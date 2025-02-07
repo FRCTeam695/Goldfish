@@ -4,13 +4,17 @@
 
 package frc.robot;
 
-import frc.robot.Constants.OperatorConstants;
+import frc.BisonLib.BaseProject.Controller.EnhancedCommandController;
+import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 import frc.robot.commands.Autos;
 import frc.robot.commands.ExampleCommand;
 import frc.robot.subsystems.ExampleSubsystem;
+import frc.robot.subsystems.Swerve;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import static edu.wpi.first.wpilibj2.command.Commands.*;
+
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -22,14 +26,27 @@ public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final ExampleSubsystem m_exampleSubsystem = new ExampleSubsystem();
 
-  // Replace with CommandPS4Controller or CommandJoystick if needed
-  private final CommandXboxController m_driverController =
-      new CommandXboxController(OperatorConstants.kDriverControllerPort);
+  public final Swerve Swerve;
+  private final TalonFXModule[] modules = new TalonFXModule[] 
+          {
+            new TalonFXModule(Constants.Swerve.FRONT_RIGHT_DRIVE_ID, Constants.Swerve.FRONT_RIGHT_TURN_ID, Constants.Swerve.FRONT_RIGHT_ABS_ENCODER_OFFSET_ROTATIONS, Constants.Swerve.FRONT_RIGHT_CANCODER_ID, 0),
+            new TalonFXModule(Constants.Swerve.FRONT_LEFT_DRIVE_ID, Constants.Swerve.FRONT_LEFT_TURN_ID, Constants.Swerve.FRONT_LEFT_ABS_ENCODER_OFFSET_ROTATIONS, Constants.Swerve.FRONT_LEFT_CANCODER_ID, 1),
+            new TalonFXModule(Constants.Swerve.BACK_LEFT_DRIVE_ID, Constants.Swerve.BACK_LEFT_TURN_ID, Constants.Swerve.BACK_LEFT_ABS_ENCODER_OFFSET_ROTATIONS, Constants.Swerve.BACK_LEFT_CANCODER_ID, 2),
+            new TalonFXModule(Constants.Swerve.BACK_RIGHT_DRIVE_ID, Constants.Swerve.BACK_RIGHT_TURN_ID, Constants.Swerve.BACK_RIGHT_ABS_ENCODER_OFFSET_ROTATIONS, Constants.Swerve.BACK_RIGHT_CANCODER_ID, 3)
+          };
+
+  private final String[] camNames = {"limelight-shooter"};
+          
+  private final EnhancedCommandController Driver =
+      new EnhancedCommandController(0);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+    Swerve = new Swerve(camNames, modules);
+
     // Configure the trigger bindings
     configureBindings();
+    configureDefaultCommands();
   }
 
   /**
@@ -48,9 +65,26 @@ public class RobotContainer {
 
     // Schedule `exampleMethodCommand` when the Xbox controller's B button is pressed,
     // cancelling on release.
-    m_driverController.b().whileTrue(m_exampleSubsystem.exampleMethodCommand());
+    Driver.b().whileTrue(m_exampleSubsystem.exampleMethodCommand());
   }
 
+  public void configureDefaultCommands(){
+    // This is the Swerve subsystem default command, this allows the driver to drive the robot
+    Swerve.setDefaultCommand
+      (
+        run
+          (
+            ()-> 
+              Swerve.teleopDefaultCommand(
+                Driver::getRequestedChassisSpeeds,
+                true
+              )
+              ,
+              Swerve
+          ).withName("Swerve Drive Command")
+      );
+  }
+  
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
    *
