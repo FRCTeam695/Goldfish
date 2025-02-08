@@ -101,6 +101,7 @@ public class SwerveBase extends SubsystemBase {
     protected String[] camNames;
     private final SwerveSetpointGenerator setpointGenerator;
     private SwerveSetpoint previousSetpoint;
+    //private Pigeon2 pigeon = new Pigeon2(8);
 
     /**
      * Does all da constructing
@@ -109,6 +110,7 @@ public class SwerveBase extends SubsystemBase {
      * @param moduleTypes The type of swerve module on the swerve drive
      */
     public SwerveBase(String[] camNames, TalonFXModule[] modules) {
+        //pigeon.setYaw(0);
         // 4 modules * 3 signals per module
         allOdomSignals = new BaseStatusSignal[(4 * 3)];
         for(int i = 0; i < modules.length; ++i){
@@ -144,8 +146,8 @@ public class SwerveBase extends SubsystemBase {
         new Thread(() -> {
             try {
                 Thread.sleep(1000);
-                //setGyro(180);
-                setGyro(-0.88);
+                setGyro(0);
+                //setGyro(-0.88);
             } catch (Exception e) {
             }
         }).start();
@@ -261,12 +263,10 @@ public class SwerveBase extends SubsystemBase {
 
     /**
      * setGyro sets the gyro to a given angle,
-     * it does this by resetting the gyro to 0and then giving it an offset
-     * (negative offset bcs wpilib is ccw+ and navX is cw+)
-     * 
      * @param degrees the degree value that the gyro should be set to
      */
     public void setGyro(double degrees){
+        //pigeon.setYaw(0);
         synchronized(gyroLock){
             gyro.reset();
             gyro.setAngleAdjustment(-degrees);
@@ -316,16 +316,15 @@ public class SwerveBase extends SubsystemBase {
      * @returns the angle the gyro is facing expressed as a Rotation2d
      */
     private Rotation2d getGyroHeading() {
+        //0.99622314806
         synchronized (gyroLock){
-            return new Rotation2d(-Math.toRadians(Math.IEEEremainder(gyro.getAngle(), 360)));
+            return new Rotation2d(-Math.toRadians(Math.IEEEremainder(gyro.getAngle()/0.99622314806, 360)));
         }
     }
 
-    protected double getGyroRate() {
-        synchronized (gyroLock){
-            return gyro.getRate();
-        }
-    }
+    // protected double getGyroRate() {
+    //     return pigeon.getAngularVelocityZWorld().getValueAsDouble();
+    // }
 
 
     /**
@@ -478,6 +477,20 @@ public class SwerveBase extends SubsystemBase {
                             odometryLock.writeLock().unlock();
                         }
                     }
+                    //LL RESET
+                    new Thread(() -> {
+                        try {
+                            for(String cam: camNames){
+                                LimelightHelpers.SetIMUMode(cam, 1);
+                                double startTime = Timer.getFPGATimestamp();
+                                while( Timer.getFPGATimestamp() < startTime + .1){
+                                    LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
+                                }
+                                LimelightHelpers.SetIMUMode(cam, 2);
+                            }
+                        } catch (Exception e) {
+                        }
+                    }).start();
                 }
         ).ignoringDisable(true);
     }
@@ -507,7 +520,7 @@ public class SwerveBase extends SubsystemBase {
         .andThen(runOnce(
           ()-> {
             initialPositions = getRawDrivePositions();
-            initialGyroAngle = gyro.getAngle() + 180;
+            initialGyroAngle = gyro.getAngle();
           }
         ))
         .andThen(
@@ -529,7 +542,7 @@ public class SwerveBase extends SubsystemBase {
             runOnce(()-> {
                 double[] currentPositions = getRawDrivePositions();
                 double avg_calculated_wheel_circumference = 0;
-                double actual_distance_traveled = one_rotation_distance * Math.abs(gyro.getAngle()-initialGyroAngle)/360.;
+                double actual_distance_traveled = one_rotation_distance * Math.abs(gyro.getAngle()-initialGyroAngle)/360;
                 for(var mod : modules){
                     //original_circumference/new_circumference = calculated_distance/actual_distance
                     // actual_distance * original_circumference = new_circumference * calculated_distance
@@ -538,10 +551,10 @@ public class SwerveBase extends SubsystemBase {
                     avg_calculated_wheel_circumference += new_circumference;
                     SmartDashboard.putNumber("initial distance " + mod.index, initialPositions[mod.index]);
                     SmartDashboard.putNumber("current distance " + mod.index, currentPositions[mod.index]);
-                    SmartDashboard.putNumber("Swerve/Module " + mod.index + "/calculated wheel circumference", new_circumference);
+                    SmartDashboard.putNumber(mod.index + "calculated wheel circumference", new_circumference);
                 }
                 avg_calculated_wheel_circumference /= 4;
-                SmartDashboard.putNumber("Swerve/Average Calculated Wheel Circumference", avg_calculated_wheel_circumference);
+                SmartDashboard.putNumber("Average Calculated Wheel Circumference", avg_calculated_wheel_circumference);
             })
         )
         ;
@@ -680,7 +693,6 @@ public class SwerveBase extends SubsystemBase {
         if(DriverStation.isAutonomous()){
             return;
         }
-        
         driveRobotRelative(ChassisSpeeds.fromFieldRelativeSpeeds(speedsSupplier.get(), getSavedPose().getRotation()), false);
     }
     
@@ -698,52 +710,6 @@ public class SwerveBase extends SubsystemBase {
         }
 
         this.driveRobotRelative(speeds, false);
-    }
-
-
-    /*
-     * updateOdometryWithVision uses vision to add measurements to the odometry
-     */
-    public void updateOdometryWithVision(){
-        // LimelightHelpers.SetRobotOrientation("limelight-shooter", getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-        // LimelightHelpers.PoseEstimate mt2_estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-shooter");
-        // SmartDashboard.putString("Megatag 2 pose estimate", mt2_estimate.toString());
-        // m_field.getObject("limelight-shooter").setPose(mt2_estimate.pose);
-
-
-        for(String cam : camNames){  
-            LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-            SmartDashboard.putNumber("Gyro Yaw", getSavedPose().getRotation().getDegrees());
-            LimelightHelpers.PoseEstimate mt2_estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cam);
-            //double[] stddevs = NetworkTableInstance.getDefault().getTable(cam).getEntry("stddevs").getDoubleArray(new double[6]);
-
-
-
-
-            // Only update pose if it is valid and if we arent spinning too fast
-            if(mt2_estimate.tagCount != 0 && getGyroRate() < 720){
-
-                // Finally, we actually add the measurement to our odometry
-                odometryLock.writeLock().lock();
-                try{
-                    odometry.addVisionMeasurement
-                    (
-                        mt2_estimate.pose, 
-                        mt2_estimate.timestampSeconds,
-                        
-                        // This way it doesn't trust the rotation reading from the vision
-                        VecBuilder.fill(0.1, 0.1, 999999999)
-                    );
-                }finally{
-                    odometryLock.writeLock().unlock();
-                }
-                
-                // This puts the pose reading from each camera onto the Field2d Widget,
-                // Docs - https://docs.wpilib.org/en/stable/docs/software/dashboards/glass/field2d-widget.html
-                m_field.getObject(cam).setPose(mt2_estimate.pose);
-                SmartDashboard.putString("mt2 pose", mt2_estimate.pose.toString());
-            }
-        }  
     }
 
 
@@ -774,6 +740,59 @@ public class SwerveBase extends SubsystemBase {
         }finally{
             odometryLock.writeLock().unlock();
         }
+    }
+
+
+    /*
+     * updateOdometryWithVision uses vision to add measurements to the odometry
+     */
+    public void updateOdometryWithVision(){
+        // LimelightHelpers.SetRobotOrientation("limelight-shooter", getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
+        // LimelightHelpers.PoseEstimate mt2_estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-shooter");
+        // SmartDashboard.putString("Megatag 2 pose estimate", mt2_estimate.toString());
+        // m_field.getObject("limelight-shooter").setPose(mt2_estimate.pose);
+
+        //double yawRate = getGyroRate();
+        for(String cam : camNames){  
+            LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
+
+            // if(DriverStation.isEnabled()){
+            //     LimelightHelpers.SetIMUMode(cam, 2);
+            // }
+            // else{
+            //     LimelightHelpers.SetIMUMode(cam, 1);
+            // }
+
+            // SmartDashboard.putNumber("Gyro Yaw", getSavedPose().getRotation().getDegrees());
+            LimelightHelpers.PoseEstimate mt2_estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cam);
+            //double[] stddevs = NetworkTableInstance.getDefault().getTable(cam).getEntry("stddevs").getDoubleArray(new double[6]);
+
+        
+
+            // Only update pose if it is valid and if we arent spinning too fast
+            if(mt2_estimate.tagCount != 0){//remove rotation speed limit
+
+                // Finally, we actually add the measurement to our odometry
+                odometryLock.writeLock().lock();
+                try{
+                    odometry.addVisionMeasurement
+                    (
+                        mt2_estimate.pose, 
+                        mt2_estimate.timestampSeconds,
+                        
+                        // This way it doesn't trust the rotation reading from the vision
+                        VecBuilder.fill(0.1, 0.1, 999999999)
+                    );
+                }finally{
+                    odometryLock.writeLock().unlock();
+                }
+                
+                // This puts the pose reading from each camera onto the Field2d Widget,
+                // Docs - https://docs.wpilib.org/en/stable/docs/software/dashboards/glass/field2d-widget.html
+                m_field.getObject(cam).setPose(mt2_estimate.pose);
+                SmartDashboard.putString("mt2 pose", mt2_estimate.pose.toString());
+            }
+        }  
     }
 
 
@@ -827,17 +846,25 @@ public class SwerveBase extends SubsystemBase {
         updateOdometryWithVision();
 
 
-       SmartDashboard.putNumber("Actual Gyro Update Rate", gyro.getActualUpdateRate());
+       //SmartDashboard.putNumber("Actual Gyro Update Rate", gyro.getActualUpdateRate());
+       //0.996906819673
+       //0.99622314806
+       //SmartDashboard.putNumber("NavX Rate", getGyroRate());
+       SmartDashboard.putNumber("NavX Position", gyro.getAngle());
+       SmartDashboard.putNumber("NavX Modified Position", getGyroHeading().getDegrees());
+       //SmartDashboard.putNumber("Pigeon Rate", pigeon.getAngularVelocityZWorld().getValueAsDouble());
+       //SmartDashboard.putNumber("Pigeon Position", pigeon.getYaw().getValueAsDouble());
+       //SmartDashboard.putNumber("NavX Temperature", gyro.getTempC());
         m_field.setRobotPose(getSavedPose());
          
 
-        // SwerveModuleState[] modStates = getModuleStates();
+        SwerveModuleState[] modStates = getModuleStates();
         // double[] modAccelerations = getModuleAccelerations();
 
-        // //SmartDashboard.putNumber("Swerve/Module 1/Module 1 Angle rad", modStates[0].angle.getRadians());
-        // //SmartDashboard.putNumber("Swerve/Module 2/Module 2 Angle rad", modStates[1].angle.getRadians());
-        // //SmartDashboard.putNumber("Swerve/Module 3/Module 3 Angle rad", modStates[2].angle.getRadians());
-        // //SmartDashboard.putNumber("Swerve/Module 4/Module 4 Angle rad", modStates[3].angle.getRadians());
+        SmartDashboard.putNumber("Module 1 Angle deg", modStates[0].angle.getDegrees());
+        SmartDashboard.putNumber("Module 2 Angle deg", modStates[1].angle.getDegrees());
+        SmartDashboard.putNumber("Module 3 Angle deg", modStates[2].angle.getDegrees());
+        SmartDashboard.putNumber("Module 4 Angle deg", modStates[3].angle.getDegrees());
 
         // SmartDashboard.putNumber("Swerve/Module 1/Module 1 Velocity", modStates[0].speedMetersPerSecond);
         // SmartDashboard.putNumber("Swerve/Module 2/Module 2 Velocity", modStates[1].speedMetersPerSecond);
@@ -853,6 +880,7 @@ public class SwerveBase extends SubsystemBase {
         // // //SmartDashboard.putNumber("Swerve/max rio measured acceleration", max_accel);
         // // //SmartDashboard.putNumber("Swerve/Current NavX measured acceleration", navXAccel);
         // // //SmartDashboard.putNumber("Swerve/Current Rio acceleration", rioAccel);
+        
         
         SmartDashboard.putBoolean("Robot Rotation at Setpoint", atRotationSetpoint.getAsBoolean());
     }

@@ -99,10 +99,6 @@ public class TalonFXModule{
         odomSignals[0] = drivePositionSignal;
         odomSignals[1] = driveVelocitySignal;
         odomSignals[2] = rotationSignal;
-
-        drivePositionSignal.setUpdateFrequency(Constants.Swerve.ODOMETRY_UPDATE_RATE_HZ_INTEGER);
-        driveVelocitySignal.setUpdateFrequency(Constants.Swerve.ODOMETRY_UPDATE_RATE_HZ_INTEGER);
-        rotationSignal.setUpdateFrequency(Constants.Swerve.ODOMETRY_UPDATE_RATE_HZ_INTEGER);
     }
 
 
@@ -145,6 +141,7 @@ public class TalonFXModule{
      */
     public void configTurnMotor(){
         TalonFXConfiguration config = new TalonFXConfiguration();
+        config.ClosedLoopGeneral.ContinuousWrap = true;
         config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         config.CurrentLimits.SupplyCurrentLimit = 30;
         config.CurrentLimits.SupplyCurrentLimitEnable = true;
@@ -164,6 +161,7 @@ public class TalonFXModule{
         config.Slot0.kP = Constants.Swerve.TURN_WHEEL_KP;
         config.Slot0.kD = Constants.Swerve.TURN_WHEEL_KD;
         config.Slot0.kS = Constants.Swerve.TURN_WHEEL_KS;
+        
 
         turnMotor.getConfigurator().apply(config);
     }
@@ -265,6 +263,8 @@ public class TalonFXModule{
         
         // Module optimization (don't turn more than 90 degrees)
         var delta = desiredState.angle.minus(latestAngle);
+        SmartDashboard.putNumber("Unoptimized Angle " + this.index + 1, desiredState.angle.getDegrees());
+        SmartDashboard.putNumber("Module Angle Delta " + this.index+1, delta.getDegrees());
         if (Math.abs(delta.getDegrees()) > 90.0) {
           desiredState = new SwerveModuleState(
               -desiredState.speedMetersPerSecond, desiredState.angle.rotateBy(Rotation2d.kPi));
@@ -278,20 +278,22 @@ public class TalonFXModule{
         
         //driveMotor.set(Math.cos(Math.abs(desiredState.angle.getRadians() -  latestAngle.getRadians())) * desiredState.speedMetersPerSecond/Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS);
 
+
         turnMotor.setControl(
+            //rotationSetter.withPosition(Rotation2d.fromDegrees(175 * Math.signum(desiredState.angle.getDegrees())).getRotations())
             rotationSetter.withPosition(desiredState.angle.getRotations())
         );
 
         
         SmartDashboard.putNumber("Module " + (this.index+1) + " Desired Velocity", desiredState.speedMetersPerSecond);
-        SmartDashboard.putNumber("Module " + (this.index+1) + " Rotation Setpoint Rad", desiredState.angle.getRadians());
+        SmartDashboard.putNumber("Module " + (this.index+1) + " Rotation Setpoint Deg", desiredState.angle.getDegrees());
         SmartDashboard.putNumber("Module " + (this.index+1) + " Cosine Error", Math.cos(Math.abs(desiredState.angle.getRadians() -  latestAngle.getRadians())));
-        SmartDashboard.putNumber("Module " + (this.index+1) + " Latest Angle", latestAngle.getRadians());
-        
+        SmartDashboard.putNumber("Module " + (this.index+1) + " Latest Angle Deg", latestAngle.getDegrees());
+
         SmartDashboard.putNumber("Module " + (this.index+1) + " Motor Velocity", driveMotor.getVelocity().getValueAsDouble() / Constants.Swerve.DRIVING_GEAR_RATIO * Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS);
         SmartDashboard.putNumber("Module " + (this.index+1) + " PID Desired Velocity", velocity);
 
-        SmartDashboard.putNumber("Module " + (this.index+1) + " Error", (velocity)-(driveMotor.getVelocity().getValueAsDouble() / Constants.Swerve.DRIVING_GEAR_RATIO * Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS));
+        SmartDashboard.putNumber("Module " + (this.index+1) + " Velocity Error", (velocity)-(driveMotor.getVelocity().getValueAsDouble() / Constants.Swerve.DRIVING_GEAR_RATIO * Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS));
     }
 
     public SwerveModulePosition getPosition(){

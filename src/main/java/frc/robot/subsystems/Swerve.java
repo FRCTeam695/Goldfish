@@ -24,7 +24,7 @@ public class Swerve extends SwerveBase{
     public Translation2d startTranslation;
     public boolean hasSeenReefTag;
     public Pose2d scoringLocationPose;
-    public Pose2d megatag2Pose;
+    
     //NT
     public NetworkTableInstance inst;
     public NetworkTable sideCarTable;
@@ -39,7 +39,6 @@ public class Swerve extends SwerveBase{
         hasSeenReefTag = false;
         scoringLocationPose = new Pose2d();
         startTranslation = new Translation2d();
-        megatag2Pose = new Pose2d();
 
         inst = NetworkTableInstance.getDefault();
         sideCarTable = inst.getTable("sideCarTable");  

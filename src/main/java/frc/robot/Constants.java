@@ -9,80 +9,10 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.math.util.Units;
 import frc.BisonLib.BaseProject.Swerve.SwerveConfig;
 
 public class Constants {
     public static final class Swerve {
-        /*
-        stores the robot specific constants {
-            frontRightOffset [0],
-            frontLeftOffset [1],
-            backLeftOffset [2],
-            backRightOffset [3],
-            drivingGearRatio [4],
-            maxSpeedFeetPerSec [5],
-            maxAngularSpeedFeetPerSec [6],
-            wheelCircumferenceInches [7],
-            turningKPval [8],
-            profiledKPval [9],
-            //maxVelocityMetersPerSec [10],   The number at this index isn't used, 
-                                                it gets recalculated, 
-                                                i just left this here cus its too hard to change, have to change a lot of code
-            wheelbaseInches [11],
-            trackwidthInches [12],
-            maxAngularAccelerationRadiansPerSecond [13],
-            turningGearRatio [14], 
-            isMK4i  (1 means it is MK4i, 0 means its not) [15]
-            rotationToAngleKPval [16]
-        }
-         */
-
-         /* 2DO - Make this another constants class instead of an array */
-        public static final double[] GOLDMODULE_CONSTANTS = { 338, 107, 311, 29, 5.70, 15.82, 15.82, 4 * Math.PI, 0.015,
-                1, 6.35, 21.5, 24.5, Math.PI, 150.0 / 7, 1 , 0};
-        public static final double[] QB_CONSTANTS = { 351, 229, 169, 207, 8.14, 10.9, 10.9, 4 * Math.PI, 0.015, 
-                1, 6.92, 19, 19, Math.PI, 150.0 / 7, 1 , 0};
-        public static final double[] LITEBOT_CONSTANTS = { 194, -5, 2, 268, 6.12, 14.73, 14.73, 4 * Math.PI, 0.007, 
-                1, 4.49, 21, 24, Math.PI, 12.8, 0 , 0};
-        public static final double[] PRODUCTION_2024 = { (93.42 + 180), 273.5, (180 + 84.11), (180 + 69), 6.12, 14.73, 14.73, 3.8 * Math.PI, 0.01,
-                1, 4.49, 22.5, 22.5, Math.PI, 12.8, 0, 0.05};   
-
-        // the last 3 values (KP, KV, and KS) have NOT been tested for surge
-        // they are the constants from QB
-        public static final SwerveConfig surgeConfig = new SwerveConfig(-0.007080 + 0.5, -0.009277 + 0.5, -0.484375, -0.441895, 
-                                                6.12, Units.metersToFeet(5.3), 3.8 * Math.PI,40, 
-                                    5, 22.5, 22.5, 12.8, 
-                                    false, 0.006, 6, 
-                                    0, 110, 40, 
-                                    0, 0, 0, 
-                                    0.25, 0.11, 0.2);
-        
-        
-        // the last 3 values (KP, KV, and KS) have NOT been tested for goldmodule
-        // they are the constants from QB
-        public static final SwerveConfig goldmoduleConfig = 
-                new SwerveConfig(0.317, 0.459+0.5, -0.112+0.5, 0.163,
-                                    //new SwerveConfig(0.317, 0, 0, 0,
-                        5.7, 15.82, 4 * Math.PI, 0.015, 
-                        1, 22.25, 
-                        24.75, 
-                        150.0 / 7, true, 0.006, 1, 
-                        0, 90, 40, 
-                        0, 0.05, 0, 
-                        0.25, 0.11, 0.2);
-        // public static final Map<String, double[]> ROBOT_MAP = new HashMap<String, double[]>() {
-        //     {
-        //         put("GOLDMODULE", GOLDMODULE_CONSTANTS);
-        //         put("QB", QB_CONSTANTS);
-        //         put("LITEBOT", LITEBOT_CONSTANTS);
-        //         put("PRODUCTION_2024", PRODUCTION_2024);
-        //     }
-        // };
-
-        // front right originally .0395
-
-        // back right originally .432
 
         public static final SwerveConfig QBConfig = 
                 new SwerveConfig(-0.4625, 
@@ -97,17 +27,35 @@ public class Constants {
                 0, 0.25, 
                 0.11, 0.2);
 
+        public static final SwerveConfig production2025Config =
+                new SwerveConfig(
+                    //must find all offsets
+                -0.454346, 0.433716, -0.438721, -0.138916,
+                 8.14, 12.4, 4 * Math.PI, 
+                 // must find this kp
+                 70, 1, 
+                 // must find wheelbase and track width
+                 23.75, 23.75, 150.0/7, true, 
+                 // must tune this
+                 0.006, 1, 
+                 // find this with field
+                 0, 
+                 // tune stator limit; supply limit doesn't get applied
+                 90, 40, 
+                 // tune velocity pid and ff
+                 0, 0, 0, 0.1, 0.8, 0.15);
+        
+
         public static final Map<String, SwerveConfig> ROBOT_MAP = new HashMap<String, SwerveConfig>() {
             {
-                put("Surge", surgeConfig);
-                put("Goldmodule", goldmoduleConfig);
                 put("QB", QBConfig);
+                put("Production_2025", production2025Config);
             }
         };
         
 
         // CHOOSE WHICH ROBOT YOU'RE USING
-        public static final SwerveConfig CHOSEN_CONSTANTS = ROBOT_MAP.get("QB");
+        public static final SwerveConfig CHOSEN_CONSTANTS = ROBOT_MAP.get("Production_2025");
 
         // miscellaneous constants
         public static final double MAX_SPEED_METERS_PER_SECONDS = CHOSEN_CONSTANTS.maxSpeedMetersPerSec;
@@ -204,19 +152,20 @@ public class Constants {
         public static final Transform2d APRIL_TAG_18 = new Transform2d(-5.1164, 0,new Rotation2d(Math.PI));
         
 
-        public static final Pose2d FEED_LOCATION = new Pose2d(0.5, 1.9, new Rotation2d());
+        public static final Pose2d FEED_LOCATION = new Pose2d(0.5, 1.9, new Rotation2d(55));
         public static final Pose2d REEF_A_SCORING_LOCATION = new Pose2d(3.26,4.17, new Rotation2d());
         public static final Pose2d REEF_B_SCORING_LOCATION = new Pose2d(3.26,3.82, new Rotation2d());
-        public static final Pose2d REEF_C_SCORING_LOCATION = new Pose2d();
-        public static final Pose2d REEF_D_SCORING_LOCATION = new Pose2d();
-        public static final Pose2d REEF_E_SCORING_LOCATION = new Pose2d();
-        public static final Pose2d REEF_F_SCORING_LOCATION = new Pose2d();
-        public static final Pose2d REEF_G_SCORING_LOCATION = new Pose2d();
-        public static final Pose2d REEF_H_SCORING_LOCATION = new Pose2d();
-        public static final Pose2d REEF_I_SCORING_LOCATION = new Pose2d();
-        public static final Pose2d REEF_J_SCORING_LOCATION = new Pose2d();
-        public static final Pose2d REEF_K_SCORING_LOCATION = new Pose2d();
-        public static final Pose2d REEF_L_SCORING_LOCATION = new Pose2d();
+        //everything below is random stuff
+        public static final Pose2d REEF_C_SCORING_LOCATION = new Pose2d(3,3.82, Rotation2d.fromDegrees(60));
+        public static final Pose2d REEF_D_SCORING_LOCATION = new Pose2d(3,3.82, Rotation2d.fromDegrees(60));
+        public static final Pose2d REEF_E_SCORING_LOCATION = new Pose2d(3,3.82, Rotation2d.fromDegrees(120));
+        public static final Pose2d REEF_F_SCORING_LOCATION = new Pose2d(3,3.82, Rotation2d.fromDegrees(120));
+        public static final Pose2d REEF_G_SCORING_LOCATION = new Pose2d(3,3.82, Rotation2d.fromDegrees(180));
+        public static final Pose2d REEF_H_SCORING_LOCATION = new Pose2d(3,3.82, Rotation2d.fromDegrees(180));
+        public static final Pose2d REEF_I_SCORING_LOCATION = new Pose2d(3,3.82, Rotation2d.fromDegrees(-120));
+        public static final Pose2d REEF_J_SCORING_LOCATION = new Pose2d(3,3.82, Rotation2d.fromDegrees(-120));
+        public static final Pose2d REEF_K_SCORING_LOCATION = new Pose2d(3,3.82, Rotation2d.fromDegrees(-60));
+        public static final Pose2d REEF_L_SCORING_LOCATION = new Pose2d(3,3.82, Rotation2d.fromDegrees(-60));
 
         public static final HashMap<String, Pose2d> REEF_SCORING_LOCATIONS = new HashMap<String, Pose2d>(){
             {
