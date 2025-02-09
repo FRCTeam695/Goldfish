@@ -33,8 +33,8 @@ public class Swerve extends SwerveBase{
     public StringSubscriber scoringLocationSub; 
 
     // 2.4, 9    
-    public ProfiledPIDController xController = new ProfiledPIDController(2.4, 0, 0, new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, 6));
-    public ProfiledPIDController yController = new ProfiledPIDController(2.4, 0, 0, new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, 6));
+    public ProfiledPIDController xController = new ProfiledPIDController(2.4, 0, 0, new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, 15));
+    public ProfiledPIDController yController = new ProfiledPIDController(2.4, 0, 0, new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, 15));
 
     public Swerve(String[] camNames, TalonFXModule[] modules) {
         super(camNames, modules);
