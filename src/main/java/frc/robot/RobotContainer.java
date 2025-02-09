@@ -15,6 +15,11 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -25,7 +30,11 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
 
+  public SendableChooser<Command> autoChooser;
+
+
   public final Swerve Swerve;
+
   private final TalonFXModule[] modules = new TalonFXModule[] 
           {
             new TalonFXModule(Constants.Swerve.FRONT_RIGHT_DRIVE_ID, Constants.Swerve.FRONT_RIGHT_TURN_ID, Constants.Swerve.FRONT_RIGHT_ABS_ENCODER_OFFSET_ROTATIONS, Constants.Swerve.FRONT_RIGHT_CANCODER_ID, 0),
@@ -43,11 +52,23 @@ public class RobotContainer {
   public RobotContainer() {
     Swerve = new Swerve(camNames, modules);
 
+    sendAutoChooserToDashboard();
+
+    // SmartDashboarding subsystems allow you to see what commands they are running
+    SmartDashboard.putData("Swerve Subsystem", Swerve);
+
     // Configure the trigger bindings
     configureBindings();
     configureDefaultCommands();
   }
 
+  private void sendAutoChooserToDashboard(){
+    // This creates our auto chooser and sends it to SmartDashboard, look at pathplanner docs for more details
+    // https://pathplanner.dev/home.html
+    autoChooser = AutoBuilder.buildAutoChooser();
+    SmartDashboard.putData("Auto Chooser", autoChooser);
+  }
+  
   /**
    * Use this method to define your trigger->command mappings. Triggers can be created via the
    * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with an arbitrary

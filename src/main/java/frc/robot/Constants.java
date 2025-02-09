@@ -30,20 +30,24 @@ public class Constants {
         public static final SwerveConfig production2025Config =
                 new SwerveConfig(
                     //must find all offsets
-                -0.454346, 0.433716, -0.438721, -0.138916,
-                 8.14, 12.4, 4 * Math.PI, 
+                -0.45874 + 0.001997 + 0.000244, // front right
+                0.4375 - 0.001465 - 0.499512, // front left
+                -0.438477 + 0.001465 - 0.499756, // back left
+                0.354292 - 0.496094 + 1 - 0.000244, // back right
+                 8.14, 12.9, 4 * Math.PI, 
                  // must find this kp
-                 70, 1, 
+                 65, 1, 
                  // must find wheelbase and track width
                  23.75, 23.75, 150.0/7, true, 
                  // must tune this
-                 0.006, 1, 
+                 0.01, 1, 
                  // find this with field
                  0, 
                  // tune stator limit; supply limit doesn't get applied
                  90, 40, 
                  // tune velocity pid and ff
-                 0, 0, 0, 0.1, 0.8, 0.15);
+                 0, 0, 0, 
+                 0.05, 0.12, 0.2);
         
 
         public static final Map<String, SwerveConfig> ROBOT_MAP = new HashMap<String, SwerveConfig>() {

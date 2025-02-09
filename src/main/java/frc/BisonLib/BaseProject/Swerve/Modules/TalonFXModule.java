@@ -294,6 +294,8 @@ public class TalonFXModule{
         SmartDashboard.putNumber("Module " + (this.index+1) + " PID Desired Velocity", velocity);
 
         SmartDashboard.putNumber("Module " + (this.index+1) + " Velocity Error", (velocity)-(driveMotor.getVelocity().getValueAsDouble() / Constants.Swerve.DRIVING_GEAR_RATIO * Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS));
+
+        
     }
 
     public SwerveModulePosition getPosition(){

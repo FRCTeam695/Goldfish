@@ -3,6 +3,8 @@ package frc.robot.subsystems;
 
 import java.util.function.DoubleSupplier;
 
+import com.ctre.phoenix6.signals.S1CloseStateValue;
+
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Transform2d;
@@ -29,6 +31,7 @@ public class Swerve extends SwerveBase{
     public NetworkTableInstance inst;
     public NetworkTable sideCarTable;
     public StringSubscriber scoringLocationSub; 
+
     // 2.4, 9    
     public ProfiledPIDController xController = new ProfiledPIDController(2.4, 0, 0, new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, 6));
     public ProfiledPIDController yController = new ProfiledPIDController(2.4, 0, 0, new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, 6));
@@ -64,8 +67,8 @@ public class Swerve extends SwerveBase{
             SmartDashboard.putString("NT scoring location", scoringLocationSub.get());
             Transform2d transformToReef = robotPose.minus(scoringLocationPose);
 
-            xController.setConstraints(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, xAccel));
-            yController.setConstraints(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, yAccel));
+            //xController.setConstraints(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, xAccel));
+            //yController.setConstraints(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, yAccel));
 
             double xSpeed = xController.calculate(transformToReef.getX());
             double ySpeed = yController.calculate(transformToReef.getY());
