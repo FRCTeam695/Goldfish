@@ -44,6 +44,8 @@ public class SwerveConfig {
         public final double driveWheelKV;
         public final double driveWheelKS;
 
+        public final double gyroDriftCompensation;
+
 
         /**
          * @param frontRightOffset The offset for the front right absolute encoder
@@ -75,7 +77,7 @@ public class SwerveConfig {
                             double profiledKPvalPathplanner, double wheelbaseInches, double trackwidthInches,
                             double turningGearRatio, boolean driveMotorInverted, double rotationToAngleKPval, double pathplannerTranslationKP,
                             double maxAccelFeetPerSec, double statorCurrentLimit, double supplyCurrentLimit, double turnWheelKD, double turnWheelKS, double maxWheelRotationalSpeed, 
-                            double driveWheelKP, double driveWheelKV, double driveWheelKS){
+                            double driveWheelKP, double driveWheelKV, double driveWheelKS, double gyroDriftCompensation){
             
             this.frontRightOffset = frontRightOffset;
             this.frontLeftOffset = frontLeftOffset;
@@ -118,5 +120,6 @@ public class SwerveConfig {
             this.driveWheelKV = driveWheelKV;
             this.driveWheelKS = driveWheelKS;
 
+            this.gyroDriftCompensation = gyroDriftCompensation;
         }
 }

@@ -318,7 +318,7 @@ public class SwerveBase extends SubsystemBase {
     private Rotation2d getGyroHeading() {
         //0.99622314806
         synchronized (gyroLock){
-            return new Rotation2d(-Math.toRadians(Math.IEEEremainder(gyro.getAngle()/0.99622314806, 360)));
+            return new Rotation2d(-Math.toRadians(Math.IEEEremainder(gyro.getAngle()/Constants.Swerve.GYRO_DRIFT_COMPENSATION, 360)));
         }
     }
 

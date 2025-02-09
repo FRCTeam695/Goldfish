@@ -25,7 +25,7 @@ public class Constants {
                 0, 90, 
                 40, 0, 0, 
                 0, 0.25, 
-                0.11, 0.2);
+                0.11, 0.2, 1);
 
         public static final SwerveConfig production2025Config =
                 new SwerveConfig(
@@ -47,7 +47,7 @@ public class Constants {
                  90, 40, 
                  // tune velocity pid and ff
                  0, 0, 0, 
-                 0.05, 0.12, 0.2);
+                 0.05, 0.12, 0.2, 1);
         
 
         public static final Map<String, SwerveConfig> ROBOT_MAP = new HashMap<String, SwerveConfig>() {
@@ -74,6 +74,7 @@ public class Constants {
         public static final double PATHPLANNER_OMEGA_KP = CHOSEN_CONSTANTS.pathplannerOmegaKP;
         public static final double PATHPLANNER_TRANSLATION_KP = CHOSEN_CONSTANTS.pathplannerTranslationKP;
         public static final double MAX_WHEEL_ROTATIONAL_SPEED = CHOSEN_CONSTANTS.maxWheelRotationalSpeed;
+        public static final double GYRO_DRIFT_COMPENSATION = CHOSEN_CONSTANTS.gyroDriftCompensation;
 
         public static final double MAX_ACCELERATION_RADIANS_PER_SECOND_SQUARED = CHOSEN_CONSTANTS.maxAngularAccelerationRadPerSecondSquared;
         public static final double DISCRETIZE_TIMESTAMP = 0.02;
@@ -132,25 +133,7 @@ public class Constants {
         public static final Translation2d BACK_RIGHT_TRANSLATION = CHOSEN_CONSTANTS.backRightTranslation;
     }
 
-    public static final class Arm{
-        public static final double INTAKE_POSITION_RADIANS = Math.toRadians(52.25);//0.99;
-        public static final double SHOOT_POSITION_RADIANS = 1.05;
 
-
-
-        
-        //113.2 degrees (blue end amp pos)
-        public static final double AMP_POSITION_RADIANS = Math.toRadians(115.5);// 113.5 //Math.toRadians(117.5);
-        
-        public static final double STOCKPILE_POSITION_RADIANS = 0.7;
-        public static final double READY_POSITION_RADIANS = 0.4;
-        public static final double PODIUM_SHOT_RADIANS = Math.toRadians(39);
-    }
-
-    public static final class Shooter{
-        public static final int STOCKPILE_RPM = 3500;
-        public static final double MAX_SHOOTING_DISTANCE = 100;
-    }
     public static final class Vision{
 
         public static final Transform2d APRIL_TAG_18 = new Transform2d(-5.1164, 0,new Rotation2d(Math.PI));
