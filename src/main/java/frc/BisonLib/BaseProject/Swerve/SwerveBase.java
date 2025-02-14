@@ -147,7 +147,6 @@ public class SwerveBase extends SubsystemBase {
             try {
                 Thread.sleep(1000);
                 setGyro(0);
-                //setGyro(-0.88);
             } catch (Exception e) {
             }
         }).start();
@@ -464,7 +463,7 @@ public class SwerveBase extends SubsystemBase {
                     if(isRedAlliance()){
                         odometryLock.writeLock().lock();
                         try{
-                            resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), new Rotation2d(Math.PI)));
+                            resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), new Rotation2d(0)));
                         }finally{
                             odometryLock.writeLock().unlock();
                         }
@@ -472,7 +471,7 @@ public class SwerveBase extends SubsystemBase {
                     else {
                         odometryLock.writeLock().lock();
                         try{
-                            resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), new Rotation2d(0)));
+                            resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), new Rotation2d(Math.PI)));
                         }finally{
                             odometryLock.writeLock().unlock();
                         }

@@ -13,6 +13,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringSubscriber;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.BisonLib.BaseProject.Swerve.SwerveBase;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 import frc.robot.Constants;
@@ -36,6 +37,8 @@ public class Swerve extends SwerveBase{
     public final double kp_attract = 2.6;
     public final double kp_repulse = 1.0;
 
+    public Trigger isCloseToDestination;
+    public Trigger isAtDestination;
 
     public Swerve(String[] camNames, TalonFXModule[] modules) {
         super(camNames, modules);
@@ -56,13 +59,16 @@ public class Swerve extends SwerveBase{
         reefVerticies[3] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(64), reefVerticies[0].getY(), new Rotation2d());
         reefVerticies[4] = new Pose2d(reefVerticies[1].getX()+Units.inchesToMeters(64), reefVerticies[1].getY(), new Rotation2d());
         reefVerticies[5] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(33.25), reefVerticies[1].getY() + Units.inchesToMeters(8.75), new Rotation2d());
+
+        isCloseToDestination = new Trigger(() -> Math.abs(scoringLocationPose.minus(getSavedPose()).getTranslation().getNorm()) < 0.1);
+        isAtDestination = new Trigger(() -> Math.abs(scoringLocationPose.minus(getSavedPose()).getTranslation().getNorm()) < 0.01);
     }
 
     /*
      * The math for all the obstacle avoidance is laid out in this desmos
      * https://www.desmos.com/calculator/z3xqpwls08
      */
-    public Command testObstacleAvoidance(){
+    public Command alignToReef(){
         return run(()->{
             Pose2d robotPose = getSavedPose();
 
@@ -103,7 +109,7 @@ public class Swerve extends SwerveBase{
                     // magnitude of repulsive force
                     double f_mag = kp_repulse/Math.pow(distance,2);
 
-                    // direction of repulsive forces
+                    // unit vector of repulsive force
                     double unit_vector_x = transformToVertex.getX()/distance;
                     double unit_vector_y = transformToVertex.getY()/distance;
 
@@ -123,33 +129,53 @@ public class Swerve extends SwerveBase{
 
             ChassisSpeeds speeds = new ChassisSpeeds(-xSpeed, -ySpeed, getAngularComponentFromRotationOverride(edu.wpi.first.math.MathUtil.inputModulus(scoringLocationPose.getRotation().getDegrees(),-180,180)));
             drive(speeds, true);
-        }).until(() -> Math.abs(scoringLocationPose.minus(getSavedPose()).getTranslation().getNorm()) < 0.01);
+        }).until(isAtDestination);
     }
 
-public Command driveToFeed(){//"A","B","C"...."I"
+    /*
+     * this command doesn't run obstacle avoidance
+     */
+    public Command driveToReefLocation(String location){
+        return run(()->{
+            Pose2d robotPose = getSavedPose();
+            scoringLocationPose = Constants.Vision.CORAL_SCORING_LOCATIONS.get(location);
+            Transform2d transformToScoringLocation = robotPose.minus(scoringLocationPose);
+
+            // calculate attraction forces
+            double attractX = kp_attract * transformToScoringLocation.getX();
+            double attractY = kp_attract * transformToScoringLocation.getY();
+
+            
+            ChassisSpeeds speeds = new ChassisSpeeds(-attractX, -attractY, getAngularComponentFromRotationOverride(edu.wpi.first.math.MathUtil.inputModulus(scoringLocationPose.getRotation().getDegrees(),-180,180)));
+            drive(speeds, true);
+        }).until(isAtDestination);
+    }
+
+public Command driveToNearestFeed(){//"A","B","C"...."I"
         
 return 
     run(
     ()->{
         // the current field relative robot pose
         Pose2d robotPose = getSavedPose();
-        scoringLocationPose = Constants.Vision.FEED_LOCATION;
-        Transform2d transformToReef = robotPose.minus(scoringLocationPose);
 
-        double attractX = kp_attract * transformToReef.getX();
-        double attractY = kp_attract * transformToReef.getY();
+        Transform2d transformToFeederRight = robotPose.minus(Constants.Vision.FEED_LOCATION_RIGHT);
+        Transform2d transformToFeederLeft = robotPose.minus(Constants.Vision.FEED_LOCATION_LEFT);
+        Transform2d closestFeederTransform = transformToFeederLeft.getTranslation().getNorm() < transformToFeederRight.getTranslation().getNorm() ? transformToFeederLeft : transformToFeederRight;
+
+
+        double attractX = kp_attract * closestFeederTransform.getX();
+        double attractY = kp_attract * closestFeederTransform.getY();
         //need to change rotation
         ChassisSpeeds speeds = new ChassisSpeeds(attractX, attractY, getAngularComponentFromRotationOverride(0));
         // ChassisSpeeds speeds = new ChassisSpeeds(1.8 * transformToReef.getX(), 1.8 * transformToReef.getY(), getAngularComponentFromRotationOverride(0));
         SmartDashboard.putString("align to reef speeds", speeds.toString());
 
         drive(speeds, true);
-
-
     }
 
 // runs the command until we are within 1 cm of target
-).until(() -> Math.abs(scoringLocationPose.minus(getSavedPose()).getTranslation().getNorm()) < 0.01);
+).until(isAtDestination);
 }
 
 

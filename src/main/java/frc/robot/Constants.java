@@ -139,7 +139,7 @@ public class Constants {
         public static final Transform2d APRIL_TAG_18 = new Transform2d(-5.1164, 0,new Rotation2d(Math.PI));
         
 
-        public static final Pose2d FEED_LOCATION = new Pose2d(0.5, 1.9, new Rotation2d(55));
+
         public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.174,4.036, new Rotation2d());
         public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(3.16,3.82, new Rotation2d());
         //everything below is random stuff
@@ -153,6 +153,9 @@ public class Constants {
         public static final Pose2d CORAL_J_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-120));
         public static final Pose2d CORAL_K_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-60));
         public static final Pose2d CORAL_L_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-60));
+        
+        public static final Pose2d FEED_LOCATION_RIGHT = new Pose2d(0.5, 1.9, new Rotation2d(55));
+        public static final Pose2d FEED_LOCATION_LEFT = new Pose2d(0.5, 1.9, new Rotation2d(55));
 
         public static final HashMap<String, Pose2d> CORAL_SCORING_LOCATIONS = new HashMap<String, Pose2d>(){
             {

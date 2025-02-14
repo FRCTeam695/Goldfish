@@ -6,11 +6,9 @@ package frc.robot;
 
 import frc.BisonLib.BaseProject.Controller.EnhancedCommandController;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
-import frc.robot.commands.Autos;
 
 import frc.robot.subsystems.Swerve;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
@@ -107,7 +105,18 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
-    return new WaitCommand(0);
+    return Swerve.resetGyro().andThen(fourPieceLeft());
     //return Autos.exampleAuto(m_exampleSubsystem);
+  }
+
+
+  public Command fourPieceLeft() {
+    return Swerve.driveToReefLocation("J")
+            .andThen(Swerve.driveToNearestFeed())
+            .andThen(Swerve.driveToReefLocation("K"))
+            .andThen(Swerve.driveToNearestFeed())
+            .andThen(Swerve.driveToReefLocation("L"))
+            .andThen(Swerve.driveToNearestFeed())
+            .andThen(Swerve.driveToReefLocation("A"));
   }
 }
