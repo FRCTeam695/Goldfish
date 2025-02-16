@@ -148,6 +148,7 @@ public class SwerveBase extends SubsystemBase {
                 Thread.sleep(1000);
                 setGyro(0);
             } catch (Exception e) {
+                setGyro(0);
             }
         }).start();
 
@@ -183,6 +184,7 @@ public class SwerveBase extends SubsystemBase {
 
 
         SmartDashboard.putData("field", m_field);
+        SmartDashboard.putData("Robot angle PID controller", thetaController);
     }
 
 
@@ -302,7 +304,7 @@ public class SwerveBase extends SubsystemBase {
         //SmartDasboard.putNumber("Swerve/Setpoint Robot Rotation", wantedAngle);
         //SmartDasboard.putNumber("Swerve/Rotation PID output", pidOutput);
 
-        rotatedToSetpoint = Math.abs(currentRotation - wantedAngle) < 3;
+        rotatedToSetpoint = Math.abs(currentRotation - wantedAngle) < 1;
         return MathUtil.clamp(pidOutput, -1, 1) * Constants.Swerve.MAX_ANGULAR_SPEED_RAD_PER_SECOND;
     }
 
@@ -317,7 +319,7 @@ public class SwerveBase extends SubsystemBase {
     private Rotation2d getGyroHeading() {
         //0.99622314806
         synchronized (gyroLock){
-            return new Rotation2d(-Math.toRadians(Math.IEEEremainder(gyro.getAngle()/Constants.Swerve.GYRO_DRIFT_COMPENSATION, 360)));
+            return new Rotation2d(-Math.toRadians(Math.IEEEremainder(gyro.getAngle()/0.99622314806, 360)));
         }
     }
 
@@ -791,25 +793,15 @@ public class SwerveBase extends SubsystemBase {
         // m_field.getObject("limelight-shooter").setPose(mt2_estimate.pose);
 
         //double yawRate = getGyroRate();
+        int inc = 0;
         for(String cam : camNames){  
             LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-
-            // if(DriverStation.isEnabled()){
-            //     LimelightHelpers.SetIMUMode(cam, 2);
-            // }
-            // else{
-            //     LimelightHelpers.SetIMUMode(cam, 1);
-            // }
-
-            // SmartDashboard.putNumber("Gyro Yaw", getSavedPose().getRotation().getDegrees());
             LimelightHelpers.PoseEstimate mt2_estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cam);
-            //double[] stddevs = NetworkTableInstance.getDefault().getTable(cam).getEntry("stddevs").getDoubleArray(new double[6]);
-
         
-
+            ++inc;
             // Only update pose if it is valid and if we arent spinning too fast
-            if(mt2_estimate.tagCount != 0){//remove rotation speed limit
-
+            if(mt2_estimate != null && mt2_estimate.tagCount != 0){//remove rotation speed limit
+                SmartDashboard.putNumber(inc + " Average Tag Distance", mt2_estimate.avgTagDist);
                 // Finally, we actually add the measurement to our odometry
                 odometryLock.writeLock().lock();
                 try{
@@ -819,7 +811,7 @@ public class SwerveBase extends SubsystemBase {
                         mt2_estimate.timestampSeconds,
                         
                         // This way it doesn't trust the rotation reading from the vision
-                        VecBuilder.fill(0.1, 0.1, 999999999)
+                        VecBuilder.fill(mt2_estimate.avgTagDist * 0.4/Units.inchesToMeters(166), mt2_estimate.avgTagDist * 0.1/Units.inchesToMeters(166), 999999999)
                     );
                 }finally{
                     odometryLock.writeLock().unlock();
@@ -869,6 +861,7 @@ public class SwerveBase extends SubsystemBase {
         SmartDashboard.putNumber("average odometry loop time", avgLoopTIme);
         SmartDashboard.putNumber("failed odometry updates", failedOdometryUpdates);
         SmartDashboard.putNumber("sucessful odometry updates", successfulOdometryUpdates);
+        SmartDashboard.putString("Robot Pose", getSavedPose().toString());
         //modules[0].setTurnMotor(1);
         //SmartDashboard.putNumber("turn motor speed", modules[0].getTurnVelocity());
 

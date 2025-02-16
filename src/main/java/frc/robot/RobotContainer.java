@@ -4,35 +4,36 @@
 
 package frc.robot;
 
-import frc.BisonLib.BaseProject.Controller.EnhancedCommandController;
-import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
-
-import frc.robot.subsystems.Swerve;
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
-import static edu.wpi.first.wpilibj2.command.Commands.*;
-
 import com.pathplanner.lib.auto.AutoBuilder;
 
+// import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import frc.BisonLib.BaseProject.Controller.EnhancedCommandController;
+
+// import frc.robot.Subsystems.CoralGripper2Motors;
+import frc.robot.subsystems.Swerve;
+import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
+
+import static edu.wpi.first.wpilibj2.command.Commands.*;
+
+import java.util.Optional;
 
 
-/**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
- * subsystems, commands, and trigger mappings) should be declared here.
- */
 public class RobotContainer {
-  // The robot's subsystems and commands are defined here...
-
-  public SendableChooser<Command> autoChooser;
-
 
   public final Swerve Swerve;
+  //public final CoralGripper2Motors Gripper;
+  //public final FakeElevator FakeElevator;
+  //public final AlgaeGripper AlgaeGripper;
 
+  //public final CoralGripper2Motors Gripper2;
+
+  // Creates an array that holds all our pose estimation cameras, pass this into Swerve
+  private final String[] camNames = {"limelight-left", "limelight-right"};//robot left and robot right
+    
+  // Creates an array of all the swerve modules, pass this into Swerve
   private final TalonFXModule[] modules = new TalonFXModule[] 
           {
             new TalonFXModule(Constants.Swerve.FRONT_RIGHT_DRIVE_ID, Constants.Swerve.FRONT_RIGHT_TURN_ID, Constants.Swerve.FRONT_RIGHT_ABS_ENCODER_OFFSET_ROTATIONS, Constants.Swerve.FRONT_RIGHT_CANCODER_ID, 0),
@@ -41,44 +42,69 @@ public class RobotContainer {
             new TalonFXModule(Constants.Swerve.BACK_RIGHT_DRIVE_ID, Constants.Swerve.BACK_RIGHT_TURN_ID, Constants.Swerve.BACK_RIGHT_ABS_ENCODER_OFFSET_ROTATIONS, Constants.Swerve.BACK_RIGHT_CANCODER_ID, 3)
           };
 
-  private final String[] camNames = {};
-          
-  private final EnhancedCommandController Driver =
-      new EnhancedCommandController(0);
+  // Creates an Xbox Controller Object, the first parameter relates to the port on the laptop
+  public static final EnhancedCommandController Driver = new EnhancedCommandController(0);
 
-  /** The container for the robot. Contains subsystems, OI devices, and commands. */
+  // Creates joystick controller objects for the coral grippers
+  // private final CommandJoystick m_joystickIntakeLeft = new CommandJoystick(0);
+  // joystick for intake is on the left of the table
+  // private final CommandJoystick m_joystickShootRight = new CommandJoystick(1);
+  // joystick for shooting is on the right of the table
+  //UsbCamera usbCamera = new UsbCamera("USB Camera 0", 0);
+  //MjpegServer mjpegServer1 = new MjpegServer("serve_USB Camera 0", 1181);
+
+  //Creates joystick controller objects for the algae grippers
+
+
+
+  private SendableChooser<Command> autoChooser;
   public RobotContainer() {
     Swerve = new Swerve(camNames, modules);
+    //Gripper1 = new CoralGripper1Motor();
+    //FakeElevator = new FakeElevator();
+    //AlgaeGripper = new AlgaeGripper();
 
+    //Gripper = new CoralGripper2Motors();
+    //CameraServer.startAutomaticCapture();
+
+    // configureBindings binds Commands to different button presses (or triggers),
+    // Commands are an important part of our programming, here are the docs,
+    // https://docs.wpilib.org/en/2021/docs/software/commandbased/index.html
+    // I would highly suggest reading all of the links on this page
+    configureBindings();
+
+    // configureDefaultCommands sets default commands to each subsystem, 
+    // a default command runs when the subsystem is not otherwise required by a different command, look at the docs for more details,
+    // https://docs.wpilib.org/en/2021/docs/software/old-commandbased/commands/default-commands.html
+    configureDefaultCommands();
     sendAutoChooserToDashboard();
 
     // SmartDashboarding subsystems allow you to see what commands they are running
     SmartDashboard.putData("Swerve Subsystem", Swerve);
-
-    // Configure the trigger bindings
-    configureBindings();
-    configureDefaultCommands();
   }
 
+  /*
+   * I put it in a method so I can't accidentally comment out the auton
+   */
   private void sendAutoChooserToDashboard(){
     // This creates our auto chooser and sends it to SmartDashboard, look at pathplanner docs for more details
     // https://pathplanner.dev/home.html
     autoChooser = AutoBuilder.buildAutoChooser();
     SmartDashboard.putData("Auto Chooser", autoChooser);
   }
-  
-  /**
-   * Use this method to define your trigger->command mappings. Triggers can be created via the
-   * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with an arbitrary
-   * predicate, or via the named factories in {@link
-   * edu.wpi.first.wpilibj2.command.button.CommandGenericHID}'s subclasses for {@link
-   * CommandXboxController Xbox}/{@link edu.wpi.first.wpilibj2.command.button.CommandPS4Controller
-   * PS4} controllers or {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
-   * joysticks}.
-   */
-  private void configureBindings() {
 
-    
+  private void configureBindings() {
+    Driver.back().onTrue(Swerve.resetGyro());
+
+    // comment out drive and odometry code before running this
+    Driver.a().onTrue(Swerve.runWheelCharacterization());
+    Driver.b().onTrue(Swerve.backwardsResetGyro());
+    Driver.leftBumper().whileTrue(Swerve.alignToReef(Optional.empty()));
+    Driver.rightBumper().whileTrue(Swerve.driveToNearestFeed());
+    Driver.y().whileTrue(
+      fourPieceLeft()
+    );
+    //Driver.b().whileTrue(Gripper.intake());
   }
 
   public void configureDefaultCommands(){
@@ -96,26 +122,23 @@ public class RobotContainer {
               Swerve
           ).withName("Swerve Drive Command")
       );
+
+      //Gripper.setDefaultCommand(Gripper.stop());
   }
-  
-  /**
-   * Use this to pass the autonomous command to the main {@link Robot} class.
-   *
-   * @return the command to run in autonomous
-   */
+
+  // The command specified in here is run in autonomous
   public Command getAutonomousCommand() {
-    // An example command will be run in autonomous
     return Swerve.backwardsResetGyro().andThen(fourPieceLeft());
   }
 
 
   public Command fourPieceLeft() {
-    return Swerve.driveToReefLocation("J")
+    return Swerve.alignToReef(Optional.of("J"))
             .andThen(Swerve.driveToNearestFeed())
-            .andThen(Swerve.driveToReefLocation("K"))
+            .andThen(Swerve.alignToReef(Optional.of("K")))
             .andThen(Swerve.driveToNearestFeed())
-            .andThen(Swerve.driveToReefLocation("L"))
+            .andThen(Swerve.alignToReef(Optional.of("L")))
             .andThen(Swerve.driveToNearestFeed())
-            .andThen(Swerve.driveToReefLocation("A"));
+            .andThen(Swerve.alignToReef(Optional.of("A")));
   }
 }
