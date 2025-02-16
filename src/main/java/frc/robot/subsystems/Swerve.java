@@ -41,11 +41,14 @@ public class Swerve extends SwerveBase{
     public final double kp_attract = 3.1;
     public final double kp_repulse = 2;
 
+    public boolean hasDetectedCollision = false;
+
     public Trigger isCloseToDestination;
     public Trigger isAtDestination;
+    public Trigger collisionDetected;
 
-    SlewRateLimiter xFilter = new SlewRateLimiter(8);
-    SlewRateLimiter yFilter = new SlewRateLimiter(8);
+    SlewRateLimiter xFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
+    SlewRateLimiter yFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
 
     public Swerve(String[] camNames, TalonFXModule[] modules) {
         super(camNames, modules);
@@ -69,6 +72,7 @@ public class Swerve extends SwerveBase{
 
         isCloseToDestination = new Trigger(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.1);
         isAtDestination = new Trigger(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.01);
+        collisionDetected = new Trigger(()-> hasDetectedCollision);
     }
 
 
@@ -112,6 +116,8 @@ public class Swerve extends SwerveBase{
             SmartDashboard.putBoolean("Collision detected", distanceForward < 0);
             // if we will collide
             if(distanceForward < 0){
+                hasDetectedCollision = true;
+
                 // calculate repulsion vector from all verticies
                 double inc = 0;
                 for(var vertex : reefVerticies){
@@ -137,6 +143,8 @@ public class Swerve extends SwerveBase{
                     repulsionX += f_x;
                     repulsionY += f_y;
                 }
+            }else{
+                hasDetectedCollision = false;
             }
             
             // combine repulsion and attraction forces for the adjusted velocities
