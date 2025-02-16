@@ -497,14 +497,14 @@ public class SwerveBase extends SubsystemBase {
     }
     
 
-    public Command backwardsResetGyro(){
+    public Command sidewaysRestGyro(){
         return runOnce(
             ()-> 
                 {
                     if(isRedAlliance()){
                         odometryLock.writeLock().lock();
                         try{
-                            resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), new Rotation2d(0)));
+                            resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), Rotation2d.fromDegrees(90)));
                         }finally{
                             odometryLock.writeLock().unlock();
                         }
@@ -512,7 +512,7 @@ public class SwerveBase extends SubsystemBase {
                     else {
                         odometryLock.writeLock().lock();
                         try{
-                            resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), new Rotation2d(Math.PI)));
+                            resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), Rotation2d.fromDegrees(-90)));
                         }finally{
                             odometryLock.writeLock().unlock();
                         }
