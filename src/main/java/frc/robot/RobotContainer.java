@@ -6,12 +6,12 @@ package frc.robot;
 
 import frc.BisonLib.BaseProject.Controller.EnhancedCommandController;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
-import frc.robot.commands.Autos;
 
-//import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.DuoTalonLift;
 import frc.robot.subsystems.DuoTalonLift.Heights;
 import edu.wpi.first.wpilibj2.command.Command;
+
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -39,7 +39,7 @@ public class RobotContainer {
   public SendableChooser<Command> autoChooser;
 
 
-  //public final Swerve Swerve;
+  public final Swerve Swerve;
   public final DuoTalonLift Elevator;
 
   private final TalonFXModule[] modules = new TalonFXModule[] 
@@ -59,17 +59,17 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    //Swerve = new Swerve(camNames, modules);
+    Swerve = new Swerve(camNames, modules);
     Elevator = new DuoTalonLift();
 
-    //sendAutoChooserToDashboard();
+    sendAutoChooserToDashboard();
 
     // SmartDashboarding subsystems allow you to see what commands they are running
-    //SmartDashboard.putData("Swerve Subsystem", Swerve);
+    SmartDashboard.putData("Swerve Subsystem", Swerve);
 
     // Configure the trigger bindings
     configureBindings();
-    //configureDefaultCommands();
+    configureDefaultCommands();
   }
 
   private void sendAutoChooserToDashboard(){
@@ -98,7 +98,7 @@ public class RobotContainer {
     
   }
 
-  /*public void configureDefaultCommands(){
+  public void configureDefaultCommands(){
     // This is the Swerve subsystem default command, this allows the driver to drive the robot
     Swerve.setDefaultCommand
       (
@@ -113,7 +113,7 @@ public class RobotContainer {
               Swerve
           ).withName("Swerve Drive Command")
       );
-  }*/
+  }
   
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
@@ -122,7 +122,18 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
-    return new WaitCommand(0);
+    return Swerve.resetGyro().andThen(fourPieceLeft());
     //return Autos.exampleAuto(m_exampleSubsystem);
+  }
+
+
+  public Command fourPieceLeft() {
+    return Swerve.driveToReefLocation("J")
+            .andThen(Swerve.driveToNearestFeed())
+            .andThen(Swerve.driveToReefLocation("K"))
+            .andThen(Swerve.driveToNearestFeed())
+            .andThen(Swerve.driveToReefLocation("L"))
+            .andThen(Swerve.driveToNearestFeed())
+            .andThen(Swerve.driveToReefLocation("A"));
   }
 }

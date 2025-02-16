@@ -122,14 +122,14 @@ public class DuoTalonLift extends SubsystemBase{
     public Command setHeightLevel(Heights setpoint) {
         return runOnce(() -> 
         {
-            r_leaderTalon.setControl(r_leaderRequests.withPosition(setpoint.heightInches));
+            r_leaderTalon.setControl(r_leaderRequests.withPosition(setpoint.heightInches)); // *rotationsPerInch
         });
     }
 
     // Enum of certain heights
     public enum Heights { // An enum is a class of defined objects
         Ground ("Ground", 0),
-        L1 ("L1", 15),
+        L1 ("L1", 15), // *rotationsPerInch
         L2 ("L2", 30),
         L3 ("L3", 45),
         L4 ("L4", 60);
