@@ -20,7 +20,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
 public class DuoTalonLift extends SubsystemBase{
-    private static final double rotationsPerInch = 52.685/48.5; // ROT/INCH!!!
+    //private static final double rotationsPerInch = 52.685/48.5; // ROT/INCH!!!
 
     // Right master talon
     private TalonFX r_leaderTalon; // RIGHT MOTOR ID 50 IS LEADER

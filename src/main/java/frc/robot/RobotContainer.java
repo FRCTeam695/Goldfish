@@ -21,10 +21,7 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import java.util.Optional;
 
-import com.ctre.phoenix6.SignalLogger;
-import com.pathplanner.lib.auto.AutoBuilder;
 
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
