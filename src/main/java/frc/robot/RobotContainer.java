@@ -8,13 +8,19 @@ import frc.BisonLib.BaseProject.Controller.EnhancedCommandController;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 import frc.robot.commands.Autos;
 
-import frc.robot.subsystems.Swerve;
+//import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.DuoTalonLift;
+import frc.robot.subsystems.DuoTalonLift.Heights;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
+import com.ctre.phoenix6.SignalLogger;
 import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -33,7 +39,8 @@ public class RobotContainer {
   public SendableChooser<Command> autoChooser;
 
 
-  public final Swerve Swerve;
+  //public final Swerve Swerve;
+  public final DuoTalonLift Elevator;
 
   private final TalonFXModule[] modules = new TalonFXModule[] 
           {
@@ -47,19 +54,22 @@ public class RobotContainer {
           
   private final EnhancedCommandController Driver =
       new EnhancedCommandController(0);
+  private static final CommandXboxController m_driverController =
+      new CommandXboxController(0);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    Swerve = new Swerve(camNames, modules);
+    //Swerve = new Swerve(camNames, modules);
+    Elevator = new DuoTalonLift();
 
-    sendAutoChooserToDashboard();
+    //sendAutoChooserToDashboard();
 
     // SmartDashboarding subsystems allow you to see what commands they are running
-    SmartDashboard.putData("Swerve Subsystem", Swerve);
+    //SmartDashboard.putData("Swerve Subsystem", Swerve);
 
     // Configure the trigger bindings
     configureBindings();
-    configureDefaultCommands();
+    //configureDefaultCommands();
   }
 
   private void sendAutoChooserToDashboard(){
@@ -79,11 +89,16 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-
+    // 2025 Elevator SysID
+    m_driverController.rightBumper().whileTrue(Elevator.setHeightLevel(Heights.Ground));
+    m_driverController.x().whileTrue(Elevator.setHeightLevel(Heights.L1));
+    m_driverController.y().whileTrue(Elevator.setHeightLevel(Heights.L2));
+    m_driverController.a().whileTrue(Elevator.setHeightLevel(Heights.L3));
+    m_driverController.b().whileTrue(Elevator.setHeightLevel(Heights.L4));
     
   }
 
-  public void configureDefaultCommands(){
+  /*public void configureDefaultCommands(){
     // This is the Swerve subsystem default command, this allows the driver to drive the robot
     Swerve.setDefaultCommand
       (
@@ -98,7 +113,7 @@ public class RobotContainer {
               Swerve
           ).withName("Swerve Drive Command")
       );
-  }
+  }*/
   
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
