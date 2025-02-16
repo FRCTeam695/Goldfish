@@ -105,8 +105,7 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     // An example command will be run in autonomous
-    return Swerve.resetGyro().andThen(fourPieceLeft());
-    //return Autos.exampleAuto(m_exampleSubsystem);
+    return Swerve.backwardsResetGyro().andThen(fourPieceLeft());
   }
 
 

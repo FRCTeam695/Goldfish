@@ -463,6 +463,45 @@ public class SwerveBase extends SubsystemBase {
                     if(isRedAlliance()){
                         odometryLock.writeLock().lock();
                         try{
+                            resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), new Rotation2d(Math.PI)));
+                        }finally{
+                            odometryLock.writeLock().unlock();
+                        }
+                    }
+                    else {
+                        odometryLock.writeLock().lock();
+                        try{
+                            resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), new Rotation2d(0)));
+                        }finally{
+                            odometryLock.writeLock().unlock();
+                        }
+                    }
+                    //LL RESET
+                    new Thread(() -> {
+                        try {
+                            for(String cam: camNames){
+                                LimelightHelpers.SetIMUMode(cam, 1);
+                                double startTime = Timer.getFPGATimestamp();
+                                while( Timer.getFPGATimestamp() < startTime + .1){
+                                    LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
+                                }
+                                LimelightHelpers.SetIMUMode(cam, 2);
+                            }
+                        } catch (Exception e) {
+                        }
+                    }).start();
+                }
+        ).ignoringDisable(true);
+    }
+    
+
+    public Command backwardsResetGyro(){
+        return runOnce(
+            ()-> 
+                {
+                    if(isRedAlliance()){
+                        odometryLock.writeLock().lock();
+                        try{
                             resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), new Rotation2d(0)));
                         }finally{
                             odometryLock.writeLock().unlock();

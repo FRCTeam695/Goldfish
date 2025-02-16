@@ -61,7 +61,7 @@ public class Swerve extends SwerveBase{
         reefVerticies[5] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(33.25), reefVerticies[1].getY() + Units.inchesToMeters(8.75), new Rotation2d());
 
         isCloseToDestination = new Trigger(() -> Math.abs(scoringLocationPose.minus(getSavedPose()).getTranslation().getNorm()) < 0.1);
-        isAtDestination = new Trigger(() -> Math.abs(scoringLocationPose.minus(getSavedPose()).getTranslation().getNorm()) < 0.01);
+        isAtDestination = new Trigger(() -> Math.abs(scoringLocationPose.minus(getSavedPose()).getTranslation().getNorm()) < 0.005);
     }
 
     /*

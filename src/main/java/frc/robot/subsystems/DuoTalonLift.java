@@ -49,7 +49,7 @@ public class DuoTalonLift extends SubsystemBase{
     // Constructor
     public DuoTalonLift () {
         // Right leader control (RIGHT MOTOR IS LEADER)
-        r_leaderTalon = new TalonFX(15);
+        r_leaderTalon = new TalonFX(51);
         r_leaderRequests = new MotionMagicVoltage(0); // Trapezoid configuration
         r_leaderConfigs = new TalonFXConfiguration(); // All configurations for right master
         r_leaderTalon.setControl(r_leaderRequests.withUpdateFreqHz(50));
@@ -57,7 +57,7 @@ public class DuoTalonLift extends SubsystemBase{
         r_leaderConfigs.MotorOutput.Inverted = InvertedValue.Clockwise_Positive; 
 
         // Left follower control
-        l_followerTalon = new TalonFX(14);
+        l_followerTalon = new TalonFX(50);
         l_followerRequests = new MotionMagicVoltage(0); // Trapezoid configuration
         l_followerConfigs = new TalonFXConfiguration(); // All configurations for left slave
         l_followerTalon.setControl(l_followerRequests.withUpdateFreqHz(50));
