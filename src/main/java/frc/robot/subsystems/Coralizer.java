@@ -26,4 +26,8 @@ public class Coralizer extends SubsystemBase{
             }
         );
     }
+
+    public Command ejectCoral(){
+        return runCoralizer(()-> 0.2);
+    }
 }

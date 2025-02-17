@@ -8,12 +8,12 @@ import frc.BisonLib.BaseProject.Controller.EnhancedCommandController;
 
 // import frc.robot.Subsystems.CoralGripper2Motors;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.Coralizer;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 
 import frc.robot.subsystems.DuoTalonLift;
 import frc.robot.subsystems.DuoTalonLift.Heights;
 import edu.wpi.first.wpilibj2.command.Command;
-
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
@@ -35,6 +35,7 @@ public class RobotContainer {
 
   public final Swerve Swerve;
   public final DuoTalonLift Elevator;
+  public final Coralizer Coralizer;
 
   private final TalonFXModule[] modules = new TalonFXModule[] 
           {
@@ -45,16 +46,14 @@ public class RobotContainer {
           };
 
   private final String[] camNames = {};
-          
-  private final EnhancedCommandController Driver =
+  private static final EnhancedCommandController driver =
       new EnhancedCommandController(0);
-  private static final CommandXboxController m_driverController =
-      new CommandXboxController(0);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     Swerve = new Swerve(camNames, modules);
     Elevator = new DuoTalonLift();
+    Coralizer = new Coralizer();
 
     // SmartDashboarding subsystems allow you to see what commands they are running
     SmartDashboard.putData("Swerve Subsystem", Swerve);
@@ -76,12 +75,21 @@ public class RobotContainer {
    */
   private void configureBindings() {
     // 2025 Elevator SysID
-    m_driverController.rightBumper().whileTrue(Elevator.setHeightLevel(Heights.Ground));
-    m_driverController.x().whileTrue(Elevator.setHeightLevel(Heights.L1));
-    m_driverController.y().whileTrue(Elevator.setHeightLevel(Heights.L2));
-    m_driverController.a().whileTrue(Elevator.setHeightLevel(Heights.L3));
-    m_driverController.b().whileTrue(Elevator.setHeightLevel(Heights.L4));
-    
+    driver.rightBumper().whileTrue(Elevator.setHeightLevel(Heights.Ground));
+    driver.b().whileTrue(Swerve.alignToReef(Optional.empty()));
+    driver.a().whileTrue(
+      parallel(
+        Swerve.alignToReef(Optional.empty()),
+        (Elevator.goToScoringHeight()
+            .onlyIf(
+              Swerve.atRotationSetpoint
+              .and(Swerve.collisionDetected.negate())
+              .and(Swerve.isCloseToDestination)
+            )
+        ).repeatedly().until(Elevator.atSetpoint)
+      )
+      .andThen(Coralizer.ejectCoral())
+    );
   }
 
   public void configureDefaultCommands(){
@@ -92,12 +100,16 @@ public class RobotContainer {
           (
             ()-> 
               Swerve.teleopDefaultCommand(
-                Driver::getRequestedChassisSpeeds,
+                driver::getRequestedChassisSpeeds,
                 true
               )
               ,
               Swerve
           ).withName("Swerve Drive Command")
+      );
+
+      Elevator.setDefaultCommand(
+        Elevator.setHeightLevel(Heights.Ground)
       );
 
       //Gripper.setDefaultCommand(Gripper.stop());
