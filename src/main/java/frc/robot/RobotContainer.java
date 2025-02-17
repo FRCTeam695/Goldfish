@@ -46,7 +46,7 @@ public class RobotContainer {
             new TalonFXModule(Constants.Swerve.BACK_RIGHT_DRIVE_ID, Constants.Swerve.BACK_RIGHT_TURN_ID, Constants.Swerve.BACK_RIGHT_ABS_ENCODER_OFFSET_ROTATIONS, Constants.Swerve.BACK_RIGHT_CANCODER_ID, 3)
           };
 
-  private final String[] camNames = {};
+  private final String[] camNames = {"limelight-left", "limelight-right"};
   private static final EnhancedCommandController driver =
       new EnhancedCommandController(0);
 
@@ -78,7 +78,10 @@ public class RobotContainer {
     // 2025 Elevator SysID
     driver.rightBumper().whileTrue(Elevator.setHeightLevel(Heights.Ground));
     driver.b().whileTrue(Swerve.alignToReef(Optional.empty()));
-    driver.x().whileTrue(Coralizer.ejectCoral());
+    driver.x().whileTrue(Elevator.goToScoringHeight());
+
+    driver.back().onTrue(Swerve.resetGyro());
+    driver.y().whileTrue(Coralizer.ejectCoral());
 
 
     driver.a().whileTrue(
@@ -95,7 +98,7 @@ public class RobotContainer {
           Elevator.goToScoringHeight()
         ).until(Elevator.atSetpoint)
       )
-      .andThen(Coralizer.ejectCoral().withTimeout(0.2))
+      .andThen(Coralizer.ejectCoral())
     );
   }
 
@@ -120,7 +123,7 @@ public class RobotContainer {
       );
 
       Coralizer.setDefaultCommand(
-        Coralizer.runCoralizer(()->0)
+        Coralizer.runIntakeAndCoralizer(()->0)
       );
 
       //Gripper.setDefaultCommand(Gripper.stop());

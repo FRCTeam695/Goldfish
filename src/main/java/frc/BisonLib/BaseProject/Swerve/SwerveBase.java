@@ -32,6 +32,7 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -101,6 +102,10 @@ public class SwerveBase extends SubsystemBase {
     protected String[] camNames;
     private final SwerveSetpointGenerator setpointGenerator;
     private SwerveSetpoint previousSetpoint;
+
+    SlewRateLimiter xFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
+    SlewRateLimiter yFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);    
+    SlewRateLimiter omegaFilter = new SlewRateLimiter(Math.toRadians(1074.5588535));
     //private Pigeon2 pigeon = new Pigeon2(8);
 
     /**
@@ -659,7 +664,7 @@ public class SwerveBase extends SubsystemBase {
      * 
      * @param chassisSpeeds The chassis speeds the robot should travel at
      */
-    public void driveRobotRelative(ChassisSpeeds chassisSpeeds, boolean useSetpointGenerator) {
+    private void driveRobotRelative(ChassisSpeeds chassisSpeeds, boolean useSetpointGenerator) {
         if(!useSetpointGenerator){
             // discretizes the chassis speeds (acccounts for robot skew)
             chassisSpeeds = ChassisSpeeds.discretize(chassisSpeeds, Constants.Swerve.DISCRETIZE_TIMESTAMP);
@@ -729,11 +734,7 @@ public class SwerveBase extends SubsystemBase {
      * Drives the robot in teleop, we don't want it fighting the auton swerve commands
      */
     public void teleopDefaultCommand(Supplier<ChassisSpeeds> speedsSupplier, boolean fieldOriented){
-        // We don't want to run the TELEOP default command in auton
-        if(DriverStation.isAutonomous()){
-            return;
-        }
-        driveRobotRelative(ChassisSpeeds.fromFieldRelativeSpeeds(speedsSupplier.get(), getSavedPose().getRotation()), false);
+        drive(speedsSupplier.get(), true);
     }
     
     /**
@@ -744,6 +745,13 @@ public class SwerveBase extends SubsystemBase {
      * @param fieldOriented A boolean that specifies if the robot should be driven in fieldOriented mode or not
      */
     public void drive(ChassisSpeeds speeds, boolean fieldOriented){
+        if(DriverStation.isAutonomous()){
+            return;
+        }
+
+        speeds.vxMetersPerSecond = xFilter.calculate(speeds.vxMetersPerSecond);
+        speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
+        speeds.omegaRadiansPerSecond = omegaFilter.calculate(speeds.omegaRadiansPerSecond);
 
         if (fieldOriented) {
             speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getSavedPose().getRotation());

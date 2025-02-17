@@ -5,7 +5,6 @@ import static edu.wpi.first.wpilibj2.command.Commands.runEnd;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
@@ -16,9 +15,6 @@ import frc.robot.Constants;
 
 
 public class EnhancedCommandController extends CommandXboxController{
-    
-    SlewRateLimiter xFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
-    SlewRateLimiter yFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
 
     public EnhancedCommandController(int port){
         super(port);
@@ -60,9 +56,6 @@ public class EnhancedCommandController extends CommandXboxController{
         Xj *= Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS;
         Yj *= Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS;
         Zj *= Constants.Swerve.MAX_ANGULAR_SPEED_RAD_PER_SECOND;
-
-        Xj = xFilter.calculate(Xj);
-        Yj = yFilter.calculate(Yj);
 
         SmartDashboard.putNumber("Zj", Zj);
         SmartDashboard.putNumber("Xj", Xj);

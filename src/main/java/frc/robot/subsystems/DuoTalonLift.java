@@ -59,12 +59,14 @@ public class DuoTalonLift extends SubsystemBase{
     public NetworkTable sideCarTable;
     public IntegerSubscriber scoringHeight;
     public Trigger atSetpoint;
+    public int rotationSetpoint = 0;
 
     // Constructor
     public DuoTalonLift () {
         sideCarTable = inst.getTable("sidecarTable");
-        scoringHeight = sideCarTable.getIntegerTopic("scoringLocation").subscribe(1);
-        atSetpoint = new Trigger(()-> r_leaderTalon.getClosedLoopError().getValueAsDouble() < 0.25);
+        scoringHeight = sideCarTable.getIntegerTopic("scoringLevel").subscribe(1);
+        atSetpoint = new Trigger(()-> Math.abs(r_leaderTalon.getPosition().getValueAsDouble() - rotationSetpoint) < 0.25);
+
 
         // Right leader control (RIGHT MOTOR IS LEADER)
         r_leaderTalon = new TalonFX(50);
@@ -121,18 +123,20 @@ public class DuoTalonLift extends SubsystemBase{
         r_leaderTalon.setPosition(0); // Reset leader's position
     }
 
-
     public Command goToScoringHeight(){
         return run(()->{
-            int networkTablesHeight = (int)scoringHeight.get(2);
-            if(networkTablesHeight == 1) r_leaderTalon.setControl(r_leaderRequests.withPosition(Heights.L1.heightInches));
-            else if(networkTablesHeight == 3) r_leaderTalon.setControl(r_leaderRequests.withPosition(Heights.L3.heightInches));
-            else if(networkTablesHeight == 4) r_leaderTalon.setControl(r_leaderRequests.withPosition(Heights.L4.heightInches));
-            else r_leaderTalon.setControl(r_leaderRequests.withPosition(Heights.L2.heightInches));
+            int networkTablesHeight = (int)Math.round(scoringHeight.get(2));
+            if(networkTablesHeight == 1) rotationSetpoint = (int)Math.round(Heights.L1.heightInches);
+            else if(networkTablesHeight == 2) rotationSetpoint = (int)Math.round(Heights.L2.heightInches);
+            else if(networkTablesHeight == 3)  rotationSetpoint = (int)Math.round(Heights.L3.heightInches);
+            else if(networkTablesHeight == 4)  rotationSetpoint = (int)Math.round(Heights.L4.heightInches);
+            else rotationSetpoint = (int)Heights.L1.heightInches;
+
+            r_leaderTalon.setControl(r_leaderRequests.withPosition(rotationSetpoint));
         });
     }
 
-    // Setting elevator leader talon to spin to a certain heights
+    // Setting elevator leader talon to spin to a certain height
     // a, b, x, y, and right bumper control different set heights (for now)
     public Command setHeightLevel(Heights setpoint) {
         return run(() -> 
@@ -165,6 +169,7 @@ public class DuoTalonLift extends SubsystemBase{
         SmartDashboard.putNumber("Supply Voltage output", l_followerTalon.getSupplyVoltage().getValueAsDouble());
         SmartDashboard.putNumber("Position", r_leaderTalon.getPosition().getValueAsDouble());
         SmartDashboard.putBoolean("Elevator at Setpoint", atSetpoint.getAsBoolean());
+        SmartDashboard.putNumber("Elevator Closed Loop Reference", r_leaderTalon.getClosedLoopReference().getValueAsDouble());
 
         // Field variable outputs
         // Position

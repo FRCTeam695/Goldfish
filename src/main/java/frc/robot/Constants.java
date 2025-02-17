@@ -47,7 +47,8 @@ public class Constants {
                  90, 40, 
                  // tune velocity pid and ff
                  0, 0, 0, 
-                 0.05, 0.12, 0.2, 1);
+                 0.05, 0.12, 0.2, 1.0/1.003344);
+                 //0.99622314806
         
 
         public static final Map<String, SwerveConfig> ROBOT_MAP = new HashMap<String, SwerveConfig>() {
@@ -80,7 +81,7 @@ public class Constants {
         public static final double DISCRETIZE_TIMESTAMP = 0.02;
         public static final int ODOMETRY_UPDATE_RATE_HZ_INTEGER = 200;
         public static final boolean MODULE_IS_INVERTED = CHOSEN_CONSTANTS.driveMotorInverted;
-        public static final double MAX_ACCELERATION_METERS_PER_SECOND_SQ = 7.0;
+        public static final double MAX_ACCELERATION_METERS_PER_SECOND_SQ = 8.0;
         public static final double SUPPLY_CURRENT_LIMIT = CHOSEN_CONSTANTS.supplyCurrentLimit;
         public static final double STATOR_CURRENT_LIMIT = CHOSEN_CONSTANTS.statorCurrentLimit;
 
@@ -136,12 +137,14 @@ public class Constants {
 
     public static final class Vision{
 
+
         public static final Transform2d APRIL_TAG_18 = new Transform2d(-5.1164, 0,new Rotation2d(Math.PI));
         
 
 
-        public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.174,4.036, new Rotation2d());
-        public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(3.16,3.82, new Rotation2d());
+        public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.157,4.182, new Rotation2d());
+        //public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.174,4.036, new Rotation2d())
+        public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(3.171,3.83, new Rotation2d());
         //everything below is random stuff
         public static final Pose2d CORAL_C_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
         public static final Pose2d CORAL_D_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));

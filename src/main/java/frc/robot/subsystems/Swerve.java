@@ -5,7 +5,6 @@ package frc.robot.subsystems;
 import java.util.Optional;
 
 import edu.wpi.first.math.MathUtil;
-import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
@@ -38,7 +37,7 @@ public class Swerve extends SwerveBase{
     public StringSubscriber scoringLocationSub; 
     public StringSubscriber scoringModeSub;
     // 2.4, 9
-    public final double kp_attract = 1;
+    public final double kp_attract = 2.4;
     public final double kp_repulse = 1;
 
     public boolean hasDetectedCollision = false;
@@ -46,9 +45,6 @@ public class Swerve extends SwerveBase{
     public Trigger isCloseToDestination;
     public Trigger isAtDestination;
     public Trigger collisionDetected;
-
-    SlewRateLimiter xFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
-    SlewRateLimiter yFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
 
     public Swerve(String[] camNames, TalonFXModule[] modules) {
         super(camNames, modules);
@@ -63,7 +59,7 @@ public class Swerve extends SwerveBase{
         scoringLocationSub = sideCarTable.getStringTopic("scoringLocation").subscribe("");
         scoringModeSub = sideCarTable.getStringTopic("currentIntakeMode").subscribe("");
 
-        reefVerticies[0] = new Pose2d(Constants.Vision.ALGAE_A_SCORING_LOCATION.getX()+Units.inchesToMeters(5.5) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, Constants.Vision.ALGAE_A_SCORING_LOCATION.getY() - (Constants.Swerve.TRACK_WIDTH_METERS)/2 - Units.inchesToMeters(7), new Rotation2d());
+        reefVerticies[0] = new Pose2d(Constants.Vision.ALGAE_A_SCORING_LOCATION.getX()+Units.inchesToMeters(6.125) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, Constants.Vision.ALGAE_A_SCORING_LOCATION.getY() - (Constants.Swerve.TRACK_WIDTH_METERS)/2 - Units.inchesToMeters(7), new Rotation2d());
         reefVerticies[1] = new Pose2d(Constants.Vision.ALGAE_A_SCORING_LOCATION.getX()+Units.inchesToMeters(5.5) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, Constants.Vision.ALGAE_A_SCORING_LOCATION.getY() + (Constants.Swerve.TRACK_WIDTH_METERS)/2 + Units.inchesToMeters(7), new Rotation2d());
         reefVerticies[2] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65/2.), reefVerticies[0].getY() - Units.inchesToMeters(20.25), new Rotation2d());
         reefVerticies[3] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65), reefVerticies[0].getY(), new Rotation2d());
@@ -75,14 +71,6 @@ public class Swerve extends SwerveBase{
         collisionDetected = new Trigger(()-> hasDetectedCollision);
     }
 
-    public Command seedRateLimiter(){
-        return runOnce(()->{
-            ChassisSpeeds latestSpeeds = getLatestChassisSpeed();
-            xFilter.reset(latestSpeeds.vxMetersPerSecond);
-            yFilter.reset(latestSpeeds.vyMetersPerSecond);
-        });
-    }
-
 
     /*
      * The math for all the obstacle avoidance is laid out in this desmos
@@ -90,93 +78,94 @@ public class Swerve extends SwerveBase{
      */
     public Command alignToReef(Optional<String> location){
         return 
-        seedRateLimiter().andThen(
-        run(()->{
-            Pose2d robotPose = getSavedPose();
+        runOnce(()-> hasDetectedCollision = true)
+        .andThen(
+            run(()->{
+                SmartDashboard.putBoolean("Collision Detected",  collisionDetected.getAsBoolean());
+                SmartDashboard.putBoolean("Close to Destination",  isCloseToDestination.getAsBoolean());
 
-            if(location.isEmpty()){
-                String currentIntakeMode = scoringModeSub.get();
-                if(currentIntakeMode.equals("Coral")){
-                    targetLocationPose = Constants.Vision.CORAL_SCORING_LOCATIONS.get(scoringLocationSub.get());
-                }else if(currentIntakeMode.equals("Algae")) {
-                    targetLocationPose = Constants.Vision.ALGAE_SCORING_LOCATIONS.get(scoringLocationSub.get());
+                Pose2d robotPose = getSavedPose();
+
+                if(location.isEmpty()){
+                    String currentIntakeMode = scoringModeSub.get();
+                    if(currentIntakeMode.equals("Coral")){
+                        targetLocationPose = Constants.Vision.CORAL_SCORING_LOCATIONS.get(scoringLocationSub.get());
+                    }else if(currentIntakeMode.equals("Algae")) {
+                        targetLocationPose = Constants.Vision.ALGAE_SCORING_LOCATIONS.get(scoringLocationSub.get());
+                    }else{
+                        targetLocationPose = robotPose;
+                    }
                 }else{
-                    targetLocationPose = robotPose;
+                    targetLocationPose = Constants.Vision.CORAL_SCORING_LOCATIONS.get(location.get());
                 }
-            }else{
-                targetLocationPose = Constants.Vision.CORAL_SCORING_LOCATIONS.get(location.get());
-            }
 
-            double dx = targetLocationPose.getX()-robotPose.getX();
-            double dy = targetLocationPose.getY() - robotPose.getY();
+                double dx = targetLocationPose.getX()-robotPose.getX();
+                double dy = targetLocationPose.getY() - robotPose.getY();
 
-            // calculate attraction forces
-            double attractX = kp_attract * dx;
-            double attractY = kp_attract * dy;
+                // calculate attraction forces
+                double attractX = kp_attract * dx;
+                double attractY = kp_attract * dy;
 
-            double repulsionX = 0;
-            double repulsionY = 0;
+                double repulsionX = 0;
+                double repulsionY = 0;
 
-            // calculate the forward distance we need to go in order to get to the target;
-            // if its negative we have to move backwards
-            SmartDashboard.putString("Scoring Location Pose", targetLocationPose.toString());
+                // calculate the forward distance we need to go in order to get to the target;
+                // if its negative we have to move backwards
+                SmartDashboard.putString("Scoring Location Pose", targetLocationPose.toString());
 
-            double distanceForward = dx * targetLocationPose.getRotation().getCos() + dy * targetLocationPose.getRotation().getSin();
+                double distanceForward = dx * targetLocationPose.getRotation().getCos() + dy * targetLocationPose.getRotation().getSin();
 
-            SmartDashboard.putBoolean("Collision detected", distanceForward < 0);
-            // if we will collide
-            if(distanceForward < 0){
-                hasDetectedCollision = true;
+                // if we will collide
+                if(distanceForward < 0){
+                    hasDetectedCollision = true;
 
-                // calculate repulsion vector from all verticies
-                double inc = 0;
-                for(var vertex : reefVerticies){
-                    inc++;
-                    m_field.getObject(""+inc).setPose(vertex);
-                    // get distance to vertex
-                    Transform2d transformToVertex = vertex.minus(robotPose);
-                    double vdx = vertex.getX() - robotPose.getX();
-                    double vdy = vertex.getY() - robotPose.getY();
-                    double distance = transformToVertex.getTranslation().getNorm();
-                    
-                    // magnitude of repulsive force
-                    double f_mag = kp_repulse/Math.pow(distance,2);
+                    // calculate repulsion vector from all verticies
+                    double inc = 0;
+                    for(var vertex : reefVerticies){
+                        inc++;
+                        m_field.getObject(""+inc).setPose(vertex);
+                        // get distance to vertex
+                        Transform2d transformToVertex = vertex.minus(robotPose);
+                        double vdx = vertex.getX() - robotPose.getX();
+                        double vdy = vertex.getY() - robotPose.getY();
+                        double distance = transformToVertex.getTranslation().getNorm();
+                        
+                        // magnitude of repulsive force
+                        double f_mag = kp_repulse/Math.pow(distance,2);
 
-                    // unit vector of repulsive force
-                    double unit_vector_x = vdx/distance;
-                    double unit_vector_y = vdy/distance;
+                        // unit vector of repulsive force
+                        double unit_vector_x = vdx/distance;
+                        double unit_vector_y = vdy/distance;
 
-                    // multiply by unit vector to get direction and magnitude
-                    double f_x = f_mag * unit_vector_x;
-                    double f_y = f_mag * unit_vector_y;
+                        // multiply by unit vector to get direction and magnitude
+                        double f_x = f_mag * unit_vector_x;
+                        double f_y = f_mag * unit_vector_y;
 
-                    repulsionX += f_x;
-                    repulsionY += f_y;
+                        repulsionX += f_x;
+                        repulsionY += f_y;
+                    }
+                }else{
+                    hasDetectedCollision = false;
                 }
-            }else{
-                hasDetectedCollision = false;
-            }
-            
-            // combine repulsion and attraction forces for the adjusted velocities
-            double xSpeed = attractX - repulsionX;
-            double ySpeed = attractY - repulsionY;
+                
+                // combine repulsion and attraction forces for the adjusted velocities
+                double xSpeed = attractX - repulsionX;
+                double ySpeed = attractY - repulsionY;
 
-            ChassisSpeeds speeds = new ChassisSpeeds(
-                MathUtil.clamp(xSpeed, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS), 
-                MathUtil.clamp(ySpeed, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS), 
-                getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()));
-            speeds.vxMetersPerSecond = xFilter.calculate(speeds.vxMetersPerSecond);
-            speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
-            SmartDashboard.putString("Chassis Speeds Commanded", speeds.toString());
-            drive(speeds, true);
-        }).until(isAtDestination));
+                ChassisSpeeds speeds = new ChassisSpeeds(
+                    MathUtil.clamp(xSpeed, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS), 
+                    MathUtil.clamp(ySpeed, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS), 
+                    getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()));
+                SmartDashboard.putString("Chassis Speeds Commanded", speeds.toString());
+                drive(speeds, true);
+            }).until(isAtDestination)
+        );
     }
 
 
 public Command driveToNearestFeed(){//"A","B","C"...."I"
         
 return 
-    seedRateLimiter().andThen(
     run(
     ()->{
         // the current field relative robot pose
@@ -236,7 +225,7 @@ return
 
         drive(speeds, true);
     }
-    ).until(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.05));
+    ).until(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.05);
 }
 
 
