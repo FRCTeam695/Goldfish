@@ -77,6 +77,9 @@ public class RobotContainer {
     // 2025 Elevator SysID
     driver.rightBumper().whileTrue(Elevator.setHeightLevel(Heights.Ground));
     driver.b().whileTrue(Swerve.alignToReef(Optional.empty()));
+    driver.x().whileTrue(Coralizer.ejectCoral());
+
+
     driver.a().whileTrue(
       parallel(
         Swerve.alignToReef(Optional.empty()),
@@ -110,6 +113,10 @@ public class RobotContainer {
 
       Elevator.setDefaultCommand(
         Elevator.setHeightLevel(Heights.Ground)
+      );
+
+      Coralizer.setDefaultCommand(
+        Coralizer.runCoralizer(()->0)
       );
 
       //Gripper.setDefaultCommand(Gripper.stop());
