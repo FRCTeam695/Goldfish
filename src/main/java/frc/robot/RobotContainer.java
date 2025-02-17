@@ -14,6 +14,7 @@ import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 import frc.robot.subsystems.DuoTalonLift;
 import frc.robot.subsystems.DuoTalonLift.Heights;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
@@ -83,14 +84,16 @@ public class RobotContainer {
     driver.a().whileTrue(
       parallel(
         Swerve.alignToReef(Optional.empty()),
+        
+        new WaitUntilCommand(
+          Swerve.atRotationSetpoint
+          .and(Swerve.collisionDetected.negate())
+          .and(Swerve.isCloseToDestination)
+        )
+        .andThen
         (
           Elevator.goToScoringHeight()
-            .onlyIf(
-              Swerve.atRotationSetpoint
-              .and(Swerve.collisionDetected.negate())
-              .and(Swerve.isCloseToDestination)
-            )
-        ).repeatedly().until(Elevator.atSetpoint)
+        ).until(Elevator.atSetpoint)
       )
       .andThen(Coralizer.ejectCoral().withTimeout(0.2))
     );

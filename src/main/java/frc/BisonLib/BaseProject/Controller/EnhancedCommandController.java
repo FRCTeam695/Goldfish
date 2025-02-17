@@ -17,8 +17,8 @@ import frc.robot.Constants;
 
 public class EnhancedCommandController extends CommandXboxController{
     
-    SlewRateLimiter xFilter = new SlewRateLimiter(6);
-    SlewRateLimiter yFilter = new SlewRateLimiter(6);
+    SlewRateLimiter xFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
+    SlewRateLimiter yFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
 
     public EnhancedCommandController(int port){
         super(port);

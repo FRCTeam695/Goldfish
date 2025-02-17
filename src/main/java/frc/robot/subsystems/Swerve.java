@@ -38,8 +38,8 @@ public class Swerve extends SwerveBase{
     public StringSubscriber scoringLocationSub; 
     public StringSubscriber scoringModeSub;
     // 2.4, 9
-    public final double kp_attract = 3.1;
-    public final double kp_repulse = 2;
+    public final double kp_attract = 1;
+    public final double kp_repulse = 1;
 
     public boolean hasDetectedCollision = false;
 
@@ -75,13 +75,23 @@ public class Swerve extends SwerveBase{
         collisionDetected = new Trigger(()-> hasDetectedCollision);
     }
 
+    public Command seedRateLimiter(){
+        return runOnce(()->{
+            ChassisSpeeds latestSpeeds = getLatestChassisSpeed();
+            xFilter.reset(latestSpeeds.vxMetersPerSecond);
+            yFilter.reset(latestSpeeds.vyMetersPerSecond);
+        });
+    }
+
 
     /*
      * The math for all the obstacle avoidance is laid out in this desmos
      * https://www.desmos.com/calculator/z3xqpwls08
      */
     public Command alignToReef(Optional<String> location){
-        return run(()->{
+        return 
+        seedRateLimiter().andThen(
+        run(()->{
             Pose2d robotPose = getSavedPose();
 
             if(location.isEmpty()){
@@ -159,13 +169,14 @@ public class Swerve extends SwerveBase{
             speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
             SmartDashboard.putString("Chassis Speeds Commanded", speeds.toString());
             drive(speeds, true);
-        }).until(isAtDestination);
+        }).until(isAtDestination));
     }
 
 
 public Command driveToNearestFeed(){//"A","B","C"...."I"
         
 return 
+    seedRateLimiter().andThen(
     run(
     ()->{
         // the current field relative robot pose
@@ -225,7 +236,7 @@ return
 
         drive(speeds, true);
     }
-    ).until(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.05);
+    ).until(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.05));
 }
 
 

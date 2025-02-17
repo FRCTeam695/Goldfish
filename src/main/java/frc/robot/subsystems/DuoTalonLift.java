@@ -1,8 +1,6 @@
 package frc.robot.subsystems;
 
 
-import java.util.Map;
-
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -18,7 +16,6 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SelectCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -124,19 +121,18 @@ public class DuoTalonLift extends SubsystemBase{
         r_leaderTalon.setPosition(0); // Reset leader's position
     }
 
+
     public Command goToScoringHeight(){
-        return new SelectCommand<>(
-            Map.ofEntries(
-                Map.entry(1, setHeightLevel(Heights.L1)),
-                Map.entry(2, setHeightLevel(Heights.L2)),
-                Map.entry(3, setHeightLevel(Heights.L3)),
-                Map.entry(4, setHeightLevel(Heights.L4))
-            ),
-            ()-> scoringHeight.get(2)
-        );
+        return run(()->{
+            int networkTablesHeight = (int)scoringHeight.get(2);
+            if(networkTablesHeight == 1) r_leaderTalon.setControl(r_leaderRequests.withPosition(Heights.L1.heightInches));
+            else if(networkTablesHeight == 3) r_leaderTalon.setControl(r_leaderRequests.withPosition(Heights.L3.heightInches));
+            else if(networkTablesHeight == 4) r_leaderTalon.setControl(r_leaderRequests.withPosition(Heights.L4.heightInches));
+            else r_leaderTalon.setControl(r_leaderRequests.withPosition(Heights.L2.heightInches));
+        });
     }
 
-    // Setting elevator leader talon to spin to a certain height
+    // Setting elevator leader talon to spin to a certain heights
     // a, b, x, y, and right bumper control different set heights (for now)
     public Command setHeightLevel(Heights setpoint) {
         return run(() -> 
