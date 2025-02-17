@@ -83,7 +83,8 @@ public class RobotContainer {
     driver.a().whileTrue(
       parallel(
         Swerve.alignToReef(Optional.empty()),
-        (Elevator.goToScoringHeight()
+        (
+          Elevator.goToScoringHeight()
             .onlyIf(
               Swerve.atRotationSetpoint
               .and(Swerve.collisionDetected.negate())
@@ -91,7 +92,7 @@ public class RobotContainer {
             )
         ).repeatedly().until(Elevator.atSetpoint)
       )
-      .andThen(Coralizer.ejectCoral())
+      .andThen(Coralizer.ejectCoral().withTimeout(0.2))
     );
   }
 
