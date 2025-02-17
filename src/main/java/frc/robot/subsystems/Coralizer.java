@@ -22,12 +22,19 @@ public class Coralizer extends SubsystemBase{
     public Coralizer(){
         //beamBreak = new DigitalInput(0);
         coralizer = new TalonFX(52);
-        intake = new TalonFX(53);
+        intake = new TalonFX(54);
+
+
         MotorOutputConfigs coralizerConfig = new MotorOutputConfigs();
         coralizerConfig.NeutralMode = NeutralModeValue.Brake;
-
         coralizerConfig.Inverted = InvertedValue.Clockwise_Positive;
         coralizer.getConfigurator().apply(coralizerConfig);
+
+        MotorOutputConfigs intakeConfig = new MotorOutputConfigs();
+        intakeConfig.NeutralMode = NeutralModeValue.Brake;
+
+        coralizerConfig.Inverted = InvertedValue.Clockwise_Positive;
+        intake.getConfigurator().apply(intakeConfig);
 
         beamBreak = new DigitalInput(0);
     }
@@ -53,6 +60,14 @@ public class Coralizer extends SubsystemBase{
         return run(()->{
             output.Output = speed.getAsDouble();
             coralizer.setControl(output);
+            intake.setControl(output);
+        });
+    }
+
+    public Command runIntakeMotor(DoubleSupplier speed){
+        DutyCycleOut output = new DutyCycleOut(0);
+        return run(()->{
+            output.Output = speed.getAsDouble();
             intake.setControl(output);
         });
     }
