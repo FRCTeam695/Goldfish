@@ -23,11 +23,7 @@ import frc.robot.Constants;
 
 public class Swerve extends SwerveBase{
     
-    public double lastRecordedDistance;
-    public Translation2d startTranslation;
-    public boolean hasSeenReefTag;
     public Pose2d targetLocationPose;
-    public Pose2d megatag2Pose;
 
     public Pose2d[] reefVerticies = new Pose2d[6];
 
@@ -36,8 +32,13 @@ public class Swerve extends SwerveBase{
     public NetworkTable sideCarTable;
     public StringSubscriber scoringLocationSub; 
     public StringSubscriber scoringModeSub;
-    // 2.4, 9
+    
+
+    // probably turn this up, its low rn (for reference QB's attraction kp was 2.7, 
+    // when ur tuning make sure ur just running the autoalign without the elevator)
     public final double kp_attract = 2.4;
+
+    // we will tune this on the practice field
     public final double kp_repulse = 1;
 
     public boolean hasDetectedCollision = false;
@@ -49,10 +50,7 @@ public class Swerve extends SwerveBase{
     public Swerve(String[] camNames, TalonFXModule[] modules) {
         super(camNames, modules);
 
-        hasSeenReefTag = false;
         targetLocationPose = new Pose2d();
-        startTranslation = new Translation2d();
-        megatag2Pose = new Pose2d();
 
         inst = NetworkTableInstance.getDefault();
         sideCarTable = inst.getTable("sidecarTable");  
