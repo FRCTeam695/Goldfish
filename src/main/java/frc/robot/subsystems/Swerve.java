@@ -99,6 +99,8 @@ public class Swerve extends SwerveBase{
                     targetLocationPose = Constants.Vision.CORAL_SCORING_LOCATIONS.get(location.get());
                 }
 
+                m_field.getObject("target location").setPose(targetLocationPose);
+
                 double dx = targetLocationPose.getX()-robotPose.getX();
                 double dy = targetLocationPose.getY() - robotPose.getY();
 
