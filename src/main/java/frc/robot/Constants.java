@@ -5,7 +5,6 @@ import java.util.Map;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
@@ -135,17 +134,10 @@ public class Constants {
     }
 
 
-    public static final class Vision{
-
-
-        public static final Transform2d APRIL_TAG_18 = new Transform2d(-5.1164, 0,new Rotation2d(Math.PI));
-        
-
+    public static final class Vision{        
 
         public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.157,4.182, new Rotation2d());
-        //public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.174,4.036, new Rotation2d())
         public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(3.171,3.83, new Rotation2d());
-        //everything below is random stuff
         public static final Pose2d CORAL_C_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
         public static final Pose2d CORAL_D_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
         public static final Pose2d CORAL_E_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(120));
