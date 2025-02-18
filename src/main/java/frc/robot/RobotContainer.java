@@ -75,15 +75,22 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    // 2025 Elevator SysID
-    driver.rightBumper().whileTrue(Elevator.setHeightLevel(Heights.Ground));
+    // these are all the buttons for manually scoring coral without automation
+    driver.rightBumper().whileTrue(Elevator.goToScoringHeight());
     driver.b().whileTrue(Swerve.alignToReef(Optional.empty()));
     driver.y().whileTrue(Coralizer.intake());
     driver.x().whileTrue(Coralizer.ejectCoral());
+    
 
+    // make sure you gyro reset by aligning with the reef, not eyeballing it
     driver.back().onTrue(Swerve.resetGyro());
 
 
+    /*
+     * Automatically scores coral into the desired location, you need to be running the operator python app for this to work
+     * Also, you will need to add logic in here so the elevator doesn't raise unless the coral is fully indexed,
+     * I would suggest added a trigger in the coralizer subsystem.
+     */
     driver.a().whileTrue(
       parallel(
         Swerve.alignToReef(Optional.empty()),
