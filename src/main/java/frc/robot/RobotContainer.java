@@ -89,7 +89,7 @@ public class RobotContainer {
     /*
      * Automatically scores coral into the desired location, you need to be running the operator python app for this to work
      * Also, you will need to add logic in here so the elevator doesn't raise unless the coral is fully indexed,
-     * I would suggest added a trigger in the coralizer subsystem.
+     * I would suggest adding a trigger in the coralizer subsystem.
      */
     driver.a().whileTrue(
       parallel(
