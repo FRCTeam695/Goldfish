@@ -70,9 +70,14 @@ public class Swerve extends SwerveBase{
     }
 
 
-    /*
+    /**
      * The math for all the obstacle avoidance is laid out in this desmos
      * https://www.desmos.com/calculator/z3xqpwls08
+     * 
+     * @param location If you want the robot to auto align to a specific location, 
+     *                 you can supply the location in an optional (we use this for auton).
+     *                 If you supply an empty optional, then it pulls the location to 
+     *                 align to off networktables from the operator interface
      */
     public Command alignToReef(Optional<String> location){
         return 
@@ -84,6 +89,7 @@ public class Swerve extends SwerveBase{
 
                 Pose2d robotPose = getSavedPose();
 
+                // if no location is provided, we grab it from networktables
                 if(location.isEmpty()){
                     String currentIntakeMode = scoringModeSub.get();
                     if(currentIntakeMode.equals("Coral")){
@@ -93,7 +99,9 @@ public class Swerve extends SwerveBase{
                     }else{
                         targetLocationPose = robotPose;
                     }
-                }else{
+                }
+                // if a location is provided, we just drive to the provided lcoation
+                else{
                     targetLocationPose = Constants.Vision.CORAL_SCORING_LOCATIONS.get(location.get());
                 }
 
@@ -152,6 +160,7 @@ public class Swerve extends SwerveBase{
                 double xSpeed = attractX - repulsionX;
                 double ySpeed = attractY - repulsionY;
 
+                //clamp speeds to avoid desaturation killing our rotational movement
                 ChassisSpeeds speeds = new ChassisSpeeds(
                     MathUtil.clamp(xSpeed, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS), 
                     MathUtil.clamp(ySpeed, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS), 
