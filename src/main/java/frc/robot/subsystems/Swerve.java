@@ -13,7 +13,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringSubscriber;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -57,12 +56,6 @@ public class Swerve extends SwerveBase{
         super(camNames, modules);
 
         targetLocationPose = new Pose2d();
-
-        NetworkTableInstance Vision = NetworkTableInstance.getDefault();
-        NetworkTable Pose = Vision.getTable("vision");
-        poseXEntry = Pose.getDoubleTopic("x").publish();
-        poseYEntry = Pose.getDoubleTopic("y").publish();
-        poseAngleEntry = Pose.getDoubleTopic("angle").publish();
 
         inst = NetworkTableInstance.getDefault();
         sideCarTable = inst.getTable("sidecarTable");  
