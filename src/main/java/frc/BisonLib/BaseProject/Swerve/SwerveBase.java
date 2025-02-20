@@ -102,9 +102,7 @@ public class SwerveBase extends SubsystemBase {
     protected String[] camNames;
     private final SwerveSetpointGenerator setpointGenerator;
     private SwerveSetpoint previousSetpoint;
-
-    SlewRateLimiter xFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
-    SlewRateLimiter yFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);    
+ 
     SlewRateLimiter omegaFilter = new SlewRateLimiter(Math.toRadians(1074.5588535));
     //private Pigeon2 pigeon = new Pigeon2(8);
 
@@ -634,12 +632,6 @@ public class SwerveBase extends SubsystemBase {
                     speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(angleDegrees.getAsDouble());
                     drive(speeds, true);
                  }
-
-            // /* INTERRUPTED */
-            // interrupted-> {
-            //                 setStateToDriverControl();
-            //                 rotatedToSetpoint = false;
-            //               },
         );
     }
 
@@ -749,8 +741,7 @@ public class SwerveBase extends SubsystemBase {
             return;
         }
 
-        speeds.vxMetersPerSecond = xFilter.calculate(speeds.vxMetersPerSecond);
-        speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
+        speeds = applyAccelerationLimit(speeds);
         speeds.omegaRadiansPerSecond = omegaFilter.calculate(speeds.omegaRadiansPerSecond);
 
         if (fieldOriented) {
@@ -758,6 +749,23 @@ public class SwerveBase extends SubsystemBase {
         }
 
         this.driveRobotRelative(speeds, false);
+    }
+
+    public ChassisSpeeds applyAccelerationLimit(ChassisSpeeds desiredSpeeds){
+        ChassisSpeeds current = getLatestChassisSpeed();
+        double ax = desiredSpeeds.vxMetersPerSecond - current.vxMetersPerSecond;
+        double ay = desiredSpeeds.vyMetersPerSecond - current.vyMetersPerSecond;
+
+        double magnitude = Math.hypot(ax, ay);
+        if(magnitude > Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ && magnitude != 0){
+            double scale = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ/magnitude;
+            ax *= scale;  
+            ay *= scale;
+        }
+
+        current.vxMetersPerSecond += (ax * 0.02);
+        current.vyMetersPerSecond += (ay * 0.02);
+        return current;
     }
 
 
@@ -891,34 +899,15 @@ public class SwerveBase extends SubsystemBase {
        //SmartDashboard.putNumber("NavX Rate", getGyroRate());
        SmartDashboard.putNumber("NavX Position", gyro.getAngle());
        SmartDashboard.putNumber("NavX Modified Position", getGyroHeading().getDegrees());
-       //SmartDashboard.putNumber("Pigeon Rate", pigeon.getAngularVelocityZWorld().getValueAsDouble());
-       //SmartDashboard.putNumber("Pigeon Position", pigeon.getYaw().getValueAsDouble());
-       //SmartDashboard.putNumber("NavX Temperature", gyro.getTempC());
+
         m_field.setRobotPose(getSavedPose());
-         
 
         SwerveModuleState[] modStates = getModuleStates();
-        // double[] modAccelerations = getModuleAccelerations();
 
         SmartDashboard.putNumber("Module 1 Angle deg", modStates[0].angle.getDegrees());
         SmartDashboard.putNumber("Module 2 Angle deg", modStates[1].angle.getDegrees());
         SmartDashboard.putNumber("Module 3 Angle deg", modStates[2].angle.getDegrees());
         SmartDashboard.putNumber("Module 4 Angle deg", modStates[3].angle.getDegrees());
-
-        // SmartDashboard.putNumber("Swerve/Module 1/Module 1 Velocity", modStates[0].speedMetersPerSecond);
-        // SmartDashboard.putNumber("Swerve/Module 2/Module 2 Velocity", modStates[1].speedMetersPerSecond);
-        // SmartDashboard.putNumber("Swerve/Module 3/Module 3 Velocity", modStates[2].speedMetersPerSecond);
-        // SmartDashboard.putNumber("Swerve/Module 4/Module 4 Velocity", modStates[3].speedMetersPerSecond);
-
-        // SmartDashboard.putNumber("Swerve/Module 1/Module 1 Accel", modAccelerations[0]);
-        // SmartDashboard.putNumber("Swerve/Module 2/Module 2 Accel", modAccelerations[1]);
-        // SmartDashboard.putNumber("Swerve/Module 3/Module 3 Accel", modAccelerations[2]);
-        // SmartDashboard.putNumber("Swerve/Module 4/Module 4 Accel", modAccelerations[3]);
-
-        // //SmartDashboard.putNumber("Swerve/current robot velocity", speed);
-        // // //SmartDashboard.putNumber("Swerve/max rio measured acceleration", max_accel);
-        // // //SmartDashboard.putNumber("Swerve/Current NavX measured acceleration", navXAccel);
-        // // //SmartDashboard.putNumber("Swerve/Current Rio acceleration", rioAccel);
         
         
         SmartDashboard.putBoolean("Robot Rotation at Setpoint", atRotationSetpoint.getAsBoolean());
