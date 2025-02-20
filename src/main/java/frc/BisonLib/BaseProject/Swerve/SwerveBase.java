@@ -297,15 +297,7 @@ public class SwerveBase extends SubsystemBase {
      */
     public double getAngularComponentFromRotationOverride(double wantedAngle){
         double currentRotation = getSavedPose().getRotation().getDegrees();
-        SmartDashboard.putNumber("current rotation", currentRotation);
-        SmartDashboard.putNumber("wanted angle", wantedAngle);
         double pidOutput = thetaController.calculate(currentRotation, wantedAngle);
-        SmartDashboard.putNumber("rotation pid output", pidOutput);
-        SmartDashboard.putNumber("max angularspeed rad/sec", Constants.Swerve.MAX_ANGULAR_SPEED_RAD_PER_SECOND);
-
-        //SmartDasboard.putNumber("Swerve/Current Robot Rotation", currentRotation);
-        //SmartDasboard.putNumber("Swerve/Setpoint Robot Rotation", wantedAngle);
-        //SmartDasboard.putNumber("Swerve/Rotation PID output", pidOutput);
 
         rotatedToSetpoint = Math.abs(currentRotation - wantedAngle) < 1;
         return MathUtil.clamp(pidOutput, -1, 1) * Constants.Swerve.MAX_ANGULAR_SPEED_RAD_PER_SECOND;
@@ -698,6 +690,7 @@ public class SwerveBase extends SubsystemBase {
 
         // I derivated whole thing using polar coordinates but the Translation2d turns it back into standard x, y coordinates
         // Here is my work, I didn't write this in a way that I mean't to be easy to be understood by others but make of it what you will
+        // it also doesn't work at all lol
         // https://i.imgur.com/jL4c0yS.jpeg
         double radius = Math.sqrt(2) * Constants.Swerve.WHEEL_BASE_METERS/2.0;
         double offset;
@@ -810,12 +803,6 @@ public class SwerveBase extends SubsystemBase {
      * updateOdometryWithVision uses vision to add measurements to the odometry
      */
     public void updateOdometryWithVision(){
-        // LimelightHelpers.SetRobotOrientation("limelight-shooter", getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-        // LimelightHelpers.PoseEstimate mt2_estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-shooter");
-        // SmartDashboard.putString("Megatag 2 pose estimate", mt2_estimate.toString());
-        // m_field.getObject("limelight-shooter").setPose(mt2_estimate.pose);
-
-        //double yawRate = getGyroRate();
         int inc = 0;
         for(String cam : camNames){  
             LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
@@ -834,6 +821,7 @@ public class SwerveBase extends SubsystemBase {
                         mt2_estimate.timestampSeconds,
                         
                         // This way it doesn't trust the rotation reading from the vision
+                        // these are all the state stdevs
                         VecBuilder.fill(mt2_estimate.avgTagDist * 0.4/Units.inchesToMeters(166), mt2_estimate.avgTagDist * 0.1/Units.inchesToMeters(166), 999999999)
                     );
                 }finally{
