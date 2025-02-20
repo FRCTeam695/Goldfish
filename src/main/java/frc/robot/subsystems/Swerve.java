@@ -11,7 +11,9 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringSubscriber;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -47,10 +49,20 @@ public class Swerve extends SwerveBase{
     public Trigger isAtDestination;
     public Trigger collisionDetected;
 
+    public DoublePublisher poseXEntry;
+    public DoublePublisher poseYEntry;
+    public DoublePublisher poseAngleEntry;
+
     public Swerve(String[] camNames, TalonFXModule[] modules) {
         super(camNames, modules);
 
         targetLocationPose = new Pose2d();
+
+        NetworkTableInstance Vision = NetworkTableInstance.getDefault();
+        NetworkTable Pose = Vision.getTable("vision");
+        poseXEntry = Pose.getDoubleTopic("x").publish();
+        poseYEntry = Pose.getDoubleTopic("y").publish();
+        poseAngleEntry = Pose.getDoubleTopic("angle").publish();
 
         inst = NetworkTableInstance.getDefault();
         sideCarTable = inst.getTable("sidecarTable");  
@@ -88,6 +100,9 @@ public class Swerve extends SwerveBase{
                 SmartDashboard.putBoolean("Close to Destination",  isCloseToDestination.getAsBoolean());
 
                 Pose2d robotPose = getSavedPose();
+                poseXEntry.set(robotPose.getX());
+                poseYEntry.set(robotPose.getY());
+                poseAngleEntry.set(robotPose.getRotation().getDegrees());
 
                 // if no location is provided, we grab it from networktables
                 if(location.isEmpty()){
@@ -156,6 +171,11 @@ public class Swerve extends SwerveBase{
                     hasDetectedCollision = false;
                 }
                 
+                //close publishers
+                poseXEntry.close();
+                poseYEntry.close();
+                poseAngleEntry.close();
+
                 // combine repulsion and attraction forces for the adjusted velocities
                 double xSpeed = attractX - repulsionX;
                 double ySpeed = attractY - repulsionY;
