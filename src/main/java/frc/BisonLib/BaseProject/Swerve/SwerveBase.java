@@ -753,16 +753,23 @@ public class SwerveBase extends SubsystemBase {
 
     public ChassisSpeeds applyAccelerationLimit(ChassisSpeeds desiredSpeeds){
         ChassisSpeeds current = getLatestChassisSpeed();
+
+        // acceleration in the x and y direction
         double ax = desiredSpeeds.vxMetersPerSecond - current.vxMetersPerSecond;
         double ay = desiredSpeeds.vyMetersPerSecond - current.vyMetersPerSecond;
 
+        // magnitude of the acceleration
         double magnitude = Math.hypot(ax, ay);
+
+        // if requested acceleration is too much
         if(magnitude > Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ && magnitude != 0){
+            // scale down acceleration in the x and y direction
             double scale = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ/magnitude;
-            ax *= scale;  
+            ax *= scale;
             ay *= scale;
         }
 
+        // 0.02 is the loop time
         current.vxMetersPerSecond += (ax * 0.02);
         current.vyMetersPerSecond += (ay * 0.02);
         return current;
