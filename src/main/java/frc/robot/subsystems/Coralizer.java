@@ -4,6 +4,7 @@ package frc.robot.subsystems;
 import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
@@ -24,17 +25,19 @@ public class Coralizer extends SubsystemBase{
         coralizer = new TalonFX(52);
         intake = new TalonFX(54);
 
+        
+        TalonFXConfiguration config = new TalonFXConfiguration();
+        config.CurrentLimits.SupplyCurrentLimit = 20.0;
+        config.CurrentLimits.SupplyCurrentLimitEnable = true;
+        
+        MotorOutputConfigs motorOutputConfigs = new MotorOutputConfigs();
+        motorOutputConfigs.NeutralMode = NeutralModeValue.Brake;
+        motorOutputConfigs.Inverted = InvertedValue.Clockwise_Positive;
 
-        MotorOutputConfigs coralizerConfig = new MotorOutputConfigs();
-        coralizerConfig.NeutralMode = NeutralModeValue.Brake;
-        coralizerConfig.Inverted = InvertedValue.Clockwise_Positive;
-        coralizer.getConfigurator().apply(coralizerConfig);
+        config.MotorOutput = motorOutputConfigs;
 
-        MotorOutputConfigs intakeConfig = new MotorOutputConfigs();
-        intakeConfig.NeutralMode = NeutralModeValue.Brake;
-
-        coralizerConfig.Inverted = InvertedValue.Clockwise_Positive;
-        intake.getConfigurator().apply(intakeConfig);
+        coralizer.getConfigurator().apply(config);
+        intake.getConfigurator().apply(config);
 
         beamBreak = new DigitalInput(0);
     }
