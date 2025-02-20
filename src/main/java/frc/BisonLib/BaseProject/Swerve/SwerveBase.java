@@ -885,25 +885,9 @@ public class SwerveBase extends SubsystemBase {
         SmartDashboard.putNumber("failed odometry updates", failedOdometryUpdates);
         SmartDashboard.putNumber("sucessful odometry updates", successfulOdometryUpdates);
         SmartDashboard.putString("Robot Pose", getSavedPose().toString());
-        //modules[0].setTurnMotor(1);
-        //SmartDashboard.putNumber("turn motor speed", modules[0].getTurnVelocity());
 
-        // ChassisSpeeds currentSpeeds = getLatestChassisSpeed();
-        // speed = Math.hypot(currentSpeeds.vxMetersPerSecond, currentSpeeds.vyMetersPerSecond);
-        //double navXAccel = Math.hypot(gyro.getWorldLinearAccelX(), gyro.getWorldLinearAccelY());
-        //double rioAccel = Math.hypot(xAccelFilter.calculate(rioAccelerometer.getX()), yAccelFilter.calculate(rioAccelerometer.getY()));
-        // if(rioAccel > max_accel){
-        //     max_accel = rioAccel;
-        // }
-
-        //updateOdometryWithKinematics();
         updateOdometryWithVision();
 
-
-       //SmartDashboard.putNumber("Actual Gyro Update Rate", gyro.getActualUpdateRate());
-       //0.996906819673
-       //0.99622314806
-       //SmartDashboard.putNumber("NavX Rate", getGyroRate());
        SmartDashboard.putNumber("NavX Position", gyro.getAngle());
        SmartDashboard.putNumber("NavX Modified Position", getGyroHeading().getDegrees());
 
