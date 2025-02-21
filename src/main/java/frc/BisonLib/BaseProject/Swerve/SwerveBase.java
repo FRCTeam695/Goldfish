@@ -736,9 +736,10 @@ public class SwerveBase extends SubsystemBase {
             return;
         }
 
-        speeds.vxMetersPerSecond = xFilter.calculate(speeds.vxMetersPerSecond);
-        speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
+        // speeds.vxMetersPerSecond = xFilter.calculate(speeds.vxMetersPerSecond);
+        // speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
         speeds.omegaRadiansPerSecond = omegaFilter.calculate(speeds.omegaRadiansPerSecond);
+        speeds = applyAccelerationLimit(speeds);
 
         if (fieldOriented) {
             speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getSavedPose().getRotation());
@@ -751,8 +752,8 @@ public class SwerveBase extends SubsystemBase {
         ChassisSpeeds current = getLatestChassisSpeed();
 
         // acceleration in the x and y direction
-        double ax = desiredSpeeds.vxMetersPerSecond - current.vxMetersPerSecond;
-        double ay = desiredSpeeds.vyMetersPerSecond - current.vyMetersPerSecond;
+        double ax = (desiredSpeeds.vxMetersPerSecond - current.vxMetersPerSecond)/0.02;
+        double ay = (desiredSpeeds.vyMetersPerSecond - current.vyMetersPerSecond)/0.02;
 
         // magnitude of the acceleration
         double magnitude = Math.hypot(ax, ay);
