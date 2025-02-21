@@ -4,32 +4,35 @@ package frc.robot.subsystems;
 import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
-import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.configs.TalonFXSConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
-import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.hardware.TalonFXS;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.MotorArrangementValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 //import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class Coralizer extends SubsystemBase{
     //DigitalInput beamBreak;
-    private TalonFX coralizer;
-    private TalonFX intake;
+    private TalonFXS coralizer;
+    private TalonFXS intake;
     private DigitalInput beamBreak;
     public Coralizer(){
         //beamBreak = new DigitalInput(0);
-        coralizer = new TalonFX(52);
-        intake = new TalonFX(54);
+        coralizer = new TalonFXS(52);
+        intake = new TalonFXS(53);
 
         
-        TalonFXConfiguration config = new TalonFXConfiguration();
+        TalonFXSConfiguration config = new TalonFXSConfiguration();
         config.CurrentLimits.SupplyCurrentLimit = 20.0;
         config.CurrentLimits.SupplyCurrentLimitEnable = true;
-        
+        config.Commutation.MotorArrangement = MotorArrangementValue.NEO550_JST;
+
         MotorOutputConfigs motorOutputConfigs = new MotorOutputConfigs();
         motorOutputConfigs.NeutralMode = NeutralModeValue.Brake;
         motorOutputConfigs.Inverted = InvertedValue.Clockwise_Positive;
@@ -39,7 +42,7 @@ public class Coralizer extends SubsystemBase{
         coralizer.getConfigurator().apply(config);
         intake.getConfigurator().apply(config);
 
-        beamBreak = new DigitalInput(0);
+        beamBreak = new DigitalInput(6);
     }
 
     public boolean beamIsBroken(){
@@ -76,16 +79,22 @@ public class Coralizer extends SubsystemBase{
     }
 
     public Command runCoralizer(DoubleSupplier speed) {
-        DutyCycleOut coralizerOut = new DutyCycleOut(0);
+        //DutyCycleOut coralizerOut = new DutyCycleOut(0);
         return run(
             () -> {
-                coralizerOut.Output = speed.getAsDouble();
-                coralizer.setControl(coralizerOut);
+                // coralizerOut.Output = speed.getAsDouble();
+                // coralizer.setControl(coralizerOut);
+                coralizer.set(speed.getAsDouble());
             }
         );
     }
 
     public Command ejectCoral(){
         return runCoralizer(()-> 0.6).withTimeout(0.2);
+    }
+
+    @Override
+    public void periodic(){
+        SmartDashboard.putBoolean("Beambreak", beamIsBroken());
     }
 }

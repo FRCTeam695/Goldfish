@@ -79,7 +79,7 @@ public class RobotContainer {
     driver.rightBumper().whileTrue(Elevator.goToScoringHeight());
     driver.b().whileTrue(Swerve.alignToReef(Optional.empty()));
     driver.y().whileTrue(Coralizer.intake());
-    driver.x().whileTrue(Coralizer.ejectCoral());
+    driver.x().whileTrue(Coralizer.runIntakeAndCoralizer(()->0.6));
     
 
     // make sure you gyro reset by aligning with the reef, not eyeballing it

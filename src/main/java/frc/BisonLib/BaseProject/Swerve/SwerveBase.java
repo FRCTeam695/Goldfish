@@ -104,6 +104,8 @@ public class SwerveBase extends SubsystemBase {
     private SwerveSetpoint previousSetpoint;
  
     SlewRateLimiter omegaFilter = new SlewRateLimiter(Math.toRadians(1074.5588535));
+    SlewRateLimiter xFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
+    SlewRateLimiter yFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
     //private Pigeon2 pigeon = new Pigeon2(8);
 
     /**
@@ -734,7 +736,8 @@ public class SwerveBase extends SubsystemBase {
             return;
         }
 
-        speeds = applyAccelerationLimit(speeds);
+        speeds.vxMetersPerSecond = xFilter.calculate(speeds.vxMetersPerSecond);
+        speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
         speeds.omegaRadiansPerSecond = omegaFilter.calculate(speeds.omegaRadiansPerSecond);
 
         if (fieldOriented) {
