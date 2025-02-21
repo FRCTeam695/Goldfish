@@ -91,26 +91,8 @@ public class RobotContainer {
     driver.back().onTrue(Swerve.resetGyro());
 
 
-    /*
-     * Automatically scores coral into the desired location, you need to be running the operator python app for this to work
-     * Also, you will need to add logic in here so the elevator doesn't raise unless the coral is fully indexed,
-     * I would suggest adding a trigger in the coralizer subsystem.
-     */
     driver.a().whileTrue(
-      parallel(
-        Swerve.alignToReef(Optional.empty()),
-        
-        new WaitUntilCommand(
-          Swerve.atRotationSetpoint
-          .and(Swerve.collisionDetected.negate())
-          .and(Swerve.isCloseToDestination)
-        )
-        .andThen
-        (
-          Elevator.goToScoringHeight()
-        ).until(Elevator.atSetpoint)
-      )
-      .andThen(Coralizer.ejectCoral())
+      alignAndScore(Optional.empty())
     );
   }
 
@@ -148,12 +130,51 @@ public class RobotContainer {
 
 
   public Command fourPieceLeft() {
-    return Swerve.alignToReef(Optional.of("J"))
-            .andThen(Swerve.driveToNearestFeed())
-            .andThen(Swerve.alignToReef(Optional.of("K")))
-            .andThen(Swerve.driveToNearestFeed())
-            .andThen(Swerve.alignToReef(Optional.of("L")))
-            .andThen(Swerve.driveToNearestFeed())
-            .andThen(Swerve.alignToReef(Optional.of("A")));
+    return alignAndScore(Optional.of("T"))
+            .andThen(
+              parallel(
+                Swerve.driveToNearestFeed().andThen(alignAndScore(Optional.of("K"))),
+                Coralizer.intake()
+              )
+            )
+            .andThen(
+              parallel(
+                Swerve.driveToNearestFeed().andThen(alignAndScore(Optional.of("L"))),
+                Coralizer.intake()
+              )
+            )
+            .andThen(
+              parallel(
+                Swerve.driveToNearestFeed().andThen(alignAndScore(Optional.of("A"))),
+                Coralizer.intake()
+              )
+            );
+  }
+
+  public Command alignAndScore(Optional<String> location){
+    return
+      parallel(
+        Swerve.alignToReef(location),
+        
+        new WaitUntilCommand(
+          Swerve.atRotationSetpoint
+          .and(Swerve.collisionDetected.negate())
+          .and(Swerve.isCloseToDestination)
+          .and(Coralizer.doneIntaking)
+        )
+        .andThen
+        (
+          Elevator.goToScoringHeight()
+        ).until(Elevator.atSetpoint)
+      )
+      .andThen(Coralizer.ejectCoral());
+  }
+
+  public Command alignAndIntake(){
+    return
+      deadline(
+        Coralizer.intake(),
+        Swerve.driveToNearestFeed()
+      );
   }
 }

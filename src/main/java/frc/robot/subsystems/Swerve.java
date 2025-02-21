@@ -105,7 +105,6 @@ public class Swerve extends SwerveBase{
                     targetLocationPose = getCoralScoringLocation(scoringLocationSub.get());
                 }
 
-                m_field.getObject("target location").setPose(targetLocationPose);
 
                 double dx = targetLocationPose.getX()-robotPose.getX();
                 double dy = targetLocationPose.getY() - robotPose.getY();
@@ -119,8 +118,6 @@ public class Swerve extends SwerveBase{
 
                 // calculate the forward distance we need to go in order to get to the target;
                 // if its negative we have to move backwards
-                SmartDashboard.putString("Scoring Location Pose", targetLocationPose.toString());
-
                 double distanceForward = dx * targetLocationPose.getRotation().getCos() + dy * targetLocationPose.getRotation().getSin();
 
                 // if we will collide
@@ -186,13 +183,13 @@ return
         double angle;
         if(transformToFeederLeft.getNorm() < transformToFeederRight.getNorm()){
             closestFeederTransform = transformToFeederLeft;
-            angle = getFeedLocation("Right").getRotation().getDegrees();
+            angle = getFeedLocation("Left").getRotation().getDegrees();
             targetLocationPose = getFeedLocation("Left");
         }
         else{
             closestFeederTransform = transformToFeederRight;
             angle = getFeedLocation("Right").getRotation().getDegrees();
-            targetLocationPose = getFeedLocation("Left");
+            targetLocationPose = getFeedLocation("Right");
         }
 
         double attractX = kp_attract * closestFeederTransform.getX();
@@ -295,5 +292,10 @@ return
         return feed_location;
     }
 
+    @Override
+    public void periodic(){
+        super.periodic();
+        m_field.getObject("target location").setPose(targetLocationPose);
+    }
 }
 

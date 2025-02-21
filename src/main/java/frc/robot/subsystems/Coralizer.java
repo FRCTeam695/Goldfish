@@ -16,12 +16,15 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 //import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class Coralizer extends SubsystemBase{
     //DigitalInput beamBreak;
     private TalonFXS coralizer;
     private TalonFXS intake;
     private DigitalInput beamBreak;
+    private boolean hasFinishedIntaking = true;
+    public Trigger doneIntaking = new Trigger(()-> hasFinishedIntaking);
 
     public Coralizer(){
         //beamBreak = new DigitalInput(0);
@@ -55,14 +58,15 @@ public class Coralizer extends SubsystemBase{
     }
 
     public Command intake(){
-        return 
-        runIntakeAndCoralizer(()-> 0.6).until(this::beamIsBroken)
+        return
+        runOnce(()-> {hasFinishedIntaking = false;})
         .andThen(
-            runIntakeAndCoralizer(()->0.6).until(this::beamNotBroken)
+        runIntakeAndCoralizer(()-> 0.6).until(this::beamIsBroken))
+        .andThen(
+            runIntakeAndCoralizer(()->0.2).until(this::beamNotBroken)
         )
-        .andThen(
-            runIntakeAndCoralizer(()->-0.2).until(this::beamIsBroken)
-        ).andThen(runIntakeAndCoralizer(()-> 0));
+        .andThen(runOnce(()-> hasFinishedIntaking = true))
+        .andThen(runIntakeAndCoralizer(()-> 0));
     }
     
 
