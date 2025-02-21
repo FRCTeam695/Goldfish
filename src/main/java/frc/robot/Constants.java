@@ -134,65 +134,124 @@ public class Constants {
     }
 
 
-    public static final class Vision{        
+    public static final class Vision{     
+        public static final class Blue{
+            public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.157,4.182, new Rotation2d());
+            public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(3.171,3.83, new Rotation2d());
+            public static final Pose2d CORAL_C_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
+            public static final Pose2d CORAL_D_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
+            public static final Pose2d CORAL_E_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(120));
+            public static final Pose2d CORAL_F_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(120));
+            public static final Pose2d CORAL_G_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(180));
+            public static final Pose2d CORAL_H_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(180));
+            public static final Pose2d CORAL_I_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-120));
+            public static final Pose2d CORAL_J_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-120));
+            public static final Pose2d CORAL_K_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-60));
+            public static final Pose2d CORAL_L_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-60));
+            
+            public static final Pose2d FEED_LOCATION_RIGHT = new Pose2d(0.96, 1.06, Rotation2d.fromDegrees(50));
+            public static final Pose2d FEED_LOCATION_LEFT = new Pose2d(0.96, 1.06, Rotation2d.fromDegrees(50));
+    
+            public static final HashMap<String, Pose2d> CORAL_SCORING_LOCATIONS = new HashMap<String, Pose2d>(){
+                {
+                    put("A", CORAL_A_SCORING_LOCATION);
+                    put("B", CORAL_B_SCORING_LOCATION);
+                    put("C", CORAL_C_SCORING_LOCATION);
+                    put("D", CORAL_D_SCORING_LOCATION);
+                    put("E", CORAL_E_SCORING_LOCATION);
+                    put("F", CORAL_F_SCORING_LOCATION);
+                    put("G", CORAL_G_SCORING_LOCATION);
+                    put("H", CORAL_H_SCORING_LOCATION);
+                    put("I", CORAL_I_SCORING_LOCATION);
+                    put("J", CORAL_J_SCORING_LOCATION);
+                    put("K", CORAL_K_SCORING_LOCATION);
+                    put("L", CORAL_L_SCORING_LOCATION);
+                }
+            };
+    
+            public static final Pose2d ALGAE_A_SCORING_LOCATION = new Pose2d(3.16,4.02, new Rotation2d());
+            //everthing below needs to be updated
+            public static final Pose2d ALGAE_C_SCORING_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(60));
+            public static final Pose2d ALGAE_E_SCORING_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(120));
+            public static final Pose2d ALGAE_G_SCORING_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(180));
+            public static final Pose2d ALGAE_I_SCORING_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-120));
+            public static final Pose2d ALGAE_K_SCORING_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-60));
+    
+            public static final HashMap<String, Pose2d> ALGAE_SCORING_LOCATIONS = new HashMap<String, Pose2d>(){
+                {
+                    put("A", ALGAE_A_SCORING_LOCATION);
+                    put("B", ALGAE_A_SCORING_LOCATION);//duplicate of A
+                    put("C", ALGAE_C_SCORING_LOCATION);
+                    put("D", ALGAE_C_SCORING_LOCATION);
+                    put("E", ALGAE_E_SCORING_LOCATION);
+                    put("F", ALGAE_E_SCORING_LOCATION);
+                    put("G", ALGAE_G_SCORING_LOCATION);
+                    put("H", ALGAE_G_SCORING_LOCATION);
+                    put("I", ALGAE_I_SCORING_LOCATION);
+                    put("J", ALGAE_I_SCORING_LOCATION);
+                    put("K", ALGAE_K_SCORING_LOCATION);
+                    put("L", ALGAE_K_SCORING_LOCATION);
+                }
+            };
+        }   
+        public static final class Red{
+            public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.157,4.182, new Rotation2d());
+            public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(3.171,3.83, new Rotation2d());
+            public static final Pose2d CORAL_C_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
+            public static final Pose2d CORAL_D_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
+            public static final Pose2d CORAL_E_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(120));
+            public static final Pose2d CORAL_F_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(120));
+            public static final Pose2d CORAL_G_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(180));
+            public static final Pose2d CORAL_H_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(180));
+            public static final Pose2d CORAL_I_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-120));
+            public static final Pose2d CORAL_J_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-120));
+            public static final Pose2d CORAL_K_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-60));
+            public static final Pose2d CORAL_L_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-60));
+            
+            public static final Pose2d FEED_LOCATION_RIGHT = new Pose2d(0.5, 1.9, new Rotation2d(55));
+            public static final Pose2d FEED_LOCATION_LEFT = new Pose2d(0.5, 1.9, new Rotation2d(55));
 
-        public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.157,4.182, new Rotation2d());
-        public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(3.171,3.83, new Rotation2d());
-        public static final Pose2d CORAL_C_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
-        public static final Pose2d CORAL_D_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
-        public static final Pose2d CORAL_E_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(120));
-        public static final Pose2d CORAL_F_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(120));
-        public static final Pose2d CORAL_G_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(180));
-        public static final Pose2d CORAL_H_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(180));
-        public static final Pose2d CORAL_I_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-120));
-        public static final Pose2d CORAL_J_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-120));
-        public static final Pose2d CORAL_K_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-60));
-        public static final Pose2d CORAL_L_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-60));
-        
-        public static final Pose2d FEED_LOCATION_RIGHT = new Pose2d(0.96, 1.06, Rotation2d.fromDegrees(50));
-        public static final Pose2d FEED_LOCATION_LEFT = new Pose2d(0.96, 1.06, Rotation2d.fromDegrees(50));
+            public static final HashMap<String, Pose2d> CORAL_SCORING_LOCATIONS = new HashMap<String, Pose2d>(){
+                {
+                    put("A", CORAL_A_SCORING_LOCATION);
+                    put("B", CORAL_B_SCORING_LOCATION);
+                    put("C", CORAL_C_SCORING_LOCATION);
+                    put("D", CORAL_D_SCORING_LOCATION);
+                    put("E", CORAL_E_SCORING_LOCATION);
+                    put("F", CORAL_F_SCORING_LOCATION);
+                    put("G", CORAL_G_SCORING_LOCATION);
+                    put("H", CORAL_H_SCORING_LOCATION);
+                    put("I", CORAL_I_SCORING_LOCATION);
+                    put("J", CORAL_J_SCORING_LOCATION);
+                    put("K", CORAL_K_SCORING_LOCATION);
+                    put("L", CORAL_L_SCORING_LOCATION);
+                }
+            };
 
-        public static final HashMap<String, Pose2d> CORAL_SCORING_LOCATIONS = new HashMap<String, Pose2d>(){
-            {
-                put("A", CORAL_A_SCORING_LOCATION);
-                put("B", CORAL_B_SCORING_LOCATION);
-                put("C", CORAL_C_SCORING_LOCATION);
-                put("D", CORAL_D_SCORING_LOCATION);
-                put("E", CORAL_E_SCORING_LOCATION);
-                put("F", CORAL_F_SCORING_LOCATION);
-                put("G", CORAL_G_SCORING_LOCATION);
-                put("H", CORAL_H_SCORING_LOCATION);
-                put("I", CORAL_I_SCORING_LOCATION);
-                put("J", CORAL_J_SCORING_LOCATION);
-                put("K", CORAL_K_SCORING_LOCATION);
-                put("L", CORAL_L_SCORING_LOCATION);
-            }
-        };
+            public static final Pose2d ALGAE_A_SCORING_LOCATION = new Pose2d(3.16,4.02, new Rotation2d());
+            //everthing below needs to be updated
+            public static final Pose2d ALGAE_C_SCORING_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(60));
+            public static final Pose2d ALGAE_E_SCORING_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(120));
+            public static final Pose2d ALGAE_G_SCORING_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(180));
+            public static final Pose2d ALGAE_I_SCORING_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-120));
+            public static final Pose2d ALGAE_K_SCORING_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-60));
 
-        public static final Pose2d ALGAE_A_SCORING_LOCATION = new Pose2d(3.16,4.02, new Rotation2d());
-        //everthing below needs to be updated
-        public static final Pose2d ALGAE_C_SCORING_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(60));
-        public static final Pose2d ALGAE_E_SCORING_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(120));
-        public static final Pose2d ALGAE_G_SCORING_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(180));
-        public static final Pose2d ALGAE_I_SCORING_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-120));
-        public static final Pose2d ALGAE_K_SCORING_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-60));
-
-        public static final HashMap<String, Pose2d> ALGAE_SCORING_LOCATIONS = new HashMap<String, Pose2d>(){
-            {
-                put("A", ALGAE_A_SCORING_LOCATION);
-                put("B", ALGAE_A_SCORING_LOCATION);//duplicate of A
-                put("C", ALGAE_C_SCORING_LOCATION);
-                put("D", ALGAE_C_SCORING_LOCATION);
-                put("E", ALGAE_E_SCORING_LOCATION);
-                put("F", ALGAE_E_SCORING_LOCATION);
-                put("G", ALGAE_G_SCORING_LOCATION);
-                put("H", ALGAE_G_SCORING_LOCATION);
-                put("I", ALGAE_I_SCORING_LOCATION);
-                put("J", ALGAE_I_SCORING_LOCATION);
-                put("K", ALGAE_K_SCORING_LOCATION);
-                put("L", ALGAE_K_SCORING_LOCATION);
-            }
-        };
-        
+            public static final HashMap<String, Pose2d> ALGAE_SCORING_LOCATIONS = new HashMap<String, Pose2d>(){
+                {
+                    put("A", ALGAE_A_SCORING_LOCATION);
+                    put("B", ALGAE_A_SCORING_LOCATION);//duplicate of A
+                    put("C", ALGAE_C_SCORING_LOCATION);
+                    put("D", ALGAE_C_SCORING_LOCATION);
+                    put("E", ALGAE_E_SCORING_LOCATION);
+                    put("F", ALGAE_E_SCORING_LOCATION);
+                    put("G", ALGAE_G_SCORING_LOCATION);
+                    put("H", ALGAE_G_SCORING_LOCATION);
+                    put("I", ALGAE_I_SCORING_LOCATION);
+                    put("J", ALGAE_I_SCORING_LOCATION);
+                    put("K", ALGAE_K_SCORING_LOCATION);
+                    put("L", ALGAE_K_SCORING_LOCATION);
+                }
+            };
+        }
     }
 }
