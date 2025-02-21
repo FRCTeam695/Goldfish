@@ -57,8 +57,8 @@ public class Swerve extends SwerveBase{
         scoringLocationSub = sideCarTable.getStringTopic("scoringLocation").subscribe("");
         scoringModeSub = sideCarTable.getStringTopic("currentIntakeMode").subscribe("");
 
-        reefVerticies[0] = new Pose2d(Constants.Vision.ALGAE_A_SCORING_LOCATION.getX()+Units.inchesToMeters(6.125) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, Constants.Vision.ALGAE_A_SCORING_LOCATION.getY() - (Constants.Swerve.TRACK_WIDTH_METERS)/2 - Units.inchesToMeters(7), new Rotation2d());
-        reefVerticies[1] = new Pose2d(Constants.Vision.ALGAE_A_SCORING_LOCATION.getX()+Units.inchesToMeters(5.5) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, Constants.Vision.ALGAE_A_SCORING_LOCATION.getY() + (Constants.Swerve.TRACK_WIDTH_METERS)/2 + Units.inchesToMeters(7), new Rotation2d());
+        reefVerticies[0] = new Pose2d(getAlgaeScoringLocation("A").getX()+Units.inchesToMeters(6.125) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, getAlgaeScoringLocation("A").getY() - (Constants.Swerve.TRACK_WIDTH_METERS)/2 - Units.inchesToMeters(7), new Rotation2d());
+        reefVerticies[1] = new Pose2d(getAlgaeScoringLocation("A").getX()+Units.inchesToMeters(5.5) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, getAlgaeScoringLocation("A").getY() + (Constants.Swerve.TRACK_WIDTH_METERS)/2 + Units.inchesToMeters(7), new Rotation2d());
         reefVerticies[2] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65/2.), reefVerticies[0].getY() - Units.inchesToMeters(20.25), new Rotation2d());
         reefVerticies[3] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65), reefVerticies[0].getY(), new Rotation2d());
         reefVerticies[4] = new Pose2d(reefVerticies[1].getX()+Units.inchesToMeters(65), reefVerticies[1].getY(), new Rotation2d());
@@ -69,6 +69,7 @@ public class Swerve extends SwerveBase{
         collisionDetected = new Trigger(()-> hasDetectedCollision);
     }
 
+    
 
     /**
      * The math for all the obstacle avoidance is laid out in this desmos
@@ -92,16 +93,16 @@ public class Swerve extends SwerveBase{
                 if(location.isEmpty()){
                     String currentIntakeMode = scoringModeSub.get();
                     if(currentIntakeMode.equals("Coral")){
-                        targetLocationPose = Constants.Vision.CORAL_SCORING_LOCATIONS.get(scoringLocationSub.get());
+                        targetLocationPose = getCoralScoringLocation(scoringLocationSub.get());
                     }else if(currentIntakeMode.equals("Algae")) {
-                        targetLocationPose = Constants.Vision.ALGAE_SCORING_LOCATIONS.get(scoringLocationSub.get());
+                        targetLocationPose = getAlgaeScoringLocation(scoringLocationSub.get());
                     }else{
                         targetLocationPose = robotPose;
                     }
                 }
                 // if a location is provided, we just drive to the provided lcoation
                 else{
-                    targetLocationPose = Constants.Vision.CORAL_SCORING_LOCATIONS.get(location.get());
+                    targetLocationPose = getCoralScoringLocation(scoringLocationSub.get());
                 }
 
                 m_field.getObject("target location").setPose(targetLocationPose);
@@ -179,19 +180,19 @@ return
         // the current field relative robot pose
         Pose2d robotPose = getSavedPose();
 
-        Translation2d transformToFeederRight = robotPose.getTranslation().minus(Constants.Vision.FEED_LOCATION_RIGHT.getTranslation());
-        Translation2d transformToFeederLeft = robotPose.getTranslation().minus(Constants.Vision.FEED_LOCATION_LEFT.getTranslation());
+        Translation2d transformToFeederRight = robotPose.getTranslation().minus(getFeedLocation("Right").getTranslation());
+        Translation2d transformToFeederLeft = robotPose.getTranslation().minus(getFeedLocation("Left").getTranslation());
         Translation2d closestFeederTransform;
         double angle;
         if(transformToFeederLeft.getNorm() < transformToFeederRight.getNorm()){
             closestFeederTransform = transformToFeederLeft;
-            angle = Constants.Vision.FEED_LOCATION_LEFT.getRotation().getDegrees();
-            targetLocationPose = Constants.Vision.FEED_LOCATION_LEFT;
+            angle = getFeedLocation("Right").getRotation().getDegrees();
+            targetLocationPose = getFeedLocation("Left");
         }
         else{
             closestFeederTransform = transformToFeederRight;
-            angle = Constants.Vision.FEED_LOCATION_RIGHT.getRotation().getDegrees();
-            targetLocationPose = Constants.Vision.FEED_LOCATION_RIGHT;
+            angle = getFeedLocation("Right").getRotation().getDegrees();
+            targetLocationPose = getFeedLocation("Left");
         }
 
         double attractX = kp_attract * closestFeederTransform.getX();
@@ -237,6 +238,62 @@ return
 }
 
 
+/*
+     * returns algae scoring location on each alliance
+     * Location A-L
+     */
+    public Pose2d getAlgaeScoringLocation(String location){
+        Pose2d score_location;
+        if(isRedAlliance()){
+            score_location = Constants.Vision.Red.ALGAE_SCORING_LOCATIONS.get(location);
+        }else{
+            score_location = Constants.Vision.Blue.ALGAE_SCORING_LOCATIONS.get(location);
+        }
+        
+        return score_location;
+    }
+
+        /*
+     * returns algae scoring location on each alliance
+     * Location A-L
+     */
+    public Pose2d getCoralScoringLocation(String location){
+        Pose2d score_location;
+        if(isRedAlliance()){
+            score_location = Constants.Vision.Red.CORAL_SCORING_LOCATIONS.get(location);
+        }else{
+            score_location = Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.get(location);
+        }
+        
+        return score_location;
+    }
+    /*
+     * returns the pose of feed location
+     * either L or R
+     * (left) or (right)
+     * 
+     * if given invalid location will return right value
+     */
+    public Pose2d getFeedLocation(String location){
+        Pose2d feed_location = new Pose2d();
+        if(isRedAlliance()){
+            
+            if(location.equals("Left")){
+                feed_location = Constants.Vision.Red.FEED_LOCATION_LEFT;
+            } else{//right
+                feed_location = Constants.Vision.Red.FEED_LOCATION_RIGHT;
+            }   
+            
+        }else{
+            if(location.equals("Left")){
+                feed_location = Constants.Vision.Blue.FEED_LOCATION_LEFT;
+            } else{//right
+                feed_location = Constants.Vision.Blue.FEED_LOCATION_RIGHT;
+            }   
+        }
+        
+        return feed_location;
+    }
 
 }
 
