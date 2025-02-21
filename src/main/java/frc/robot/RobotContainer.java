@@ -75,8 +75,7 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    // these are all the buttons for manually scoring coral without automation
-    driver.rightBumper().whileTrue(Elevator.goToScoringHeight());
+    driver.rightBumper().whileTrue(Swerve.driveToNearestFeed());
     driver.b().whileTrue(Swerve.alignToReef(Optional.empty()));
     driver.y().whileTrue(
         parallel(
