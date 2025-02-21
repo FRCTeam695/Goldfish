@@ -22,7 +22,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
 public class DuoTalonLift extends SubsystemBase{
-    //private static final double rotationsPerInch = 52.685/48.5; // ROT/INCH!!!
+    private static final double rotationsPerInch = 52.685/48.5; // ROT/INCH!!!
 
     // Right master talon
     private TalonFX r_leaderTalon; // RIGHT MOTOR ID 50 IS LEADER
@@ -59,13 +59,14 @@ public class DuoTalonLift extends SubsystemBase{
     public NetworkTable sideCarTable;
     public IntegerSubscriber scoringHeight;
     public Trigger atSetpoint;
-    public int rotationSetpoint = 0;
+    public double inchesSetpoint = 0;
+    public boolean isRunning = false;
 
     // Constructor
     public DuoTalonLift () {
         sideCarTable = inst.getTable("sidecarTable");
         scoringHeight = sideCarTable.getIntegerTopic("scoringLevel").subscribe(1);
-        atSetpoint = new Trigger(()-> Math.abs(r_leaderTalon.getPosition().getValueAsDouble() - rotationSetpoint) < 0.25);
+        atSetpoint = new Trigger(()-> (Math.abs(r_leaderTalon.getPosition().getValueAsDouble() / rotationsPerInch - inchesSetpoint) < 0.25) && isRunning);
 
 
         // Right leader control (RIGHT MOTOR IS LEADER)
@@ -87,8 +88,8 @@ public class DuoTalonLift extends SubsystemBase{
         //r_voltReq = new VoltageOut(0);
 
         // Limits and modes 
-        r_leaderConfigs.MotorOutput.NeutralMode = NeutralModeValue.Brake; // Set leader neutral mode
-        l_followerConfigs.MotorOutput.NeutralMode = NeutralModeValue.Brake; // Set follower neutral mode
+        r_leaderConfigs.MotorOutput.NeutralMode = NeutralModeValue.Coast; // Set leader neutral mode
+        l_followerConfigs.MotorOutput.NeutralMode = NeutralModeValue.Coast; // Set follower neutral mode
         // BOTH HAVE CURRENT LIMIT
         r_leaderConfigs.CurrentLimits.SupplyCurrentLimitEnable = true;
         r_leaderConfigs.CurrentLimits.SupplyCurrentLimit = 40; // Amps
@@ -125,15 +126,23 @@ public class DuoTalonLift extends SubsystemBase{
 
     public Command goToScoringHeight(){
         return run(()->{
+            double newInchesSetpoint;
+            isRunning = true;
             int networkTablesHeight = (int)Math.round(scoringHeight.get(2));
-            if(networkTablesHeight == 1) rotationSetpoint = (int)Math.round(Heights.L1.heightInches);
-            else if(networkTablesHeight == 2) rotationSetpoint = (int)Math.round(Heights.L2.heightInches);
-            else if(networkTablesHeight == 3)  rotationSetpoint = (int)Math.round(Heights.L3.heightInches);
-            else if(networkTablesHeight == 4)  rotationSetpoint = (int)Math.round(Heights.L4.heightInches);
-            else rotationSetpoint = (int)Heights.L1.heightInches;
+            if(networkTablesHeight == 1) newInchesSetpoint = Heights.L1.heightInches;
+            else if(networkTablesHeight == 2) newInchesSetpoint = Heights.L2.heightInches;
+            else if(networkTablesHeight == 3)  newInchesSetpoint = Heights.L3.heightInches;
+            else if(networkTablesHeight == 4)  newInchesSetpoint = Heights.L4.heightInches;
+            else newInchesSetpoint = Heights.L1.heightInches;
 
-            r_leaderTalon.setControl(r_leaderRequests.withPosition(rotationSetpoint));
-        });
+            elevatorSetInches(newInchesSetpoint);
+        }).finallyDo(()-> {isRunning = false;});
+    }
+
+    private void elevatorSetInches(double newInchesSetpoint) {
+        inchesSetpoint = newInchesSetpoint;
+        double rotationSetpoint = inchesSetpoint * rotationsPerInch;
+        r_leaderTalon.setControl(r_leaderRequests.withPosition(rotationSetpoint));
     }
 
     // Setting elevator leader talon to spin to a certain height
@@ -141,17 +150,17 @@ public class DuoTalonLift extends SubsystemBase{
     public Command setHeightLevel(Heights setpoint) {
         return run(() -> 
         {
-            r_leaderTalon.setControl(r_leaderRequests.withPosition(setpoint.heightInches)); // *rotationsPerInch
+            elevatorSetInches(setpoint.heightInches);
         });
     }
 
     // Enum of certain heights
     public enum Heights { // An enum is a class of defined objects
         Ground ("Ground", 0),
-        L1 ("L1", 15), // *rotationsPerInch
-        L2 ("L2", 30),
-        L3 ("L3", 45),
-        L4 ("L4", 60);
+        L1 ("L1", 9.2), // *rotationsPerInch
+        L2 ("L2", 13.412),
+        L3 ("L3", 29.734),
+        L4 ("L4", 55.234);
 
         String level;
         double heightInches;
@@ -170,6 +179,7 @@ public class DuoTalonLift extends SubsystemBase{
         SmartDashboard.putNumber("Position", r_leaderTalon.getPosition().getValueAsDouble());
         SmartDashboard.putBoolean("Elevator at Setpoint", atSetpoint.getAsBoolean());
         SmartDashboard.putNumber("Elevator Closed Loop Reference", r_leaderTalon.getClosedLoopReference().getValueAsDouble());
+        SmartDashboard.putNumber("ZZZZZZ Elevator Commaded Position", inchesSetpoint);
 
         // Field variable outputs
         // Position

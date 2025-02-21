@@ -22,6 +22,7 @@ public class Coralizer extends SubsystemBase{
     private TalonFXS coralizer;
     private TalonFXS intake;
     private DigitalInput beamBreak;
+
     public Coralizer(){
         //beamBreak = new DigitalInput(0);
         coralizer = new TalonFXS(52);
@@ -47,7 +48,7 @@ public class Coralizer extends SubsystemBase{
 
     public boolean beamIsBroken(){
         return beamBreak.get();
-      }
+    }
     
     public boolean beamNotBroken(){
     return !beamIsBroken();
@@ -58,8 +59,12 @@ public class Coralizer extends SubsystemBase{
         runIntakeAndCoralizer(()-> 0.6).until(this::beamIsBroken)
         .andThen(
             runIntakeAndCoralizer(()->0.6).until(this::beamNotBroken)
-        );
+        )
+        .andThen(
+            runIntakeAndCoralizer(()->-0.2).until(this::beamIsBroken)
+        ).andThen(runIntakeAndCoralizer(()-> 0));
     }
+    
 
     public Command runIntakeAndCoralizer(DoubleSupplier speed){
         DutyCycleOut output = new DutyCycleOut(0);

@@ -78,7 +78,12 @@ public class RobotContainer {
     // these are all the buttons for manually scoring coral without automation
     driver.rightBumper().whileTrue(Elevator.goToScoringHeight());
     driver.b().whileTrue(Swerve.alignToReef(Optional.empty()));
-    driver.y().whileTrue(Coralizer.intake());
+    driver.y().whileTrue(
+        parallel(
+          Coralizer.intake(),
+          Swerve.rotateToAngle(()-> 50, driver::getRequestedChassisSpeeds)
+        )
+    );
     driver.x().whileTrue(Coralizer.runIntakeAndCoralizer(()->0.6));
     
 
