@@ -749,6 +749,7 @@ public class SwerveBase extends SubsystemBase {
     }
 
     public ChassisSpeeds applyAccelerationLimit(ChassisSpeeds desiredSpeeds){
+        // the current measured robot speeds
         ChassisSpeeds current = getLatestChassisSpeed();
 
         // acceleration in the x and y direction
