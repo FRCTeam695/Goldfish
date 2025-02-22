@@ -11,6 +11,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorArrangementValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 //import edu.wpi.first.wpilibj.DigitalInput;
@@ -24,6 +25,7 @@ public class Coralizer extends SubsystemBase{
     private TalonFXS intake;
     private DigitalInput beamBreak;
     private boolean hasFinishedIntaking = true;
+    private Debouncer debouncer = new Debouncer(0.02);
     public Trigger doneIntaking = new Trigger(()-> hasFinishedIntaking);
 
     public Coralizer(){
@@ -50,7 +52,7 @@ public class Coralizer extends SubsystemBase{
     }
 
     public boolean beamIsBroken(){
-        return beamBreak.get();
+        return debouncer.calculate(beamBreak.get());
     }
     
     public boolean beamNotBroken(){
