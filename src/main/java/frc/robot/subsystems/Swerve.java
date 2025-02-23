@@ -36,7 +36,7 @@ public class Swerve extends SwerveBase{
 
     // probably turn this up, its low rn (for reference QB's attraction kp was 2.7, 
     // when ur tuning make sure ur just running the autoalign without the elevator)
-    public final double kp_attract = 2.4;
+    public final double kp_attract = 2.7;
 
     // we will tune this on the practice field
     public final double kp_repulse = 1;
@@ -168,10 +168,10 @@ public class Swerve extends SwerveBase{
         );
     }
 
-public Command driveLeft(){
+public Command driveForward(){
     return run(
         ()->{
-            drive(new ChassisSpeeds(0, 1, 0), true);
+            drive(new ChassisSpeeds(1, 0, 0), true);
         }
     );
 }

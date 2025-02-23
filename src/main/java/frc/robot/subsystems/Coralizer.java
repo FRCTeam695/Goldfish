@@ -25,7 +25,8 @@ public class Coralizer extends SubsystemBase{
     private TalonFXS intake;
     private DigitalInput beamBreak;
     private boolean hasFinishedIntaking = true;
-    private Debouncer debouncer = new Debouncer(0.02);
+    private Debouncer debouncer = new Debouncer(0.06);
+    private Debouncer rollBackDebouncer = new Debouncer(0.03);
     public Trigger doneIntaking = new Trigger(()-> hasFinishedIntaking);
 
     public Coralizer(){
@@ -65,7 +66,10 @@ public class Coralizer extends SubsystemBase{
         .andThen(
         runIntakeAndCoralizer(()-> 0.6).until(this::beamIsBroken))
         .andThen(
-            runIntakeAndCoralizer(()->0.2).until(this::beamNotBroken)
+            runIntakeAndCoralizer(()->0.6).until(this::beamNotBroken)
+        )
+        .andThen(
+            runIntakeAndCoralizer(()->-0.1).until(()-> rollBackDebouncer.calculate(beamBreak.get()))
         )
         .andThen(runOnce(()-> hasFinishedIntaking = true))
         .andThen(runIntakeAndCoralizer(()-> 0));
@@ -107,5 +111,6 @@ public class Coralizer extends SubsystemBase{
     @Override
     public void periodic(){
         SmartDashboard.putBoolean("Beambreak", beamIsBroken());
+        SmartDashboard.putBoolean("Has Finished Intaking", doneIntaking.getAsBoolean());
     }
 }

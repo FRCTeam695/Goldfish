@@ -652,8 +652,11 @@ public class SwerveBase extends SubsystemBase {
      */
     private void driveRobotRelative(ChassisSpeeds chassisSpeeds, boolean useSetpointGenerator) {
         if(!useSetpointGenerator){
+            var tmpStates = Constants.Swerve.kDriveKinematics.toSwerveModuleStates(chassisSpeeds);
+            SwerveDriveKinematics.desaturateWheelSpeeds(tmpStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS);
+            var speeds = Constants.Swerve.kDriveKinematics.toChassisSpeeds(tmpStates);
             // discretizes the chassis speeds (acccounts for robot skew)
-            chassisSpeeds = ChassisSpeeds.discretize(chassisSpeeds, Constants.Swerve.DISCRETIZE_TIMESTAMP);
+            chassisSpeeds = ChassisSpeeds.discretize(speeds, Constants.Swerve.DISCRETIZE_TIMESTAMP);
 
             //SmartDashboard.putString("Swerve/Commanded Chassis Speeds", chassisSpeeds.toString());
             // convert chassis speeds to module states

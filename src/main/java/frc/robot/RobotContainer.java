@@ -14,6 +14,8 @@ import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 import frc.robot.subsystems.DuoTalonLift;
 import frc.robot.subsystems.DuoTalonLift.Heights;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -77,13 +79,14 @@ public class RobotContainer {
   private void configureBindings() {
     driver.rightBumper().whileTrue(Swerve.driveToNearestFeed());
     driver.b().whileTrue(Swerve.alignToReef(Optional.empty()));
-    driver.y().whileTrue(
+    driver.y().onTrue(
         parallel(
           Coralizer.intake(),
           Swerve.rotateToAngle(()-> 50, driver::getRequestedChassisSpeeds)
         )
     );
-    driver.x().whileTrue(Swerve.driveLeft());
+    driver.a().whileTrue(Coralizer.runIntakeAndCoralizer(()->0.2));
+    driver.x().whileTrue(Swerve.driveForward());
     driver.povUp().whileTrue(Elevator.goToScoringHeight());
     
 
@@ -91,7 +94,7 @@ public class RobotContainer {
     driver.back().onTrue(Swerve.resetGyro());
 
 
-    driver.a().whileTrue(
+    driver.x().whileTrue(
       alignAndScore(Optional.empty())
     );
   }
@@ -155,6 +158,8 @@ public class RobotContainer {
     return
       parallel(
         Swerve.alignToReef(location),
+
+        //new ConditionalCommand(new WaitCommand(0), Coralizer.intake(), Coralizer.doneIntaking),
         
         new WaitUntilCommand(
           Swerve.atRotationSetpoint

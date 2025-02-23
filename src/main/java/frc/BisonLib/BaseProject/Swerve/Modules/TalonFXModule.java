@@ -159,7 +159,7 @@ public class TalonFXModule{
             config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         }
 
-        config.Slot0.kP = 65;
+        config.Slot0.kP = 70;
         config.Slot0.kD = 0;
 
         config.Slot0.kS = 0.145;
