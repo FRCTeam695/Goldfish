@@ -484,7 +484,7 @@ public class SwerveBase extends SubsystemBase {
                                 while( Timer.getFPGATimestamp() < startTime + .1){
                                     LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
                                 }
-                                LimelightHelpers.SetIMUMode(cam, 2);
+                                LimelightHelpers.SetIMUMode(cam, 3);
                             }
                         } catch (Exception e) {
                         }
@@ -523,7 +523,7 @@ public class SwerveBase extends SubsystemBase {
                                 while( Timer.getFPGATimestamp() < startTime + .1){
                                     LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
                                 }
-                                LimelightHelpers.SetIMUMode(cam, 2);
+                                LimelightHelpers.SetIMUMode(cam, 3);
                             }
                         } catch (Exception e) {
                         }
