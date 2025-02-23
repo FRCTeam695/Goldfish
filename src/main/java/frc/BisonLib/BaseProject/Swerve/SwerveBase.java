@@ -1,13 +1,6 @@
 package frc.BisonLib.BaseProject.Swerve;
 
-import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
-import frc.BisonLib.BaseProject.LimelightHelpers;
-import frc.robot.Constants;
-
+import static edu.wpi.first.units.Units.Volts;
 import static edu.wpi.first.wpilibj2.command.Commands.deadline;
 import static edu.wpi.first.wpilibj2.command.Commands.waitSeconds;
 
@@ -17,15 +10,19 @@ import java.util.function.Supplier;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.Orchestra;
+import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.StatusCode;
-import com.studica.frc.AHRS;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.config.*;
-import com.pathplanner.lib.controllers.*;
-import com.pathplanner.lib.path.*;
+import com.pathplanner.lib.config.ModuleConfig;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.util.DriveFeedforwards;
 import com.pathplanner.lib.util.swerve.SwerveSetpoint;
 import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
+import com.studica.frc.AHRS;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
@@ -46,6 +43,14 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.BisonLib.BaseProject.LimelightHelpers;
+import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
+import frc.robot.Constants;
 
 public class SwerveBase extends SubsystemBase {
 
@@ -107,6 +112,8 @@ public class SwerveBase extends SubsystemBase {
     SlewRateLimiter xFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
     SlewRateLimiter yFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
     //private Pigeon2 pigeon = new Pigeon2(8);
+
+    private VoltageOut m_voltReq;
 
     /**
      * Does all da constructing
@@ -190,6 +197,37 @@ public class SwerveBase extends SubsystemBase {
 
         SmartDashboard.putData("field", m_field);
         SmartDashboard.putData("Robot angle PID controller", thetaController);
+
+        m_voltReq = new VoltageOut(0.0); 
+    }
+
+    // SysID
+    private SysIdRoutine m_sysIdRoutine = new SysIdRoutine(
+        new SysIdRoutine.Config(
+            null, // Default ramp rate (1V/s)
+            Volts.of(4), // Reduce dynamic step voltage to 4 to prevent brownout
+            null, // Default timeout (10s)
+
+            (state) -> SignalLogger.writeString("State", state.toString())
+        ), 
+        new SysIdRoutine.Mechanism(
+            (volts) -> {
+                modules[0].getTurnMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+                modules[1].getTurnMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+                modules[2].getTurnMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+                modules[3].getTurnMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+            },
+            null, // Left null when using a signal logger
+            this
+        )
+    );
+
+    public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+        return m_sysIdRoutine.quasistatic(direction);
+    }
+     
+    public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+        return m_sysIdRoutine.dynamic(direction);
     }
 
 
