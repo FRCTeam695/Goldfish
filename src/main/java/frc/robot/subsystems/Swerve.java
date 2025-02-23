@@ -1,7 +1,5 @@
 package frc.robot.subsystems;
 
-
-
 import java.util.Optional;
 
 import edu.wpi.first.math.MathUtil;
@@ -20,6 +18,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.BisonLib.BaseProject.Swerve.SwerveBase;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 import frc.robot.Constants;
+
 
 public class Swerve extends SwerveBase{
     
@@ -68,7 +67,6 @@ public class Swerve extends SwerveBase{
         isAtDestination = new Trigger(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.01);
         collisionDetected = new Trigger(()-> hasDetectedCollision);
     }
-
     
 
     /**
