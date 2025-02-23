@@ -13,6 +13,7 @@ import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
+import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
@@ -158,9 +159,11 @@ public class TalonFXModule{
             config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         }
 
-        config.Slot0.kP = Constants.Swerve.TURN_WHEEL_KP;
-        config.Slot0.kD = Constants.Swerve.TURN_WHEEL_KD;
-        config.Slot0.kS = Constants.Swerve.TURN_WHEEL_KS;
+        config.Slot0.kP = 65;
+        config.Slot0.kD = 0;
+
+        config.Slot0.kS = 0.145;
+        config.Slot0.StaticFeedforwardSign = StaticFeedforwardSignValue.UseClosedLoopSign;
         
 
         turnMotor.getConfigurator().apply(config);

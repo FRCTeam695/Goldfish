@@ -83,7 +83,7 @@ public class RobotContainer {
           Swerve.rotateToAngle(()-> 50, driver::getRequestedChassisSpeeds)
         )
     );
-    driver.x().whileTrue(Coralizer.runIntakeAndCoralizer(()->0.6));
+    driver.x().whileTrue(Swerve.driveLeft());
     driver.povUp().whileTrue(Elevator.goToScoringHeight());
     
 

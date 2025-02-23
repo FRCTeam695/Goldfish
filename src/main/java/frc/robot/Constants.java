@@ -35,7 +35,7 @@ public class Constants {
                 0.354292 +0.5, // back right
                  8.14, 12.9, 4 * Math.PI, 
                  // must find this kp
-                 65, 1, 
+                 0, 1, 
                  // must find wheelbase and track width
                  23.75, 23.75, 150.0/7, true, 
                  // must tune this
@@ -45,10 +45,15 @@ public class Constants {
                  // tune stator limit; supply limit doesn't get applied
                  90, 40, 
                  // tune velocity pid and ff
-                 0, 0, 0, 
-                 0.05, 0.12, 0.2, 1.0/1.003344);
+                 0, 50, 0, 
+                 0, 0, 0, 1.0/1.003344);
                  //0.99622314806
-        
+
+                 // drive wheel kP = 0.05
+                 // drive wheel kV = 0.12
+                 // drive wheel kS = 0.2
+    
+                 // turn wheel kP = 65
 
         public static final Map<String, SwerveConfig> ROBOT_MAP = new HashMap<String, SwerveConfig>() {
             {
@@ -80,7 +85,7 @@ public class Constants {
         public static final double DISCRETIZE_TIMESTAMP = 0.02;
         public static final int ODOMETRY_UPDATE_RATE_HZ_INTEGER = 200;
         public static final boolean MODULE_IS_INVERTED = CHOSEN_CONSTANTS.driveMotorInverted;
-        public static final double MAX_ACCELERATION_METERS_PER_SECOND_SQ = 8.0;
+        public static final double MAX_ACCELERATION_METERS_PER_SECOND_SQ = 8;
         public static final double SUPPLY_CURRENT_LIMIT = CHOSEN_CONSTANTS.supplyCurrentLimit;
         public static final double STATOR_CURRENT_LIMIT = CHOSEN_CONSTANTS.statorCurrentLimit;
 

@@ -168,6 +168,14 @@ public class Swerve extends SwerveBase{
         );
     }
 
+public Command driveLeft(){
+    return run(
+        ()->{
+            drive(new ChassisSpeeds(0, 1, 0), true);
+        }
+    );
+}
+
 
 public Command driveToNearestFeed(){//"A","B","C"...."I"
         

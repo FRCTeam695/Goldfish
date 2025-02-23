@@ -736,10 +736,10 @@ public class SwerveBase extends SubsystemBase {
             return;
         }
 
-        // speeds.vxMetersPerSecond = xFilter.calculate(speeds.vxMetersPerSecond);
-        // speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
+        speeds.vxMetersPerSecond = xFilter.calculate(speeds.vxMetersPerSecond);
+        speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
         speeds.omegaRadiansPerSecond = omegaFilter.calculate(speeds.omegaRadiansPerSecond);
-        speeds = applyAccelerationLimit(speeds);
+        //speeds = applyAccelerationLimit(speeds);
 
         if (fieldOriented) {
             speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getSavedPose().getRotation());
@@ -770,6 +770,7 @@ public class SwerveBase extends SubsystemBase {
         // 0.02 is the loop time
         current.vxMetersPerSecond += (ax * 0.02);
         current.vyMetersPerSecond += (ay * 0.02);
+        current.omegaRadiansPerSecond = desiredSpeeds.omegaRadiansPerSecond;
         return current;
     }
 
