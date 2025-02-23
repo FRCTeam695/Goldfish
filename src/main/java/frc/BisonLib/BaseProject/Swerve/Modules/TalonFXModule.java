@@ -165,12 +165,14 @@ public class TalonFXModule{
             config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         }
 
-        config.Slot0.kP = 70;
-        config.Slot0.kD = 0;
+        config.Slot0.kP = Constants.Swerve.TURN_WHEEL_KP;
+        config.Slot0.kD = Constants.Swerve.TURN_WHEEL_KD;
+        config.Slot0.kS = Constants.Swerve.TURN_WHEEL_KS;
+        config.Slot0.kA = 0.12783;
 
-        config.Slot0.kS = 0.145;
-        config.Slot0.StaticFeedforwardSign = StaticFeedforwardSignValue.UseClosedLoopSign;
+        config.Slot0.StaticFeedforwardSign = StaticFeedforwardSignValue.UseVelocitySign;
         
+        //turnmotor kp = 70, kd = 0, ks = 0.145, ka = 0.12783
 
         // Motion Magic (Trapezoid speed control)
         var motionMagicConfigs = config.MotionMagic;
@@ -302,8 +304,8 @@ public class TalonFXModule{
         
         SmartDashboard.putNumber("Module " + (this.index+1) + " Desired Velocity", desiredState.speedMetersPerSecond);
         SmartDashboard.putNumber("Module " + (this.index+1) + " Rotation Setpoint Deg", desiredState.angle.getDegrees());
-        SmartDashboard.putNumber("Module " + (this.index+1) + " Cosine Error", Math.cos(Math.abs(desiredState.angle.getRadians() -  latestAngle.getRadians())));
-        SmartDashboard.putNumber("Module " + (this.index+1) + " Latest Angle Deg", latestAngle.getDegrees());
+        SmartDashboard.putNumber("Module " + (this.index+1) + " Angular Velocity", turnMotor.getVelocity().getValueAsDouble());
+        SmartDashboard.putNumber("Module " + (this.index+1) + " Angular Acceleration", turnMotor.getAcceleration().getValueAsDouble());
 
         SmartDashboard.putNumber("Module " + (this.index+1) + " Motor Velocity", driveMotor.getVelocity().getValueAsDouble() / Constants.Swerve.DRIVING_GEAR_RATIO * Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS);
         SmartDashboard.putNumber("Module " + (this.index+1) + " PID Desired Velocity", velocity);

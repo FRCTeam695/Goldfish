@@ -41,7 +41,7 @@ public class Constants {
                 -0.14446, // back right
                  8.14, 12.9, 4 * Math.PI, 
                  // must find this kp
-                 0, 1, 
+                 70, 1, 
                  // must find wheelbase and track width
                  23.75, 23.75, 150.0/7, true, 
                  // must tune this
@@ -51,7 +51,7 @@ public class Constants {
                  // tune stator limit; supply limit doesn't get applied
                  90, 40, 
                  // tune velocity pid and ff
-                 0, 50, 0, 
+                 0, 0.145, 0, 
                  0.05, 0.12, 0.2, 1.0/1.003344);
                  //0.99622314806
 
@@ -60,6 +60,20 @@ public class Constants {
                  // drive wheel kS = 0.2
     
                  // turn wheel kP = 65
+                 // turn wheel kS = 50
+
+                 // new turn wheel kp = 70, kd = 0, ks = 0.145
+
+                 //SYSID 
+                 // kp = 0.21361
+                 // kv = 0.1232
+                 // ks = 0.45
+                 // all for velocity (drive)
+
+                 //turning motor
+                 // kp = 43.8
+                 // ks = 0.1111
+                 // kv = 2.4877
 
         public static final Map<String, SwerveConfig> ROBOT_MAP = new HashMap<String, SwerveConfig>() {
             {

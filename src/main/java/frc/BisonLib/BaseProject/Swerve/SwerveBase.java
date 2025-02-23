@@ -212,10 +212,10 @@ public class SwerveBase extends SubsystemBase {
         ), 
         new SysIdRoutine.Mechanism(
             (volts) -> {
-                modules[0].getTurnMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
-                modules[1].getTurnMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
-                modules[2].getTurnMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
-                modules[3].getTurnMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+                modules[0].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+                modules[1].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+                modules[2].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+                modules[3].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
             },
             null, // Left null when using a signal logger
             this
