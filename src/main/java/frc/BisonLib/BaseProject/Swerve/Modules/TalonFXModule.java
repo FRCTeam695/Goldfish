@@ -132,6 +132,12 @@ public class TalonFXModule{
             config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         }
 
+        // Motion Magic (Trapezoid speed control)
+        var motionMagicConfigs = config.MotionMagic;
+        motionMagicConfigs.MotionMagicCruiseVelocity = 100; 
+        motionMagicConfigs.MotionMagicAcceleration = 200; 
+        //motionMagicConfigs.MotionMagicJerk = 2000;
+
         driveMotor.getConfigurator().apply(config);
         driveMotor.setPosition(0.0);
     }
@@ -165,6 +171,12 @@ public class TalonFXModule{
         config.Slot0.kS = 0.145;
         config.Slot0.StaticFeedforwardSign = StaticFeedforwardSignValue.UseClosedLoopSign;
         
+
+        // Motion Magic (Trapezoid speed control)
+        var motionMagicConfigs = config.MotionMagic;
+        motionMagicConfigs.MotionMagicCruiseVelocity = 100; 
+        motionMagicConfigs.MotionMagicAcceleration = 200; 
+        //motionMagicConfigs.MotionMagicJerk = 2000;
 
         turnMotor.getConfigurator().apply(config);
     }
