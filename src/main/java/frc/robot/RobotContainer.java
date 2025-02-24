@@ -156,8 +156,6 @@ public class RobotContainer {
     return
       parallel(
         Swerve.alignToReef(location),
-
-        //new ConditionalCommand(new WaitCommand(0), Coralizer.intake(), Coralizer.doneIntaking),
         
         new WaitUntilCommand(
           Swerve.atRotationSetpoint
