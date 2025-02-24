@@ -69,7 +69,7 @@ public class Coralizer extends SubsystemBase{
         .andThen(
             runIntakeAndCoralizer(()->-0.1).until(()-> rollBackDebouncer.calculate(beamBreak.get()))
         )
-        .andThen(runOnce(()-> hasFinishedIntaking = true))
+        .andThen(setIntakeStateTrue())
         .andThen(runIntakeAndCoralizer(()-> 0));
     }
     
@@ -103,7 +103,15 @@ public class Coralizer extends SubsystemBase{
     }
 
     public Command ejectCoral(){
-        return runCoralizer(()-> 0.6).withTimeout(0.2).andThen(runOnce(()-> hasFinishedIntaking = false));
+        return runCoralizer(()-> 0.6).withTimeout(0.2).andThen(setIntakeStateFalse());
+    }
+
+    public Command setIntakeStateFalse(){
+        return runOnce(()-> hasFinishedIntaking = false);
+    }
+
+    public Command setIntakeStateTrue(){
+        return runOnce(()-> hasFinishedIntaking = true);
     }
 
     @Override

@@ -168,7 +168,7 @@ public class RobotContainer {
           Elevator.goToScoringHeight()
         ).until(Elevator.atSetpoint)
       )
-      .andThen(Coralizer.ejectCoral());
+      .andThen(Coralizer.ejectCoral().asProxy());
   }
 
   public Command alignAndIntake(){
