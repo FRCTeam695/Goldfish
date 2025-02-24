@@ -57,8 +57,8 @@ public class Swerve extends SwerveBase{
         scoringLocationSub = sideCarTable.getStringTopic("scoringLocation").subscribe("");
         scoringModeSub = sideCarTable.getStringTopic("currentIntakeMode").subscribe("");
 
-        reefVerticies[0] = new Pose2d(getAlgaeScoringLocation("A").getX()+Units.inchesToMeters(6.125) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, getAlgaeScoringLocation("A").getY() - (Constants.Swerve.TRACK_WIDTH_METERS)/2 - Units.inchesToMeters(7), new Rotation2d());
-        reefVerticies[1] = new Pose2d(getAlgaeScoringLocation("A").getX()+Units.inchesToMeters(5.5) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, getAlgaeScoringLocation("A").getY() + (Constants.Swerve.TRACK_WIDTH_METERS)/2 + Units.inchesToMeters(7), new Rotation2d());
+        reefVerticies[0] = new Pose2d(getReefVertexCalibrationLocation().getX()+Units.inchesToMeters(6.125) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, getReefVertexCalibrationLocation().getY() - (Constants.Swerve.TRACK_WIDTH_METERS)/2 - Units.inchesToMeters(7), new Rotation2d());
+        reefVerticies[1] = new Pose2d(getReefVertexCalibrationLocation().getX()+Units.inchesToMeters(5.5) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, getReefVertexCalibrationLocation().getY() + (Constants.Swerve.TRACK_WIDTH_METERS)/2 + Units.inchesToMeters(7), new Rotation2d());
         reefVerticies[2] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65/2.), reefVerticies[0].getY() - Units.inchesToMeters(20.25), new Rotation2d());
         reefVerticies[3] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65), reefVerticies[0].getY(), new Rotation2d());
         reefVerticies[4] = new Pose2d(reefVerticies[1].getX()+Units.inchesToMeters(65), reefVerticies[1].getY(), new Rotation2d());
@@ -93,8 +93,6 @@ public class Swerve extends SwerveBase{
                     String currentIntakeMode = scoringModeSub.get();
                     if(currentIntakeMode.equals("Coral")){
                         targetLocationPose = getCoralScoringLocation(scoringLocationSub.get());
-                    }else if(currentIntakeMode.equals("Algae")) {
-                        targetLocationPose = getAlgaeScoringLocation(scoringLocationSub.get());
                     }else{
                         targetLocationPose = robotPose;
                     }
@@ -267,23 +265,8 @@ return
 }
 
 
-/*
-     * returns algae scoring location on each alliance
-     * Location A-L
-     */
-    public Pose2d getAlgaeScoringLocation(String location){
-        Pose2d score_location;
-        if(isRedAlliance()){
-            score_location = Constants.Vision.Red.ALGAE_SCORING_LOCATIONS.get(location);
-        }else{
-            score_location = Constants.Vision.Blue.ALGAE_SCORING_LOCATIONS.get(location);
-        }
-        
-        return score_location;
-    }
-
-        /*
-     * returns algae scoring location on each alliance
+    /*
+     * returns coral scoring location on each alliance
      * Location A-L
      */
     public Pose2d getCoralScoringLocation(String location){
@@ -296,6 +279,18 @@ return
         
         return score_location;
     }
+
+    public Pose2d getReefVertexCalibrationLocation(){
+        Pose2d score_location;
+        if(isRedAlliance()){
+            score_location = Constants.Vision.Red.VERTEX_CALIBRATION_POSITION;
+        }else{
+            score_location = Constants.Vision.Blue.VERTEX_CALIBRATION_POSITION;
+        }
+        
+        return score_location;
+    }
+
     /*
      * returns the pose of feed location
      * either L or R
