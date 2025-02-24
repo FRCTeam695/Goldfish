@@ -804,7 +804,6 @@ public class SwerveBase extends SubsystemBase {
         // rate limited magnitude
         double newMagnitude = accelFilter.calculate(magnitude);
 
-        // if requested acceleration is too much
         if(magnitude != 0){
             // scale down acceleration in the x and y direction
             double scale = newMagnitude/magnitude;
