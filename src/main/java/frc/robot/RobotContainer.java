@@ -133,21 +133,20 @@ public class RobotContainer {
   public Command fourPieceLeft() {
     return alignAndScore(Optional.of("T"))
             .andThen(
-              parallel(
-                Swerve.driveToNearestFeed().andThen(alignAndScore(Optional.of("K"))),
-                Coralizer.intake()
-              )
+              pickUpAlignAndScore(Optional.of("K"))
             ).andThen(
-              parallel(
-                Swerve.driveToNearestFeed().andThen(alignAndScore(Optional.of("L"))),
-                Coralizer.intake()
-              )
+              pickUpAlignAndScore(Optional.of("L"))
             ).andThen(
-              parallel(
-                Swerve.driveToNearestFeed().andThen(alignAndScore(Optional.of("A"))),
-                Coralizer.intake()
-              )
+              pickUpAlignAndScore(Optional.of("A"))
             );
+  }
+
+  public Command pickUpAlignAndScore(Optional<String> location){
+    return 
+      parallel(
+        Swerve.driveToNearestFeed().andThen(alignAndScore(location)),
+        Coralizer.intake()
+      );
   }
 
   public Command alignAndScore(Optional<String> location){
