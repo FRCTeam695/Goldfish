@@ -168,7 +168,7 @@ public class RobotContainer {
           Elevator.goToScoringHeight()
         ).until(Elevator.atSetpoint)
       )
-      .andThen(Coralizer.ejectCoral().asProxy());
+      .andThen(Coralizer.ejectCoral().asProxy()); // asProxy because we want to be able to continue intaking while we are aligning
   }
 
   public Command alignAndIntake(){
