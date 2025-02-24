@@ -14,16 +14,14 @@ import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 import frc.robot.subsystems.DuoTalonLift;
 import frc.robot.subsystems.DuoTalonLift.Heights;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import java.util.Optional;
 
-import com.ctre.phoenix6.SignalLogger;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -48,10 +46,9 @@ public class RobotContainer {
             new TalonFXModule(Constants.Swerve.BACK_RIGHT_DRIVE_ID, Constants.Swerve.BACK_RIGHT_TURN_ID, Constants.Swerve.BACK_RIGHT_ABS_ENCODER_OFFSET_ROTATIONS, Constants.Swerve.BACK_RIGHT_CANCODER_ID, 3)
           };
 
-  private final String[] camNames = {};
+  private final String[] camNames = {"limelight-left", "limelight-right"};
   private static final EnhancedCommandController driver =
       new EnhancedCommandController(0);
-  private static final CommandXboxController m_driverController = new CommandXboxController(0);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -78,23 +75,25 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    driver.rightBumper().whileTrue(Elevator.setHeightLevel(Heights.Ground));
+    driver.rightBumper().whileTrue(Swerve.driveToNearestFeed());
     driver.b().whileTrue(Swerve.alignToReef(Optional.empty()));
-    driver.x().whileTrue(Coralizer.ejectCoral());
+    driver.y().onTrue(
+        parallel(
+          Coralizer.intake(),
+          Swerve.rotateToAngle(()-> 50, driver::getRequestedChassisSpeeds)
+        )
+    );
+    driver.a().whileTrue(Coralizer.runIntakeAndCoralizer(()->0.2));
+    driver.x().whileTrue(Swerve.driveForward());
+    driver.povUp().whileTrue(Elevator.goToScoringHeight());
+    
 
-    driver.a().whileTrue(
-      parallel(
-        Swerve.alignToReef(Optional.empty()),
-        (
-          Elevator.goToScoringHeight()
-            .onlyIf(
-              Swerve.atRotationSetpoint
-              .and(Swerve.collisionDetected.negate())
-              .and(Swerve.isCloseToDestination)
-            )
-        ).repeatedly().until(Elevator.atSetpoint)
-      )
-      .andThen(Coralizer.ejectCoral().withTimeout(0.2))
+    // make sure you gyro reset by aligning with the reef, not eyeballing it
+    driver.back().onTrue(Swerve.resetGyro());
+
+
+    driver.x().whileTrue(
+      alignAndScore(Optional.empty())
     );
   }
 
@@ -119,7 +118,7 @@ public class RobotContainer {
       );
 
       Coralizer.setDefaultCommand(
-        Coralizer.runCoralizer(()->0)
+        Coralizer.runIntakeAndCoralizer(()->0)
       );
 
       //Gripper.setDefaultCommand(Gripper.stop());
@@ -132,12 +131,53 @@ public class RobotContainer {
 
 
   public Command fourPieceLeft() {
-    return Swerve.alignToReef(Optional.of("J"))
-            .andThen(Swerve.driveToNearestFeed())
-            .andThen(Swerve.alignToReef(Optional.of("K")))
-            .andThen(Swerve.driveToNearestFeed())
-            .andThen(Swerve.alignToReef(Optional.of("L")))
-            .andThen(Swerve.driveToNearestFeed())
-            .andThen(Swerve.alignToReef(Optional.of("A")));
+    return alignAndScore(Optional.of("T"))
+            .andThen(
+              parallel(
+                Swerve.driveToNearestFeed().andThen(alignAndScore(Optional.of("K"))),
+                Coralizer.intake()
+              )
+            )
+            .andThen(
+              parallel(
+                Swerve.driveToNearestFeed().andThen(alignAndScore(Optional.of("L"))),
+                Coralizer.intake()
+              )
+            )
+            .andThen(
+              parallel(
+                Swerve.driveToNearestFeed().andThen(alignAndScore(Optional.of("A"))),
+                Coralizer.intake()
+              )
+            );
+  }
+
+  public Command alignAndScore(Optional<String> location){
+    return
+      parallel(
+        Swerve.alignToReef(location),
+
+        //new ConditionalCommand(new WaitCommand(0), Coralizer.intake(), Coralizer.doneIntaking),
+        
+        new WaitUntilCommand(
+          Swerve.atRotationSetpoint
+          .and(Swerve.collisionDetected.negate())
+          .and(Swerve.isCloseToDestination)
+          .and(Coralizer.doneIntaking)
+        )
+        .andThen
+        (
+          Elevator.goToScoringHeight()
+        ).until(Elevator.atSetpoint)
+      )
+      .andThen(Coralizer.ejectCoral());
+  }
+
+  public Command alignAndIntake(){
+    return
+      deadline(
+        Coralizer.intake(),
+        Swerve.driveToNearestFeed()
+      );
   }
 }
