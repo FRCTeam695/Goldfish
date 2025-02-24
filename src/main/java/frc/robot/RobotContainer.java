@@ -77,24 +77,23 @@ public class RobotContainer {
   private void configureBindings() {
     driver.rightBumper().whileTrue(Swerve.driveToNearestFeed());
     driver.b().whileTrue(Swerve.alignToReef(Optional.empty()));
-    driver.y().onTrue(
-        parallel(
-          Coralizer.intake(),
-          Swerve.rotateToNearestFeed(driver::getRequestedChassisSpeeds)
-        )
-    );
     driver.a().whileTrue(Coralizer.runIntakeAndCoralizer(()->0.2));
-    driver.x().whileTrue(alignAndScore(Optional.empty()));
     driver.povUp().whileTrue(Elevator.goToScoringHeight());
     
 
     // make sure you gyro reset by aligning with the reef, not eyeballing it
     driver.back().onTrue(Swerve.resetGyro());
 
-
     driver.x().whileTrue(
       alignAndScore(Optional.empty())
     );
+
+    driver.leftBumper().whileTrue(
+      parallel(
+        Coralizer.intake(),
+        Swerve.rotateToNearestFeed(driver::getRequestedChassisSpeeds)
+      )
+  );
   }
 
   public void configureDefaultCommands(){
