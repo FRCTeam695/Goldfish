@@ -80,7 +80,7 @@ public class RobotContainer {
     driver.y().onTrue(
         parallel(
           Coralizer.intake(),
-          Swerve.rotateToAngle(()-> 50, driver::getRequestedChassisSpeeds)
+          Swerve.rotateToNearestFeed(driver::getRequestedChassisSpeeds)
         )
     );
     driver.a().whileTrue(Coralizer.runIntakeAndCoralizer(()->0.2));

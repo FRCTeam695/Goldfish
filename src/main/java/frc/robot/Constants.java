@@ -175,7 +175,7 @@ public class Constants {
             public static final Pose2d CORAL_L_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-60));
             
             public static final Pose2d FEED_LOCATION_RIGHT = new Pose2d(0.96, 1.06, Rotation2d.fromDegrees(50));
-            public static final Pose2d FEED_LOCATION_LEFT = new Pose2d(0.96, 1.06, Rotation2d.fromDegrees(50));
+            public static final Pose2d FEED_LOCATION_LEFT = new Pose2d(0.96, 1.06, Rotation2d.fromDegrees(-50));
     
             public static final HashMap<String, Pose2d> CORAL_SCORING_LOCATIONS = new HashMap<String, Pose2d>(){
                 {
@@ -233,8 +233,8 @@ public class Constants {
             public static final Pose2d CORAL_K_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-60));
             public static final Pose2d CORAL_L_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-60));
             
-            public static final Pose2d FEED_LOCATION_RIGHT = new Pose2d(0.5, 1.9, new Rotation2d(55));
-            public static final Pose2d FEED_LOCATION_LEFT = new Pose2d(0.5, 1.9, new Rotation2d(55));
+            public static final Pose2d FEED_LOCATION_RIGHT = new Pose2d(0.5, 1.9, new Rotation2d(50));
+            public static final Pose2d FEED_LOCATION_LEFT = new Pose2d(0.5, 1.9, new Rotation2d(-50));
 
             public static final HashMap<String, Pose2d> CORAL_SCORING_LOCATIONS = new HashMap<String, Pose2d>(){
                 {

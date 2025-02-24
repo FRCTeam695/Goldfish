@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -172,6 +173,31 @@ public Command driveForward(){
             drive(new ChassisSpeeds(1, 0, 0), true);
         }
     );
+}
+
+public Command rotateToNearestFeed(Supplier<ChassisSpeeds> wantedVels){
+    return
+    run(()->{
+        // the current field relative robot pose
+        Pose2d robotPose = getSavedPose();
+
+        Translation2d transformToFeederRight = robotPose.getTranslation().minus(getFeedLocation("Right").getTranslation());
+        Translation2d transformToFeederLeft = robotPose.getTranslation().minus(getFeedLocation("Left").getTranslation());
+        double angle;
+
+        // closer to left station
+        if(transformToFeederLeft.getNorm() < transformToFeederRight.getNorm()){
+            angle = getFeedLocation("Left").getRotation().getDegrees();
+        }
+        // closer to right station
+        else{
+            angle = getFeedLocation("Right").getRotation().getDegrees();
+        }
+
+        ChassisSpeeds speeds = wantedVels.get();
+        speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(angle);
+        drive(speeds, true);
+    });     
 }
 
 
