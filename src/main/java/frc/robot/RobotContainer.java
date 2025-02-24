@@ -137,14 +137,12 @@ public class RobotContainer {
                 Swerve.driveToNearestFeed().andThen(alignAndScore(Optional.of("K"))),
                 Coralizer.intake()
               )
-            )
-            .andThen(
+            ).andThen(
               parallel(
                 Swerve.driveToNearestFeed().andThen(alignAndScore(Optional.of("L"))),
                 Coralizer.intake()
               )
-            )
-            .andThen(
+            ).andThen(
               parallel(
                 Swerve.driveToNearestFeed().andThen(alignAndScore(Optional.of("A"))),
                 Coralizer.intake()
@@ -162,11 +160,10 @@ public class RobotContainer {
           .and(Swerve.collisionDetected.negate())
           .and(Swerve.isCloseToDestination)
           .and(Coralizer.doneIntaking)
-        )
-        .andThen
-        (
-          Elevator.goToScoringHeight()
-        ).until(Elevator.atSetpoint)
+        ).andThen
+          (
+            Elevator.goToScoringHeight()
+          ).until(Elevator.atSetpoint)
       )
       .andThen(Coralizer.ejectCoral().asProxy()); // asProxy because we want to be able to continue intaking while we are aligning
   }
