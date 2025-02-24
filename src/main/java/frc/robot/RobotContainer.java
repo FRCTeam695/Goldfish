@@ -84,7 +84,7 @@ public class RobotContainer {
         )
     );
     driver.a().whileTrue(Coralizer.runIntakeAndCoralizer(()->0.2));
-    driver.x().whileTrue(Swerve.driveForward());
+    driver.x().whileTrue(alignAndScore(Optional.empty()));
     driver.povUp().whileTrue(Elevator.goToScoringHeight());
     
 

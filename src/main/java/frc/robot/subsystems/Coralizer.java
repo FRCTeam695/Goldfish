@@ -62,9 +62,7 @@ public class Coralizer extends SubsystemBase{
 
     public Command intake(){
         return
-        runOnce(()-> {hasFinishedIntaking = false;})
-        .andThen(
-        runIntakeAndCoralizer(()-> 0.6).until(this::beamIsBroken))
+        runIntakeAndCoralizer(()-> 0.6).until(this::beamIsBroken)
         .andThen(
             runIntakeAndCoralizer(()->0.6).until(this::beamNotBroken)
         )
@@ -105,7 +103,7 @@ public class Coralizer extends SubsystemBase{
     }
 
     public Command ejectCoral(){
-        return runCoralizer(()-> 0.6).withTimeout(0.2);
+        return runCoralizer(()-> 0.6).withTimeout(0.2).andThen(runOnce(()-> hasFinishedIntaking = false));
     }
 
     @Override
