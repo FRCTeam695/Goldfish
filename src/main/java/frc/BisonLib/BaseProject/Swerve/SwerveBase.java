@@ -111,6 +111,7 @@ public class SwerveBase extends SubsystemBase {
     SlewRateLimiter omegaFilter = new SlewRateLimiter(Math.toRadians(1074.5588535));
     SlewRateLimiter xFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
     SlewRateLimiter yFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
+    SlewRateLimiter accelFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
     //private Pigeon2 pigeon = new Pigeon2(8);
 
     private VoltageOut m_voltReq;
@@ -800,10 +801,14 @@ public class SwerveBase extends SubsystemBase {
         // magnitude of the acceleration
         double magnitude = Math.hypot(ax, ay);
 
+        // rate limited magnitude
+        double newMagnitude = accelFilter.calculate(magnitude);
+
         // if requested acceleration is too much
-        if(magnitude > Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ && magnitude != 0){
+        if(magnitude != 0){
             // scale down acceleration in the x and y direction
-            double scale = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ/magnitude;
+            double scale = newMagnitude/magnitude;
+
             ax *= scale;
             ay *= scale;
         }
