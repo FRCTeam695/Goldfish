@@ -58,7 +58,7 @@ public class Swerve extends SwerveBase{
         scoringModeSub = sideCarTable.getStringTopic("currentIntakeMode").subscribe("");
 
         reefVerticies[0] = new Pose2d(getReefVertexCalibrationLocation().getX()+Units.inchesToMeters(6.125) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, getReefVertexCalibrationLocation().getY() - (Constants.Swerve.TRACK_WIDTH_METERS)/2 - Units.inchesToMeters(7), new Rotation2d());
-        reefVerticies[1] = new Pose2d(getReefVertexCalibrationLocation().getX()+Units.inchesToMeters(5.5) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, getReefVertexCalibrationLocation().getY() + (Constants.Swerve.TRACK_WIDTH_METERS)/2 + Units.inchesToMeters(7), new Rotation2d());
+        reefVerticies[1] = new Pose2d(getReefVertexCalibrationLocation().getX()+Units.inchesToMeters(6.125) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, getReefVertexCalibrationLocation().getY() + (Constants.Swerve.TRACK_WIDTH_METERS)/2 + Units.inchesToMeters(7), new Rotation2d());
         reefVerticies[2] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65/2.), reefVerticies[0].getY() - Units.inchesToMeters(20.25), new Rotation2d());
         reefVerticies[3] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65), reefVerticies[0].getY(), new Rotation2d());
         reefVerticies[4] = new Pose2d(reefVerticies[1].getX()+Units.inchesToMeters(65), reefVerticies[1].getY(), new Rotation2d());
@@ -120,7 +120,7 @@ public class Swerve extends SwerveBase{
                 // if we will collide
                 if(distanceForward < 0){
                     hasDetectedCollision = true;
-                    Transform2d repulsionVector = getRepulsionVector(robotPose);
+                    Transform2d repulsionVector = getRepulsionVector(robotPose, kp_repulse);
                     repulsionX += repulsionVector.getX();
                     repulsionY += repulsionVector.getY();
                 }else{
@@ -179,7 +179,27 @@ public class Swerve extends SwerveBase{
 
 
     public Command algaeDislodgeSequence(){
-        return run(()->{
+        return
+        // repulses us out until we are 50 inches away from the center of the reef
+        run(()-> {
+            Pose2d robotPose = getSavedPose();
+            Transform2d repulsionVector = getRepulsionVector(robotPose, 2);
+            double repulsionX = repulsionVector.getX();
+            double repulsionY = repulsionVector.getY();
+
+            ChassisSpeeds speeds = new ChassisSpeeds(-repulsionX,  -repulsionY, 0);
+            drive(speeds, true);
+        }).until(
+            ()-> getSavedPose().getTranslation().minus(
+                new Pose2d(
+                    reefVerticies[0].getX() + Units.inchesToMeters(65), 
+                    (reefVerticies[0].getY() + reefVerticies[1].getY())/2, 
+                    new Rotation2d()
+                ).getTranslation()).getNorm() > Units.inchesToMeters(50)
+            )
+        .andThen(
+        // drive to the right location to dislodge
+        run(()->{
             Pose2d robotPose = getSavedPose();
             Pose2d[] dislodgePositions = getAlgaeDislodgeLocations();
             Translation2d transformToNearestAlgaeDislodgeLocation = robotPose.getTranslation().minus(dislodgePositions[0].getTranslation());
@@ -199,7 +219,9 @@ public class Swerve extends SwerveBase{
             
             ChassisSpeeds speeds = new ChassisSpeeds(attractX, attractY, getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()));
             drive(speeds, true);
-        }).until(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.05)
+        }).until(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.05))
+
+        // backs up slowly so the algae gets dislodged
         .andThen(run(()-> {
             driveRobotRelative(new ChassisSpeeds(-1, 0, 0), false);
             }
@@ -236,7 +258,7 @@ public class Swerve extends SwerveBase{
                 double repulsionX = 0;
                 double repulsionY = 0;
 
-                Transform2d repulsionVector = getRepulsionVector(robotPose);
+                Transform2d repulsionVector = getRepulsionVector(robotPose, kp_repulse);
                 repulsionX += repulsionVector.getX();
                 repulsionY += repulsionVector.getY();
 
@@ -261,7 +283,7 @@ public class Swerve extends SwerveBase{
     }
 
 
-    public Transform2d getRepulsionVector(Pose2d robotPose){
+    public Transform2d getRepulsionVector(Pose2d robotPose, double repulsionGain){
         double repulsionX = 0;
         double repulsionY = 0;
         int inc = 0;
@@ -275,7 +297,7 @@ public class Swerve extends SwerveBase{
             double distance = transformToVertex.getTranslation().getNorm();
             
             // magnitude of repulsive force
-            double f_mag = kp_repulse/Math.pow(distance,2);
+            double f_mag = repulsionGain/Math.pow(distance,2);
 
             // unit vector of repulsive force
             double unit_vector_x = vdx/distance;
