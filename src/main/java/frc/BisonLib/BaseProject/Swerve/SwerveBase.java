@@ -492,55 +492,21 @@ public class SwerveBase extends SubsystemBase {
     /**
      * resetGyro sets the gyro to "facing away from the driver station"
      * 
-     * @return A command that "zeroes" our gyro and syncs our swerve modules
+     * @return A command that "zeroes" our gyro
      */
     public Command resetGyro() {
-        return runOnce(
-            ()-> 
-                {
-                    if(isRedAlliance()){
-                        odometryLock.writeLock().lock();
-                        try{
-                            resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), new Rotation2d(Math.PI)));
-                        }finally{
-                            odometryLock.writeLock().unlock();
-                        }
-                    }
-                    else {
-                        odometryLock.writeLock().lock();
-                        try{
-                            resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), new Rotation2d(0)));
-                        }finally{
-                            odometryLock.writeLock().unlock();
-                        }
-                    }
-                    //LL RESET
-                    new Thread(() -> {
-                        try {
-                            for(String cam: camNames){
-                                LimelightHelpers.SetIMUMode(cam, 1);
-                                double startTime = Timer.getFPGATimestamp();
-                                while( Timer.getFPGATimestamp() < startTime + .1){
-                                    LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-                                }
-                                LimelightHelpers.SetIMUMode(cam, 3);
-                            }
-                        } catch (Exception e) {
-                        }
-                    }).start();
-                }
-        ).ignoringDisable(true);
+        return resetGyro(180);
     }
     
 
-    public Command sidewaysRestGyro(){
+    public Command resetGyro(double angle){
         return runOnce(
             ()-> 
                 {
                     if(isRedAlliance()){
                         odometryLock.writeLock().lock();
                         try{
-                            resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), Rotation2d.fromDegrees(90)));
+                            resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), Rotation2d.fromDegrees(angle)));
                         }finally{
                             odometryLock.writeLock().unlock();
                         }
@@ -548,7 +514,7 @@ public class SwerveBase extends SubsystemBase {
                     else {
                         odometryLock.writeLock().lock();
                         try{
-                            resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), Rotation2d.fromDegrees(-90)));
+                            resetOdometry(new Pose2d(currentRobotPose.getX(), currentRobotPose.getY(), Rotation2d.fromDegrees(angle+180)));
                         }finally{
                             odometryLock.writeLock().unlock();
                         }

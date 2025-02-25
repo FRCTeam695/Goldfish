@@ -222,6 +222,16 @@ public class Swerve extends SwerveBase{
     }
 
 
+    public Command leftGyroReset(){
+        return resetGyro(90);
+    }
+
+    
+    public Command rightGyroReset(){
+        return resetGyro(-90);
+    }
+
+
     public Transform2d getRepulsionVector(Pose2d robotPose){
         double repulsionX = 0;
         double repulsionY = 0;
