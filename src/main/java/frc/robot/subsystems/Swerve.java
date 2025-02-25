@@ -142,82 +142,82 @@ public class Swerve extends SwerveBase{
         );
     }
 
-public Command driveForward(){
-    return run(
-        ()->{
-            drive(new ChassisSpeeds(1, 0, 0), true);
-        }
-    );
-}
-
-public Command rotateToNearestFeed(Supplier<ChassisSpeeds> wantedVels){
-    return
-    run(()->{
-        // the current field relative robot pose
-        Pose2d robotPose = getSavedPose();
-
-        Translation2d transformToFeederRight = robotPose.getTranslation().minus(getFeedLocation("Right").getTranslation());
-        Translation2d transformToFeederLeft = robotPose.getTranslation().minus(getFeedLocation("Left").getTranslation());
-        double angle;
-
-        // closer to left station
-        if(transformToFeederLeft.getNorm() < transformToFeederRight.getNorm()){
-            angle = getFeedLocation("Left").getRotation().getDegrees();
-        }
-        // closer to right station
-        else{
-            angle = getFeedLocation("Right").getRotation().getDegrees();
-        }
-
-        ChassisSpeeds speeds = wantedVels.get();
-        speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(angle);
-        drive(speeds, true);
-    });     
-}
-
-
-public Command driveToNearestFeed(){//"A","B","C"...."I"
-        
-return 
-    run(
-    ()->{
-        // the current field relative robot pose
-        Pose2d robotPose = getSavedPose();
-
-        Translation2d transformToFeederRight = robotPose.getTranslation().minus(getFeedLocation("Right").getTranslation());
-        Translation2d transformToFeederLeft = robotPose.getTranslation().minus(getFeedLocation("Left").getTranslation());
-        Translation2d closestFeederTransform;
-        double angle;
-        if(transformToFeederLeft.getNorm() < transformToFeederRight.getNorm()){
-            closestFeederTransform = transformToFeederLeft;
-            angle = getFeedLocation("Left").getRotation().getDegrees();
-            targetLocationPose = getFeedLocation("Left");
-        }
-        else{
-            closestFeederTransform = transformToFeederRight;
-            angle = getFeedLocation("Right").getRotation().getDegrees();
-            targetLocationPose = getFeedLocation("Right");
-        }
-
-        double attractX = kp_attract * closestFeederTransform.getX();
-        double attractY = kp_attract * closestFeederTransform.getY();
-
-        double repulsionX = 0;
-        double repulsionY = 0;
-
-        Transform2d repulsionVector = getRepulsionVector(robotPose);
-        repulsionX += repulsionVector.getX();
-        repulsionY += repulsionVector.getY();
-
-        //need to change rotation
-        ChassisSpeeds speeds = new ChassisSpeeds(-attractX - repulsionX, -attractY - repulsionY, getAngularComponentFromRotationOverride(angle));
-        // ChassisSpeeds speeds = new ChassisSpeeds(1.8 * transformToReef.getX(), 1.8 * transformToReef.getY(), getAngularComponentFromRotationOverride(0));
-        SmartDashboard.putString("align to reef speeds", speeds.toString());
-
-        drive(speeds, true);
+    public Command driveForward(){
+        return run(
+            ()->{
+                drive(new ChassisSpeeds(1, 0, 0), true);
+            }
+        );
     }
-    ).until(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.05);
-}
+
+    public Command rotateToNearestFeed(Supplier<ChassisSpeeds> wantedVels){
+        return
+        run(()->{
+            // the current field relative robot pose
+            Pose2d robotPose = getSavedPose();
+
+            Translation2d transformToFeederRight = robotPose.getTranslation().minus(getFeedLocation("Right").getTranslation());
+            Translation2d transformToFeederLeft = robotPose.getTranslation().minus(getFeedLocation("Left").getTranslation());
+            double angle;
+
+            // closer to left station
+            if(transformToFeederLeft.getNorm() < transformToFeederRight.getNorm()){
+                angle = getFeedLocation("Left").getRotation().getDegrees();
+            }
+            // closer to right station
+            else{
+                angle = getFeedLocation("Right").getRotation().getDegrees();
+            }
+
+            ChassisSpeeds speeds = wantedVels.get();
+            speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(angle);
+            drive(speeds, true);
+        });     
+    }
+
+
+    public Command driveToNearestFeed(){//"A","B","C"...."I"
+            
+        return 
+            run(
+            ()->{
+                // the current field relative robot pose
+                Pose2d robotPose = getSavedPose();
+
+                Translation2d transformToFeederRight = robotPose.getTranslation().minus(getFeedLocation("Right").getTranslation());
+                Translation2d transformToFeederLeft = robotPose.getTranslation().minus(getFeedLocation("Left").getTranslation());
+                Translation2d closestFeederTransform;
+                double angle;
+                if(transformToFeederLeft.getNorm() < transformToFeederRight.getNorm()){
+                    closestFeederTransform = transformToFeederLeft;
+                    angle = getFeedLocation("Left").getRotation().getDegrees();
+                    targetLocationPose = getFeedLocation("Left");
+                }
+                else{
+                    closestFeederTransform = transformToFeederRight;
+                    angle = getFeedLocation("Right").getRotation().getDegrees();
+                    targetLocationPose = getFeedLocation("Right");
+                }
+
+                double attractX = kp_attract * closestFeederTransform.getX();
+                double attractY = kp_attract * closestFeederTransform.getY();
+
+                double repulsionX = 0;
+                double repulsionY = 0;
+
+                Transform2d repulsionVector = getRepulsionVector(robotPose);
+                repulsionX += repulsionVector.getX();
+                repulsionY += repulsionVector.getY();
+
+                //need to change rotation
+                ChassisSpeeds speeds = new ChassisSpeeds(-attractX - repulsionX, -attractY - repulsionY, getAngularComponentFromRotationOverride(angle));
+                // ChassisSpeeds speeds = new ChassisSpeeds(1.8 * transformToReef.getX(), 1.8 * transformToReef.getY(), getAngularComponentFromRotationOverride(0));
+                SmartDashboard.putString("align to reef speeds", speeds.toString());
+
+                drive(speeds, true);
+            }
+            ).until(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.05);
+    }
 
     public Transform2d getRepulsionVector(Pose2d robotPose){
         double repulsionX = 0;
@@ -270,6 +270,7 @@ return
         return score_location;
     }
 
+
     public Pose2d getReefVertexCalibrationLocation(){
         Pose2d score_location;
         if(isRedAlliance()){
@@ -280,6 +281,7 @@ return
         
         return score_location;
     }
+
 
     /*
      * returns the pose of feed location
@@ -309,6 +311,7 @@ return
         return feed_location;
     }
 
+    
     @Override
     public void periodic(){
         super.periodic();
