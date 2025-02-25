@@ -652,10 +652,11 @@ public class SwerveBase extends SubsystemBase {
 
     /**
      * Drives swerve given chassis speeds robot relative
+     * DOESN'T APPLY ACCELERATION LIMITS
      * 
      * @param chassisSpeeds The chassis speeds the robot should travel at
      */
-    private void driveRobotRelative(ChassisSpeeds chassisSpeeds, boolean useSetpointGenerator) {
+    protected void driveRobotRelative(ChassisSpeeds chassisSpeeds, boolean useSetpointGenerator) {
         if(!useSetpointGenerator){
             var tmpStates = Constants.Swerve.kDriveKinematics.toSwerveModuleStates(chassisSpeeds);
             SwerveDriveKinematics.desaturateWheelSpeeds(tmpStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS);

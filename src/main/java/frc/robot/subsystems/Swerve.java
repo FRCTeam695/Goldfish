@@ -178,6 +178,35 @@ public class Swerve extends SwerveBase{
     }
 
 
+    public Command algaeDislodgeSequence(){
+        return run(()->{
+            Pose2d robotPose = getSavedPose();
+            Pose2d[] dislodgePositions = getAlgaeDislodgeLocations();
+            Translation2d transformToNearestAlgaeDislodgeLocation = robotPose.getTranslation().minus(dislodgePositions[0].getTranslation());
+            for(int i = 1; i < dislodgePositions.length; ++i){
+                Translation2d translationToLocation = robotPose.getTranslation().minus(dislodgePositions[i].getTranslation());
+                if (transformToNearestAlgaeDislodgeLocation.getNorm() > translationToLocation.getNorm()) {
+                    transformToNearestAlgaeDislodgeLocation = translationToLocation;
+                    targetLocationPose = dislodgePositions[i];
+                }
+                else{
+                    targetLocationPose = new Pose2d(robotPose.getTranslation().minus(transformToNearestAlgaeDislodgeLocation), new Rotation2d());
+                }
+            }
+
+            double attractX = kp_attract * transformToNearestAlgaeDislodgeLocation.getX();
+            double attractY = kp_attract * transformToNearestAlgaeDislodgeLocation.getY();
+            
+            ChassisSpeeds speeds = new ChassisSpeeds(attractX, attractY, getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()));
+            drive(speeds, true);
+        }).until(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.05)
+        .andThen(run(()-> {
+            driveRobotRelative(new ChassisSpeeds(-1, 0, 0), false);
+            }
+        )).withTimeout(0.5);
+    }
+
+
     public Command driveToNearestFeed(){//"A","B","C"...."I"
             
         return 
@@ -226,7 +255,7 @@ public class Swerve extends SwerveBase{
         return resetGyro(90);
     }
 
-    
+
     public Command rightGyroReset(){
         return resetGyro(-90);
     }
@@ -281,6 +310,16 @@ public class Swerve extends SwerveBase{
         }
         
         return score_location;
+    }
+
+
+    public Pose2d[] getAlgaeDislodgeLocations(){
+        if(isRedAlliance()){
+            return Constants.Vision.Red.ALGAE_DISLODGE_POSITIONS;
+        }
+        else{
+            return Constants.Vision.Blue.ALGAE_DISLODGE_POSITIONS;
+        }
     }
 
 

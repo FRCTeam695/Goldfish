@@ -177,12 +177,12 @@ public class Constants {
             public static final Pose2d FEED_LOCATION_RIGHT = new Pose2d(0.96, 1.06, Rotation2d.fromDegrees(50));
             public static final Pose2d FEED_LOCATION_LEFT = new Pose2d(0.96, 1.06, Rotation2d.fromDegrees(-50));
 
-            public static final Pose2d ALGAE_A_DISLODGE_LOCATION = new Pose2d(3.16,4.02, new Rotation2d());
-            public static final Pose2d ALGAE_C_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(60));
-            public static final Pose2d ALGAE_E_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(120));
-            public static final Pose2d ALGAE_G_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(180));
-            public static final Pose2d ALGAE_I_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-120));
-            public static final Pose2d ALGAE_K_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-60));
+            public static final Pose2d ALGAE_A_DISLODGE_LOCATION = new Pose2d(3.16,4.02, new Rotation2d(180));
+            public static final Pose2d ALGAE_C_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-120));
+            public static final Pose2d ALGAE_E_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-60));
+            public static final Pose2d ALGAE_G_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(0));
+            public static final Pose2d ALGAE_I_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(60));
+            public static final Pose2d ALGAE_K_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(120));
     
             public static final HashMap<String, Pose2d> CORAL_SCORING_LOCATIONS = new HashMap<String, Pose2d>(){
                 {
@@ -227,12 +227,12 @@ public class Constants {
             public static final Pose2d FEED_LOCATION_RIGHT = new Pose2d(0.5, 1.9, new Rotation2d(50));
             public static final Pose2d FEED_LOCATION_LEFT = new Pose2d(0.5, 1.9, new Rotation2d(-50));
 
-            public static final Pose2d ALGAE_A_DISLODGE_LOCATION = new Pose2d(3.16,4.02, new Rotation2d());
-            public static final Pose2d ALGAE_C_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(60));
-            public static final Pose2d ALGAE_E_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(120));
-            public static final Pose2d ALGAE_G_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(180));
-            public static final Pose2d ALGAE_I_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-120));
-            public static final Pose2d ALGAE_K_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-60));
+            public static final Pose2d ALGAE_A_DISLODGE_LOCATION = new Pose2d(3.16,4.02, new Rotation2d(180));
+            public static final Pose2d ALGAE_C_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-120));
+            public static final Pose2d ALGAE_E_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-60));
+            public static final Pose2d ALGAE_G_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(0));
+            public static final Pose2d ALGAE_I_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(60));
+            public static final Pose2d ALGAE_K_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(120));
 
             public static final HashMap<String, Pose2d> CORAL_SCORING_LOCATIONS = new HashMap<String, Pose2d>(){
                 {
