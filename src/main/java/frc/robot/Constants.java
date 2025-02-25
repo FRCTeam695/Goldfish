@@ -194,7 +194,7 @@ public class Constants {
                 }
             };
     
-            public static final Pose2d ALGAE_A_SCORING_LOCATION = new Pose2d(3.16,4.02, new Rotation2d());
+            public static final Pose2d ALGAE_A_DISLODGE_LOCATION = new Pose2d(3.16,4.02, new Rotation2d());
             public static final Pose2d ALGAE_C_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(60));
             public static final Pose2d ALGAE_E_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(120));
             public static final Pose2d ALGAE_G_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(180));
@@ -202,7 +202,7 @@ public class Constants {
             public static final Pose2d ALGAE_K_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-60));
     
             public static final Pose2d[] ALGAE_DISLODGE_POSITIONS = {
-                ALGAE_A_SCORING_LOCATION, 
+                ALGAE_A_DISLODGE_LOCATION, 
                 ALGAE_C_DISLODGE_LOCATION, 
                 ALGAE_E_DISLODGE_LOCATION, 
                 ALGAE_G_DISLODGE_LOCATION, 
@@ -246,7 +246,7 @@ public class Constants {
                 }
             };
 
-            public static final Pose2d ALGAE_A_SCORING_LOCATION = new Pose2d(3.16,4.02, new Rotation2d());
+            public static final Pose2d ALGAE_A_DISLODGE_LOCATION = new Pose2d(3.16,4.02, new Rotation2d());
             public static final Pose2d ALGAE_C_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(60));
             public static final Pose2d ALGAE_E_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(120));
             public static final Pose2d ALGAE_G_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(180));
@@ -254,7 +254,7 @@ public class Constants {
             public static final Pose2d ALGAE_K_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-60));
     
             public static final Pose2d[] ALGAE_DISLODGE_POSITIONS = {
-                ALGAE_A_SCORING_LOCATION, 
+                ALGAE_A_DISLODGE_LOCATION, 
                 ALGAE_C_DISLODGE_LOCATION, 
                 ALGAE_E_DISLODGE_LOCATION, 
                 ALGAE_G_DISLODGE_LOCATION, 

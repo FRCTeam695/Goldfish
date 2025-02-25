@@ -142,6 +142,7 @@ public class Swerve extends SwerveBase{
         );
     }
 
+    
     public Command driveForward(){
         return run(
             ()->{
@@ -149,6 +150,7 @@ public class Swerve extends SwerveBase{
             }
         );
     }
+
 
     public Command rotateToNearestFeed(Supplier<ChassisSpeeds> wantedVels){
         return
@@ -218,6 +220,7 @@ public class Swerve extends SwerveBase{
             }
             ).until(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.05);
     }
+
 
     public Transform2d getRepulsionVector(Pose2d robotPose){
         double repulsionX = 0;
@@ -311,7 +314,7 @@ public class Swerve extends SwerveBase{
         return feed_location;
     }
 
-    
+
     @Override
     public void periodic(){
         super.periodic();
