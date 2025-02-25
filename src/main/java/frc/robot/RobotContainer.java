@@ -94,7 +94,7 @@ public class RobotContainer {
       )
     );
 
-    driver.rightBumper().onTrue(Swerve.doNothing().andThen(Coralizer.doNothing()));
+    driver.rightBumper().onTrue(Swerve.requireSubsystem().andThen(Coralizer.requireSubsystem()));
   }
 
   public void configureDefaultCommands(){

@@ -602,8 +602,7 @@ public class SwerveBase extends SubsystemBase {
         ;
     }
 
-    // requires the subsystem
-    public Command doNothing(){
+    public Command requireSubsystem(){
         return new WaitCommand(0);
     }
     

@@ -115,8 +115,7 @@ public class Coralizer extends SubsystemBase{
         return runOnce(()-> hasFinishedIntaking = true);
     }
 
-    // requires the subsystem
-    public Command doNothing(){
+    public Command requireSubsystem(){
         return new WaitCommand(0);
     }
 
