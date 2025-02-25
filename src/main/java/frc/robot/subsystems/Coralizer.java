@@ -27,7 +27,6 @@ public class Coralizer extends SubsystemBase{
     private DigitalInput beamBreak;
     private boolean hasFinishedIntaking = true;
     private Debouncer debouncer = new Debouncer(0.06);
-    private Debouncer rollBackDebouncer = new Debouncer(0.03);
     public Trigger doneIntaking = new Trigger(()-> hasFinishedIntaking);
 
     public Coralizer(){
@@ -68,7 +67,7 @@ public class Coralizer extends SubsystemBase{
             runIntakeAndCoralizer(()->0.6).until(this::beamNotBroken)
         )
         .andThen(
-            runIntakeAndCoralizer(()->-0.1).until(()-> rollBackDebouncer.calculate(beamBreak.get()))
+            runIntakeAndCoralizer(()->-0.1).until(this::beamIsBroken)
         )
         .andThen(setIntakeStateTrue())
         .andThen(runIntakeAndCoralizer(()-> 0));
