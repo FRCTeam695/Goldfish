@@ -126,13 +126,15 @@ public class RobotContainer {
 
   // The command specified in here is run in autonomous
   public Command getAutonomousCommand() {
-    return Swerve.leftGyroReset().andThen(fourPieceLeft());
+    return fourPieceLeft();
   }
 
 
   public Command fourPieceLeft() {
-    return alignAndScore(Optional.of("T"))
+    return Swerve.leftGyroReset()
             .andThen(
+              alignAndScore(Optional.of("T"))
+            ).andThen(
               pickUpAlignAndScore(Optional.of("K"))
             ).andThen(
               pickUpAlignAndScore(Optional.of("L"))
