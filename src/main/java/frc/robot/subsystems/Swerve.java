@@ -142,7 +142,7 @@ public class Swerve extends SwerveBase{
         );
     }
 
-    
+
     public Command driveForward(){
         return run(
             ()->{
@@ -277,9 +277,9 @@ public class Swerve extends SwerveBase{
     public Pose2d getReefVertexCalibrationLocation(){
         Pose2d score_location;
         if(isRedAlliance()){
-            score_location = Constants.Vision.Red.VERTEX_CALIBRATION_POSITION;
+            score_location = Constants.Vision.Red.ALGAE_A_DISLODGE_LOCATION;
         }else{
-            score_location = Constants.Vision.Blue.VERTEX_CALIBRATION_POSITION;
+            score_location = Constants.Vision.Blue.ALGAE_G_DISLODGE_LOCATION;
         }
         
         return score_location;

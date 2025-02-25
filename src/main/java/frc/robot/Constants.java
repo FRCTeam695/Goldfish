@@ -209,8 +209,6 @@ public class Constants {
                 ALGAE_I_DISLODGE_LOCATION,
                 ALGAE_K_DISLODGE_LOCATION
             };
-
-            public static final Pose2d VERTEX_CALIBRATION_POSITION = new Pose2d(3.16,4.02, new Rotation2d());
         }   
         public static final class Red{
             public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.157,4.182, new Rotation2d());
@@ -261,8 +259,6 @@ public class Constants {
                 ALGAE_I_DISLODGE_LOCATION,
                 ALGAE_K_DISLODGE_LOCATION
             };
-
-            public static final Pose2d VERTEX_CALIBRATION_POSITION = new Pose2d(3.16,4.02, new Rotation2d());
         }
     }
 }
