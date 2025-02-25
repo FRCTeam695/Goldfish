@@ -75,7 +75,6 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    driver.rightBumper().whileTrue(Swerve.driveToNearestFeed());
     driver.b().whileTrue(Swerve.alignToReef(Optional.empty()));
     driver.a().whileTrue(Coralizer.runIntakeAndCoralizer(()->0.2));
     driver.povUp().whileTrue(Elevator.goToScoringHeight());
@@ -88,12 +87,14 @@ public class RobotContainer {
       alignAndScore(Optional.empty())
     );
 
-    driver.leftBumper().whileTrue(
+    driver.leftBumper().onTrue(
       parallel(
         Coralizer.intake(),
         Swerve.rotateToNearestFeed(driver::getRequestedChassisSpeeds)
       )
-  );
+    );
+
+    driver.rightBumper().onTrue(Swerve.doNothing().andThen(Coralizer.doNothing()));
   }
 
   public void configureDefaultCommands(){
