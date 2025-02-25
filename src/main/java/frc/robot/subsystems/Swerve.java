@@ -120,32 +120,9 @@ public class Swerve extends SwerveBase{
                 // if we will collide
                 if(distanceForward < 0){
                     hasDetectedCollision = true;
-
-                    // calculate repulsion vector from all verticies
-                    double inc = 0;
-                    for(var vertex : reefVerticies){
-                        inc++;
-                        m_field.getObject(""+inc).setPose(vertex);
-                        // get distance to vertex
-                        Transform2d transformToVertex = vertex.minus(robotPose);
-                        double vdx = vertex.getX() - robotPose.getX();
-                        double vdy = vertex.getY() - robotPose.getY();
-                        double distance = transformToVertex.getTranslation().getNorm();
-                        
-                        // magnitude of repulsive force
-                        double f_mag = kp_repulse/Math.pow(distance,2);
-
-                        // unit vector of repulsive force
-                        double unit_vector_x = vdx/distance;
-                        double unit_vector_y = vdy/distance;
-
-                        // multiply by unit vector to get direction and magnitude
-                        double f_x = f_mag * unit_vector_x;
-                        double f_y = f_mag * unit_vector_y;
-
-                        repulsionX += f_x;
-                        repulsionY += f_y;
-                    }
+                    Transform2d repulsionVector = getRepulsionVector(robotPose);
+                    repulsionX += repulsionVector.getX();
+                    repulsionY += repulsionVector.getY();
                 }else{
                     hasDetectedCollision = false;
                 }
@@ -228,7 +205,27 @@ return
         double repulsionX = 0;
         double repulsionY = 0;
 
+        Transform2d repulsionVector = getRepulsionVector(robotPose);
+        repulsionX += repulsionVector.getX();
+        repulsionY += repulsionVector.getY();
+
+        //need to change rotation
+        ChassisSpeeds speeds = new ChassisSpeeds(-attractX - repulsionX, -attractY - repulsionY, getAngularComponentFromRotationOverride(angle));
+        // ChassisSpeeds speeds = new ChassisSpeeds(1.8 * transformToReef.getX(), 1.8 * transformToReef.getY(), getAngularComponentFromRotationOverride(0));
+        SmartDashboard.putString("align to reef speeds", speeds.toString());
+
+        drive(speeds, true);
+    }
+    ).until(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.05);
+}
+
+    public Transform2d getRepulsionVector(Pose2d robotPose){
+        double repulsionX = 0;
+        double repulsionY = 0;
+        int inc = 0;
         for(var vertex : reefVerticies){
+            ++inc;
+            m_field.getObject(""+inc).setPose(vertex);
             // get distance to vertex
             Transform2d transformToVertex = vertex.minus(robotPose);
             double vdx = vertex.getX() - robotPose.getX();
@@ -254,15 +251,8 @@ return
             repulsionY += f_y;
         }
 
-        //need to change rotation
-        ChassisSpeeds speeds = new ChassisSpeeds(-attractX - repulsionX, -attractY - repulsionY, getAngularComponentFromRotationOverride(angle));
-        // ChassisSpeeds speeds = new ChassisSpeeds(1.8 * transformToReef.getX(), 1.8 * transformToReef.getY(), getAngularComponentFromRotationOverride(0));
-        SmartDashboard.putString("align to reef speeds", speeds.toString());
-
-        drive(speeds, true);
+        return new Transform2d(repulsionX, repulsionY, new Rotation2d());
     }
-    ).until(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.05);
-}
 
 
     /*
