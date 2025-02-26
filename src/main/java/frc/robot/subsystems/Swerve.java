@@ -192,7 +192,7 @@ public class Swerve extends SwerveBase{
         }).until(
             ()-> getSavedPose().getTranslation().minus(
                 new Pose2d(
-                    reefVerticies[0].getX() + Units.inchesToMeters(65), 
+                    reefVerticies[0].getX() + Units.inchesToMeters(65/2.), 
                     (reefVerticies[0].getY() + reefVerticies[1].getY())/2, 
                     new Rotation2d()
                 ).getTranslation()).getNorm() > Units.inchesToMeters(50)
