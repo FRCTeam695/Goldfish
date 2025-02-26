@@ -87,12 +87,11 @@ public class RobotContainer {
       alignAndScore(Optional.empty())
     );
 
-    driver.leftBumper().onTrue(
-      parallel(
-        Coralizer.intake(),
+    driver.leftBumper().whileTrue(
         Swerve.rotateToNearestFeed(driver::getRequestedChassisSpeeds)
-      )
     );
+
+    driver.leftBumper().onTrue(Coralizer.intake());
 
     driver.rightBumper().onTrue(Swerve.requireSubsystem().andThen(Coralizer.requireSubsystem()));
   }
