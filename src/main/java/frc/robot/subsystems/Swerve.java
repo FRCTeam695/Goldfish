@@ -36,7 +36,7 @@ public class Swerve extends SwerveBase{
 
     // probably turn this up, its low rn (for reference QB's attraction kp was 2.7, 
     // when ur tuning make sure ur just running the autoalign without the elevator)
-    public final double kp_attract = 2.7;
+    public final double kp_attract = 2.5;
 
     // we will tune this on the practice field
     public final double kp_repulse = 1;
@@ -64,7 +64,7 @@ public class Swerve extends SwerveBase{
         reefVerticies[4] = new Pose2d(reefVerticies[1].getX()+Units.inchesToMeters(65), reefVerticies[1].getY(), new Rotation2d());
         reefVerticies[5] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65/2.), reefVerticies[1].getY() + Units.inchesToMeters(20.25), new Rotation2d());
 
-        isCloseToDestination = new Trigger(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.4);
+        isCloseToDestination = new Trigger(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 1.6);
         isAtDestination = new Trigger(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.01);
         collisionDetected = new Trigger(()-> hasDetectedCollision);
     }
@@ -390,6 +390,7 @@ public class Swerve extends SwerveBase{
     public void periodic(){
         super.periodic();
         m_field.getObject("target location").setPose(targetLocationPose);
+        SmartDashboard.putBoolean("Close to Destination", isCloseToDestination.getAsBoolean());
     }
 }
 

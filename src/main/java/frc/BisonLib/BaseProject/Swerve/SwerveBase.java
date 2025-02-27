@@ -528,7 +528,7 @@ public class SwerveBase extends SubsystemBase {
                                 while( Timer.getFPGATimestamp() < startTime + .1){
                                     LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
                                 }
-                                LimelightHelpers.SetIMUMode(cam, 3);
+                                LimelightHelpers.SetIMUMode(cam, 2);
                             }
                         } catch (Exception e) {
                         }
@@ -786,6 +786,9 @@ public class SwerveBase extends SubsystemBase {
         // 0.02 is the loop time
         current.vxMetersPerSecond += (ax * 0.02);
         current.vyMetersPerSecond += (ay * 0.02);
+
+        //current.vxMetersPerSecond = current.vxMetersPerSecond < 0.05 ? 0 : current.vxMetersPerSecond;
+        //current.vyMetersPerSecond = current.vyMetersPerSecond < 0.05 ? 0 : current.vyMetersPerSecond;
         current.omegaRadiansPerSecond = desiredSpeeds.omegaRadiansPerSecond;
         return current;
     }

@@ -93,7 +93,15 @@ public class RobotContainer {
 
     driver.leftBumper().onTrue(Coralizer.intake());
 
-    driver.rightBumper().onTrue(Swerve.requireSubsystem().andThen(Coralizer.requireSubsystem()));
+    driver.rightBumper().whileTrue(Coralizer.runIntakeAndCoralizer(()-> -0.2));
+
+
+    // check limelight poses
+    // test align to reef
+    // test intake logic
+    
+    // test intake with auto align
+    // test acceleration limit stuff
   }
 
   public void configureDefaultCommands(){
@@ -165,7 +173,12 @@ public class RobotContainer {
             Elevator.goToScoringHeight()
           ).until(Elevator.atSetpoint)
       )
-      .andThen(Coralizer.ejectCoral().asProxy()); // asProxy because we want to be able to continue intaking while we are aligning
+      .andThen(
+        new WaitUntilCommand(Swerve.isAtDestination)
+        .andThen(
+          Coralizer.ejectCoral().asProxy()
+        )
+      ); // asProxy because we want to be able to continue intaking while we are aligning
   }
 
   public Command alignAndIntake(){
