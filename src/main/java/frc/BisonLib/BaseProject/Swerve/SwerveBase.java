@@ -71,7 +71,7 @@ public class SwerveBase extends SubsystemBase {
 
     protected double max_accel = 0;
     protected double speed = 0;
-    protected boolean rotatedToSetpoint = false;
+    protected double robotRotationError = 0;
 
     // used for wheel characterization
     protected double initialGyroAngle = 0;
@@ -86,7 +86,7 @@ public class SwerveBase extends SubsystemBase {
     protected double failedOdometryUpdates = 0;
     protected double successfulOdometryUpdates = 0;
 
-    public final Trigger atRotationSetpoint = new Trigger(()-> robotRotationAtSetpoint());
+    public final Trigger atRotationSetpoint = new Trigger(()-> Math.abs(robotRotationError) < 1);
     public PPHolonomicDriveController pathplannerController =  new PPHolonomicDriveController( // HolonomicPathFollowerConfig, this should likely live in your Constants class
                                                                 new PIDConstants(6, 0.0, 0.1), // Translation PID constants (JPK was 6,0,0)
                                                                 new PIDConstants(5, 0.0, 0.0) // Rotation PID constants (JPK was 2)
@@ -108,10 +108,10 @@ public class SwerveBase extends SubsystemBase {
     private final SwerveSetpointGenerator setpointGenerator;
     private SwerveSetpoint previousSetpoint;
  
-    SlewRateLimiter omegaFilter = new SlewRateLimiter(Math.toRadians(1074.5588535));
-    SlewRateLimiter xFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
-    SlewRateLimiter yFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
-    SlewRateLimiter accelFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
+    public SlewRateLimiter omegaFilter = new SlewRateLimiter(Math.toRadians(1074.5588535));
+    public SlewRateLimiter xFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
+    public SlewRateLimiter yFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
+    public SlewRateLimiter accelFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
     //private Pigeon2 pigeon = new Pigeon2(8);
 
     private VoltageOut m_voltReq;
@@ -320,16 +320,6 @@ public class SwerveBase extends SubsystemBase {
 
 
     /**
-     * checks if the robot is facing the direction of the rotation override
-     * 
-     * @return if the robot is facing the rotation override angle
-     */
-    public boolean robotRotationAtSetpoint(){
-        return rotatedToSetpoint;
-    }
-
-
-    /**
      * Finds a new angular speed based on rotation override
      * 
      * @param originalSpeeds The original chassis speeds of the robot as inputted by the driver
@@ -340,7 +330,7 @@ public class SwerveBase extends SubsystemBase {
         double currentRotation = getSavedPose().getRotation().getDegrees();
         double pidOutput = thetaController.calculate(currentRotation, wantedAngle);
 
-        rotatedToSetpoint = Math.abs(currentRotation - wantedAngle) < 1;
+        robotRotationError = thetaController.getError();
         return MathUtil.clamp(pidOutput, -1, 1) * Constants.Swerve.MAX_ANGULAR_SPEED_RAD_PER_SECOND;
     }
 

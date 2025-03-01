@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import java.util.Optional;
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import edu.wpi.first.math.MathUtil;
@@ -9,6 +10,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -46,6 +48,8 @@ public class Swerve extends SwerveBase{
     public Trigger isCloseToDestination;
     public Trigger isAtDestination;
     public Trigger collisionDetected;
+    public Trigger almostRotatedToSetpoint;
+    public TrapezoidProfile distanceProfile;
 
     public Swerve(String[] camNames, TalonFXModule[] modules) {
         super(camNames, modules);
@@ -64,9 +68,11 @@ public class Swerve extends SwerveBase{
         reefVerticies[4] = new Pose2d(reefVerticies[1].getX()+Units.inchesToMeters(65), reefVerticies[1].getY(), new Rotation2d());
         reefVerticies[5] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65/2.), reefVerticies[1].getY() + Units.inchesToMeters(20.25), new Rotation2d());
 
-        isCloseToDestination = new Trigger(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 1.6);
+        isCloseToDestination = new Trigger(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 2.5);
         isAtDestination = new Trigger(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.01);
         collisionDetected = new Trigger(()-> hasDetectedCollision);
+        almostRotatedToSetpoint = new Trigger(()-> robotRotationError < 45);
+        distanceProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
     }
     
 
@@ -79,7 +85,7 @@ public class Swerve extends SwerveBase{
      *                 If you supply an empty optional, then it pulls the location to 
      *                 align to off networktables from the operator interface
      */
-    public Command alignToReef(Optional<String> location){
+    public Command alignToReef(Optional<String> location, DoubleSupplier elevatorTimeToArrival, boolean willRaiseElevator){
         return 
         runOnce(()-> hasDetectedCollision = true)
         .andThen(
@@ -113,12 +119,27 @@ public class Swerve extends SwerveBase{
                 double repulsionX = 0;
                 double repulsionY = 0;
 
+                boolean elevatorNotInTime = false;
+
                 // calculate the forward distance we need to go in order to get to the target;
                 // if its negative we have to move backwards
                 double distanceForward = dx * targetLocationPose.getRotation().getCos() + dy * targetLocationPose.getRotation().getSin();
 
+                // if we aren't going to collide with the reef then we check if we need to apply repulsion vectors by seeing if the elevator will be in time to avoid a collision with any coral/algae on the reef
+                if(distanceForward >= 0){
+                    ChassisSpeeds currentRobotChassisSpeeds = getLatestChassisSpeed();
+                    double currentSpeedMagnitude = Math.hypot(currentRobotChassisSpeeds.vxMetersPerSecond, currentRobotChassisSpeeds.vyMetersPerSecond);
+                    distanceProfile.calculate(0.02, new TrapezoidProfile.State(0, 0), new TrapezoidProfile.State(Math.hypot(dx, dy), currentSpeedMagnitude));
+                    double swerveTimeToArrival = distanceProfile.timeLeftUntil(0);
+
+                    SmartDashboard.putNumber("Swerve time to arrival", swerveTimeToArrival);
+                    elevatorNotInTime = elevatorTimeToArrival.getAsDouble() > swerveTimeToArrival;
+                }
+
+                if(!willRaiseElevator) elevatorNotInTime = false;
+
                 // if we will collide
-                if(distanceForward < 0){
+                if(distanceForward < 0 || elevatorNotInTime){
                     hasDetectedCollision = true;
                     Transform2d repulsionVector = getRepulsionVector(robotPose, kp_repulse);
                     repulsionX += repulsionVector.getX();
@@ -130,6 +151,7 @@ public class Swerve extends SwerveBase{
                 // combine repulsion and attraction forces for the adjusted velocities
                 double xSpeed = attractX - repulsionX;
                 double ySpeed = attractY - repulsionY;
+
 
                 //clamp speeds to avoid desaturation killing our rotational movement
                 ChassisSpeeds speeds = new ChassisSpeeds(

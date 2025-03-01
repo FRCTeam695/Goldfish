@@ -75,7 +75,7 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    driver.b().whileTrue(Swerve.alignToReef(Optional.empty()));
+    driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
     driver.a().whileTrue(Coralizer.runIntakeAndCoralizer(()->0.2));
     driver.povUp().whileTrue(Elevator.goToScoringHeight());
     
@@ -161,7 +161,12 @@ public class RobotContainer {
   public Command alignAndScore(Optional<String> location){
     return
       parallel(
-        Swerve.alignToReef(location),
+        // tells the elevator where is will be going later, 
+        // so it can give semi-accurate time estimates for how long it will take to get there
+        Elevator.configureSetpoint()
+              .andThen(
+                Swerve.alignToReef(location, ()-> Elevator.getElevatorTimeToArrival(), true)
+              ),
         
         new WaitUntilCommand(
           Swerve.atRotationSetpoint

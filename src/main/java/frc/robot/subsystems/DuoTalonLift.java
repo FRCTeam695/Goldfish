@@ -10,6 +10,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTable;
@@ -61,6 +62,8 @@ public class DuoTalonLift extends SubsystemBase{
     public Trigger atSetpoint;
     public double inchesSetpoint = 0;
     public boolean isRunning = false;
+
+    public TrapezoidProfile heightProfile;
 
     // Constructor
     public DuoTalonLift () {
@@ -122,6 +125,7 @@ public class DuoTalonLift extends SubsystemBase{
         r_leaderTalon.getConfigurator().apply(r_leaderConfigs);
         l_followerTalon.getConfigurator().apply(l_followerConfigs);
         r_leaderTalon.setPosition(0); // Reset leader's position
+        heightProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(250., 400.));
     }
 
     public Command goToScoringHeight(){
@@ -139,10 +143,32 @@ public class DuoTalonLift extends SubsystemBase{
         }).finallyDo(()-> {isRunning = false;});
     }
 
+    public Command configureSetpoint(){
+        return runOnce(()->{
+            double newInchesSetpoint;
+            isRunning = true;
+            int networkTablesHeight = (int)Math.round(scoringHeight.get(2));
+            if(networkTablesHeight == 1) newInchesSetpoint = Heights.L1.heightInches;
+            else if(networkTablesHeight == 2) newInchesSetpoint = Heights.L2.heightInches;
+            else if(networkTablesHeight == 3)  newInchesSetpoint = Heights.L3.heightInches;
+            else if(networkTablesHeight == 4)  newInchesSetpoint = Heights.L4.heightInches;
+            else newInchesSetpoint = Heights.L1.heightInches;
+
+            inchesSetpoint = newInchesSetpoint;
+        });
+    }
+
     private void elevatorSetInches(double newInchesSetpoint) {
         inchesSetpoint = newInchesSetpoint;
         double rotationSetpoint = inchesSetpoint * rotationsPerInch;
         r_leaderTalon.setControl(r_leaderRequests.withPosition(rotationSetpoint));
+    }
+
+    public double getElevatorTimeToArrival(){
+        heightProfile.calculate(0.02, new TrapezoidProfile.State(r_leaderTalon.getPosition().getValueAsDouble(), r_leaderTalon.getVelocity().getValueAsDouble()), new TrapezoidProfile.State(inchesSetpoint * rotationsPerInch, 0));
+        double time = heightProfile.timeLeftUntil(inchesSetpoint * rotationsPerInch);
+        SmartDashboard.putNumber("elevator time to arrival", time);
+        return time;
     }
 
     // Setting elevator leader talon to spin to a certain height
