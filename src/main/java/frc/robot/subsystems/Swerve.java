@@ -132,7 +132,7 @@ public class Swerve extends SwerveBase{
                     distanceProfile.calculate(0.02, new TrapezoidProfile.State(0, 0), new TrapezoidProfile.State(Math.hypot(dx, dy), currentSpeedMagnitude));
                     double swerveTimeToArrival = distanceProfile.timeLeftUntil(0);
 
-                    SmartDashboard.putNumber("Swerve time to arrival", swerveTimeToArrival);
+                    SmartDashboard.putNumber("Swerve ETA", swerveTimeToArrival);
                     elevatorNotInTime = elevatorTimeToArrival.getAsDouble() > swerveTimeToArrival;
                 }
 
