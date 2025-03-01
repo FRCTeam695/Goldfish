@@ -165,10 +165,13 @@ public class TalonFXModule{
             config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
         }
 
-        config.Slot0.kP = Constants.Swerve.TURN_WHEEL_KP;
-        config.Slot0.kD = Constants.Swerve.TURN_WHEEL_KD;
-        config.Slot0.kS = Constants.Swerve.TURN_WHEEL_KS;
+        // config.Slot0.kP = Constants.Swerve.TURN_WHEEL_KP;
+        // config.Slot0.kD = Constants.Swerve.TURN_WHEEL_KD;
+        // config.Slot0.kS = Constants.Swerve.TURN_WHEEL_KS;
+        config.Slot0.kP = 43.8;
+        config.Slot0.kS = 0.1111;
         config.Slot0.kA = 0.12783;
+        config.Slot0.kV = 2.4877;
 
         config.Slot0.StaticFeedforwardSign = StaticFeedforwardSignValue.UseVelocitySign;
         

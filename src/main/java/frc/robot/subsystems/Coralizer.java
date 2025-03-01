@@ -7,12 +7,11 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXSConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFXS;
+import com.ctre.phoenix6.signals.ForwardLimitValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorArrangementValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
-import edu.wpi.first.math.filter.Debouncer;
-import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 //import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -24,9 +23,7 @@ public class Coralizer extends SubsystemBase{
     //DigitalInput beamBreak;
     private TalonFXS coralizer;
     private TalonFXS intake;
-    private DigitalInput beamBreak;
     private boolean hasFinishedIntaking = true;
-    private Debouncer debouncer = new Debouncer(0.06);
     public Trigger doneIntaking = new Trigger(()-> hasFinishedIntaking);
 
     public Coralizer(){
@@ -37,6 +34,8 @@ public class Coralizer extends SubsystemBase{
         
         TalonFXSConfiguration config = new TalonFXSConfiguration();
         config.CurrentLimits.SupplyCurrentLimit = 20.0;
+        config.HardwareLimitSwitch.ForwardLimitEnable = false;
+        config.HardwareLimitSwitch.ReverseLimitEnable = false;
         config.CurrentLimits.SupplyCurrentLimitEnable = true;
         config.Commutation.MotorArrangement = MotorArrangementValue.NEO550_JST;
 
@@ -48,12 +47,10 @@ public class Coralizer extends SubsystemBase{
 
         coralizer.getConfigurator().apply(config);
         intake.getConfigurator().apply(config);
-
-        beamBreak = new DigitalInput(6);
     }
 
     public boolean beamIsBroken(){
-        return debouncer.calculate(beamBreak.get());
+        return  !(coralizer.getForwardLimit().getValue() == ForwardLimitValue.ClosedToGround);
     }
     
     public boolean beamNotBroken(){
@@ -64,10 +61,7 @@ public class Coralizer extends SubsystemBase{
         return
         runIntakeAndCoralizer(()-> 0.6).until(this::beamIsBroken)
         .andThen(
-            runIntakeAndCoralizer(()->0.6).until(this::beamNotBroken)
-        )
-        .andThen(
-            runIntakeAndCoralizer(()->-0.1).until(this::beamIsBroken)
+            runIntakeAndCoralizer(()->0.3).until(this::beamNotBroken)
         )
         .andThen(setIntakeStateTrue())
         .andThen(runIntakeAndCoralizer(()-> 0));

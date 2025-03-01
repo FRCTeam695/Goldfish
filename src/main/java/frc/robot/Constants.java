@@ -8,6 +8,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.util.Units;
 import frc.BisonLib.BaseProject.Swerve.SwerveConfig;
 
 public class Constants {
@@ -39,7 +40,7 @@ public class Constants {
                 -0.064209, // front left
                 0.061668, // back left
                 -0.14446, // back right
-                 8.14, 12.9, 4 * Math.PI, 
+                 8.14, Units.metersToFeet(3.6), 4 * Math.PI, 
                  // must find this kp
                  70, 1, 
                  // must find wheelbase and track width
@@ -87,7 +88,8 @@ public class Constants {
         public static final SwerveConfig CHOSEN_CONSTANTS = ROBOT_MAP.get("Production_2025");
 
         // miscellaneous constants
-        public static final double MAX_SPEED_METERS_PER_SECONDS = CHOSEN_CONSTANTS.maxSpeedMetersPerSec;
+        public static final double MAX_SPEED_METERS_PER_SECONDS_TELEOP = Units.feetToMeters(12.9);
+        public static final double MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS = 3;
         public static final double MAX_ANGULAR_SPEED_RAD_PER_SECOND = CHOSEN_CONSTANTS.maxAngularSpeedRadPerSec;
         public static final double TURNING_GEAR_RATIO = CHOSEN_CONSTANTS.turningGearRatio;
         public static final double DRIVING_GEAR_RATIO = CHOSEN_CONSTANTS.drivingGearRatio;
@@ -105,7 +107,7 @@ public class Constants {
         public static final double DISCRETIZE_TIMESTAMP = 0.02;
         public static final int ODOMETRY_UPDATE_RATE_HZ_INTEGER = 200;
         public static final boolean MODULE_IS_INVERTED = CHOSEN_CONSTANTS.driveMotorInverted;
-        public static final double MAX_ACCELERATION_METERS_PER_SECOND_SQ = 10;
+        public static final double MAX_ACCELERATION_METERS_PER_SECOND_SQ = 8.5;
         public static final double SUPPLY_CURRENT_LIMIT = CHOSEN_CONSTANTS.supplyCurrentLimit;
         public static final double STATOR_CURRENT_LIMIT = CHOSEN_CONSTANTS.statorCurrentLimit;
 
@@ -162,7 +164,7 @@ public class Constants {
     public static final class Vision{     
         public static final class Blue{
             public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(Math.PI,4.196, new Rotation2d());
-            public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(3.137,3.837, new Rotation2d());
+            public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(3.14,3.84, new Rotation2d());
             public static final Pose2d CORAL_C_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
             public static final Pose2d CORAL_D_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
             public static final Pose2d CORAL_E_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(120));

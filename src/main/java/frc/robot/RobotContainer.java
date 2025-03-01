@@ -160,30 +160,47 @@ public class RobotContainer {
 
   public Command alignAndScore(Optional<String> location){
     return
+      updateTelemetryState(1).andThen(
+      Elevator.configureSetpoint().andThen(
       parallel(
         // tells the elevator where is will be going later, 
         // so it can give semi-accurate time estimates for how long it will take to get there
-        Elevator.configureSetpoint()
-              .andThen(
-                Swerve.alignToReef(location, ()-> Elevator.getElevatorTimeToArrival(), true)
-              ),
+        
+        Swerve.alignToReef(location, ()-> Elevator.getElevatorTimeToArrival(), true),
         
         new WaitUntilCommand(
           Swerve.atRotationSetpoint
           .and(Swerve.collisionDetected.negate())
           .and(Swerve.isCloseToDestination)
           .and(Coralizer.doneIntaking)
+        ).andThen(
+          updateTelemetryState(2)
         ).andThen
           (
             Elevator.goToScoringHeight()
           ).until(Elevator.atSetpoint)
+      ))
+      .andThen(
+        updateTelemetryState(3)
       )
       .andThen(
         new WaitUntilCommand(Swerve.isAtDestination)
         .andThen(
+          updateTelemetryState(4)
+        )
+        .andThen(
           Coralizer.ejectCoral().asProxy()
         )
-      ); // asProxy because we want to be able to continue intaking while we are aligning
+        .andThen(
+          updateTelemetryState(5)
+        )
+        
+      )); // asProxy because we want to be able to continue intaking while we are aligning
+  }
+
+
+  private Command updateTelemetryState(int state) {
+    return runOnce(()-> SmartDashboard.putNumber("Align State", state));
   }
 
   public Command alignAndIntake(){

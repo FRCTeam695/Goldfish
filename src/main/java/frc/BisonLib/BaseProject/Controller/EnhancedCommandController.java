@@ -53,8 +53,8 @@ public class EnhancedCommandController extends CommandXboxController{
         Zj = MathUtil.applyDeadband(Zj, db);
 
         //WANTED FIELD RELATIVE VELOCITIES
-        Xj *= Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS;
-        Yj *= Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS;
+        Xj *= Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP;
+        Yj *= Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP;
         Zj *= Constants.Swerve.MAX_ANGULAR_SPEED_RAD_PER_SECOND;
 
         SmartDashboard.putNumber("Zj", Zj);

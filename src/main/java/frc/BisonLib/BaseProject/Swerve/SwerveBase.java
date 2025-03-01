@@ -18,7 +18,6 @@ import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
-import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.util.DriveFeedforwards;
 import com.pathplanner.lib.util.swerve.SwerveSetpoint;
 import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
@@ -268,12 +267,16 @@ public class SwerveBase extends SubsystemBase {
                 this::getSavedPose, // Robot pose supplier
                 this::resetOdometry, // Method to reset odometry (will be called if your auto has a starting pose)
                 this::getLatestChassisSpeed, // ChassisSpeeds supplier. MUST BE ROBOT RELATIVE
-                (speeds, feedforwards) -> driveRobotRelative(speeds, false), // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
+                (speeds, feedforwards) -> pathplannerDriveRobotRelative(speeds), // Method that will drive the robot given ROBOT RELATIVE ChassisSpeeds
                 pathplannerController,
                 config,
                 this::isRedAlliance,
             this // Reference to this subsystem to set requirements
         );
+    }
+
+    public void pathplannerDriveRobotRelative(ChassisSpeeds speeds){
+        driveRobotRelative(speeds, false, false);
     }
 
 
@@ -295,8 +298,9 @@ public class SwerveBase extends SubsystemBase {
     /*
      * Sets all the swerve modules to the states we want them to be in (velocity + angle)
      */
-    public void setModules(SwerveModuleState[] desiredStates) {
-        SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS);
+    public void setModules(SwerveModuleState[] desiredStates, boolean useMaxSpeed) {
+        if(useMaxSpeed) SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP);
+        else SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS);
 
         for(var module : modules){
             //SmartDashboard.putString("Swerve/Module State " + module.index, desiredStates[module.index].toString());
@@ -623,25 +627,9 @@ public class SwerveBase extends SubsystemBase {
             ()-> {
                     ChassisSpeeds speeds = speedSupplier.get();
                     speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(angleDegrees.getAsDouble());
-                    drive(speeds, true);
+                    drive(speeds, true, true);
                  }
         );
-    }
-
-
-    public Command driveToPose(Pose2d targetPose, double endVelocity){
-        PathConstraints constraints = new PathConstraints(
-            Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ,
-            Constants.Swerve.MAX_ANGULAR_SPEED_RAD_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_RADIANS_PER_SECOND_SQUARED
-        );
-
-        Command pathfindingCommand = AutoBuilder.pathfindToPose(
-            targetPose,
-            constraints,
-            endVelocity // Goal end velocity in meters/sec
-        );
-
-        return pathfindingCommand;
     }
 
     /**
@@ -650,10 +638,11 @@ public class SwerveBase extends SubsystemBase {
      * 
      * @param chassisSpeeds The chassis speeds the robot should travel at
      */
-    protected void driveRobotRelative(ChassisSpeeds chassisSpeeds, boolean useSetpointGenerator) {
+    protected void driveRobotRelative(ChassisSpeeds chassisSpeeds, boolean useSetpointGenerator, boolean useMaxSpeed) {
         if(!useSetpointGenerator){
             var tmpStates = Constants.Swerve.kDriveKinematics.toSwerveModuleStates(chassisSpeeds);
-            SwerveDriveKinematics.desaturateWheelSpeeds(tmpStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS);
+            if(useMaxSpeed) SwerveDriveKinematics.desaturateWheelSpeeds(tmpStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP);
+            else SwerveDriveKinematics.desaturateWheelSpeeds(tmpStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS);
             var speeds = Constants.Swerve.kDriveKinematics.toChassisSpeeds(tmpStates);
             // discretizes the chassis speeds (acccounts for robot skew)
             chassisSpeeds = ChassisSpeeds.discretize(speeds, Constants.Swerve.DISCRETIZE_TIMESTAMP);
@@ -663,7 +652,7 @@ public class SwerveBase extends SubsystemBase {
             SwerveModuleState[] moduleStates = Constants.Swerve.kDriveKinematics.toSwerveModuleStates(chassisSpeeds);
 
             // set the modules to their desired speeds
-            setModules(moduleStates);
+            setModules(moduleStates, useMaxSpeed);
         }
         else{
             previousSetpoint = setpointGenerator.generateSetpoint(
@@ -673,58 +662,16 @@ public class SwerveBase extends SubsystemBase {
             );
 
             //set the modules to their desired speeds
-            setModules(previousSetpoint.moduleStates());
+            setModules(previousSetpoint.moduleStates(), useMaxSpeed);
         }
     }
 
-
-    /**
-     * THIS DOESN'T WORK!!!!!!
-     * but it would be really cool if it did, maybe if someone has time then they fix it!?
-     * 
-     * @param chassisSpeeds The chassis speeds the robot should drive with
-     */
-    public void driveSwerveFromChassisSpeedsCustomCenterOfRotation(ChassisSpeeds chassisSpeeds){
-
-        // discretizes the chassis speeds (acccounts for robot skew)
-        chassisSpeeds = ChassisSpeeds.discretize(chassisSpeeds, Constants.Swerve.DISCRETIZE_TIMESTAMP);
-        //SmartDasboard.putNumber("Swerve/chassis x", chassisSpeeds.vxMetersPerSecond);
-        //SmartDasboard.putNumber("Swerve/chassis y", chassisSpeeds.vyMetersPerSecond);
-        //SmartDasboard.putNumber("Swerve/chassis omega", chassisSpeeds.omegaRadiansPerSecond);
-
-
-        // I derivated whole thing using polar coordinates but the Translation2d turns it back into standard x, y coordinates
-        // Here is my work, I didn't write this in a way that I mean't to be easy to be understood by others but make of it what you will
-        // it also doesn't work at all lol
-        // https://i.imgur.com/jL4c0yS.jpeg
-        double radius = Math.sqrt(2) * Constants.Swerve.WHEEL_BASE_METERS/2.0;
-        double offset;
-
-        // Depending on which direction we want to rotate we choose a different center of rotation
-        if(chassisSpeeds.omegaRadiansPerSecond > 0){
-            offset = Math.PI/4;
-        }
-        else{
-            offset = -Math.PI/4;
-        }
-        SwerveModuleState[] moduleStates = 
-                Constants.Swerve.kDriveKinematics.toSwerveModuleStates(
-                    chassisSpeeds,
-                    new Translation2d(
-                        radius,
-                        new Rotation2d(Math.atan(chassisSpeeds.vxMetersPerSecond / chassisSpeeds.vyMetersPerSecond) + offset)
-                    )
-                );
-
-        // set the modules to their desired speeds
-        setModules(moduleStates);
-    }
 
     /*
      * Drives the robot in teleop, we don't want it fighting the auton swerve commands
      */
     public void teleopDefaultCommand(Supplier<ChassisSpeeds> speedsSupplier, boolean fieldOriented){
-        drive(speedsSupplier.get(), true);
+        drive(speedsSupplier.get(), true, true);
     }
     
     /**
@@ -734,7 +681,7 @@ public class SwerveBase extends SubsystemBase {
      * @param speeds the commanded chassis speeds from the joysticks
      * @param fieldOriented A boolean that specifies if the robot should be driven in fieldOriented mode or not
      */
-    public void drive(ChassisSpeeds speeds, boolean fieldOriented){
+    public void drive(ChassisSpeeds speeds, boolean fieldOriented, boolean useMaxSpeed){
         if(DriverStation.isAutonomous()){
             return;
         }
@@ -748,7 +695,7 @@ public class SwerveBase extends SubsystemBase {
             speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getSavedPose().getRotation());
         }
 
-        this.driveRobotRelative(speeds, false);
+        this.driveRobotRelative(speeds, false, useMaxSpeed);
     }
 
     public ChassisSpeeds applyAccelerationLimit(ChassisSpeeds desiredSpeeds){

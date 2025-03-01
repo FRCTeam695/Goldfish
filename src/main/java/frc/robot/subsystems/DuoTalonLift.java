@@ -91,8 +91,8 @@ public class DuoTalonLift extends SubsystemBase{
         //r_voltReq = new VoltageOut(0);
 
         // Limits and modes 
-        r_leaderConfigs.MotorOutput.NeutralMode = NeutralModeValue.Coast; // Set leader neutral mode
-        l_followerConfigs.MotorOutput.NeutralMode = NeutralModeValue.Coast; // Set follower neutral mode
+        r_leaderConfigs.MotorOutput.NeutralMode = NeutralModeValue.Brake; // Set leader neutral mode
+        l_followerConfigs.MotorOutput.NeutralMode = NeutralModeValue.Brake; // Set follower neutral mode
         // BOTH HAVE CURRENT LIMIT
         r_leaderConfigs.CurrentLimits.SupplyCurrentLimitEnable = true;
         r_leaderConfigs.CurrentLimits.SupplyCurrentLimit = 40; // Amps
@@ -126,6 +126,7 @@ public class DuoTalonLift extends SubsystemBase{
         l_followerTalon.getConfigurator().apply(l_followerConfigs);
         r_leaderTalon.setPosition(0); // Reset leader's position
         heightProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(250., 400.));
+        SmartDashboard.putNumber("Elevator Set Inches", 0);
     }
 
     public Command goToScoringHeight(){
@@ -135,7 +136,10 @@ public class DuoTalonLift extends SubsystemBase{
             int networkTablesHeight = (int)Math.round(scoringHeight.get(2));
             if(networkTablesHeight == 1) newInchesSetpoint = Heights.L1.heightInches;
             else if(networkTablesHeight == 2) newInchesSetpoint = Heights.L2.heightInches;
-            else if(networkTablesHeight == 3)  newInchesSetpoint = Heights.L3.heightInches;
+            else if(networkTablesHeight == 3)  {
+                newInchesSetpoint = Heights.L3.heightInches;
+                SmartDashboard.putNumber("Elevator Set Inches", newInchesSetpoint);
+            }
             else if(networkTablesHeight == 4)  newInchesSetpoint = Heights.L4.heightInches;
             else newInchesSetpoint = Heights.L1.heightInches;
 
@@ -146,7 +150,6 @@ public class DuoTalonLift extends SubsystemBase{
     public Command configureSetpoint(){
         return runOnce(()->{
             double newInchesSetpoint;
-            isRunning = true;
             int networkTablesHeight = (int)Math.round(scoringHeight.get(2));
             if(networkTablesHeight == 1) newInchesSetpoint = Heights.L1.heightInches;
             else if(networkTablesHeight == 2) newInchesSetpoint = Heights.L2.heightInches;

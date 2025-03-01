@@ -38,17 +38,19 @@ public class Swerve extends SwerveBase{
 
     // probably turn this up, its low rn (for reference QB's attraction kp was 2.7, 
     // when ur tuning make sure ur just running the autoalign without the elevator)
-    public final double kp_attract = 2.5;
+    public final double kp_attract = 2.6;
 
     // we will tune this on the practice field
     public final double kp_repulse = 1;
 
     public boolean hasDetectedCollision = false;
+    public boolean currentlyApplyingRepulsion = false;
 
     public Trigger isCloseToDestination;
     public Trigger isAtDestination;
     public Trigger collisionDetected;
     public Trigger almostRotatedToSetpoint;
+    public Trigger isApplyingRepulsion;
     public TrapezoidProfile distanceProfile;
 
     public Swerve(String[] camNames, TalonFXModule[] modules) {
@@ -69,10 +71,16 @@ public class Swerve extends SwerveBase{
         reefVerticies[5] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65/2.), reefVerticies[1].getY() + Units.inchesToMeters(20.25), new Rotation2d());
 
         isCloseToDestination = new Trigger(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 2.5);
-        isAtDestination = new Trigger(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.01);
+        isAtDestination = new Trigger(
+            () -> Math.abs(
+                targetLocationPose.getTranslation()
+                .minus(
+                    getSavedPose().getTranslation()
+                ).getNorm()) < 0.01);
         collisionDetected = new Trigger(()-> hasDetectedCollision);
         almostRotatedToSetpoint = new Trigger(()-> robotRotationError < 45);
-        distanceProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
+        isApplyingRepulsion = new Trigger(()-> currentlyApplyingRepulsion);
+        distanceProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
     }
     
 
@@ -87,8 +95,8 @@ public class Swerve extends SwerveBase{
      */
     public Command alignToReef(Optional<String> location, DoubleSupplier elevatorTimeToArrival, boolean willRaiseElevator){
         return 
-        runOnce(()-> hasDetectedCollision = true)
-        .andThen(
+        // runOnce(()-> hasDetectedCollision = true)
+        // .andThen(
             run(()->{
                 SmartDashboard.putBoolean("Collision Detected",  collisionDetected.getAsBoolean());
                 SmartDashboard.putBoolean("Close to Destination",  isCloseToDestination.getAsBoolean());
@@ -129,7 +137,7 @@ public class Swerve extends SwerveBase{
                 if(distanceForward >= 0){
                     ChassisSpeeds currentRobotChassisSpeeds = getLatestChassisSpeed();
                     double currentSpeedMagnitude = Math.hypot(currentRobotChassisSpeeds.vxMetersPerSecond, currentRobotChassisSpeeds.vyMetersPerSecond);
-                    distanceProfile.calculate(0.02, new TrapezoidProfile.State(0, 0), new TrapezoidProfile.State(Math.hypot(dx, dy), currentSpeedMagnitude));
+                    distanceProfile.calculate(0.02, new TrapezoidProfile.State(Math.hypot(dx, dy), currentSpeedMagnitude), new TrapezoidProfile.State(0, 0));
                     double swerveTimeToArrival = distanceProfile.timeLeftUntil(0);
 
                     SmartDashboard.putNumber("Swerve ETA", swerveTimeToArrival);
@@ -140,13 +148,20 @@ public class Swerve extends SwerveBase{
 
                 // if we will collide
                 if(distanceForward < 0 || elevatorNotInTime){
-                    hasDetectedCollision = true;
-                    Transform2d repulsionVector = getRepulsionVector(robotPose, kp_repulse);
+                    if(distanceForward < 0) hasDetectedCollision = true;
+                    currentlyApplyingRepulsion = true;
+                    Transform2d repulsionVector;
+                    if(elevatorNotInTime && distanceForward >=0) repulsionVector = getRepulsionVector(robotPose, 0.6);
+                    else repulsionVector = getRepulsionVector(robotPose, kp_repulse);
                     repulsionX += repulsionVector.getX();
                     repulsionY += repulsionVector.getY();
                 }else{
+                    currentlyApplyingRepulsion = false;
                     hasDetectedCollision = false;
                 }
+
+                SmartDashboard.putNumber("Repulse Speed", Math.hypot(repulsionX, repulsionY));
+                SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
 
                 // combine repulsion and attraction forces for the adjusted velocities
                 double xSpeed = attractX - repulsionX;
@@ -155,20 +170,20 @@ public class Swerve extends SwerveBase{
 
                 //clamp speeds to avoid desaturation killing our rotational movement
                 ChassisSpeeds speeds = new ChassisSpeeds(
-                    MathUtil.clamp(xSpeed, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS), 
-                    MathUtil.clamp(ySpeed, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS), 
+                    MathUtil.clamp(xSpeed, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS), 
+                    MathUtil.clamp(ySpeed, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS), 
                     getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()));
                 SmartDashboard.putString("Chassis Speeds Commanded", speeds.toString());
-                drive(speeds, true);
-            }).until(isAtDestination)
-        );
+                drive(speeds, true, false);
+            }).until(isAtDestination.and(isApplyingRepulsion.negate()));
+        // );
     }
 
 
     public Command driveForward(){
         return run(
             ()->{
-                drive(new ChassisSpeeds(1, 0, 0), true);
+                drive(new ChassisSpeeds(1, 0, 0), true, false);
             }
         );
     }
@@ -195,7 +210,7 @@ public class Swerve extends SwerveBase{
 
             ChassisSpeeds speeds = wantedVels.get();
             speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(angle);
-            drive(speeds, true);
+            drive(speeds, true, false);
         });     
     }
 
@@ -210,7 +225,7 @@ public class Swerve extends SwerveBase{
             double repulsionY = repulsionVector.getY();
 
             ChassisSpeeds speeds = new ChassisSpeeds(-repulsionX,  -repulsionY, 0);
-            drive(speeds, true);
+            drive(speeds, true, false);
         }).until(
             ()-> getSavedPose().getTranslation().minus(
                 new Pose2d(
@@ -240,12 +255,12 @@ public class Swerve extends SwerveBase{
             double attractY = kp_attract * transformToNearestAlgaeDislodgeLocation.getY();
             
             ChassisSpeeds speeds = new ChassisSpeeds(attractX, attractY, getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()));
-            drive(speeds, true);
+            drive(speeds, true, false);
         }).until(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.05))
 
         // backs up slowly so the algae gets dislodged
         .andThen(run(()-> {
-            driveRobotRelative(new ChassisSpeeds(-1, 0, 0), false);
+            driveRobotRelative(new ChassisSpeeds(-1, 0, 0), false, false);
             }
         )).withTimeout(0.5);
     }
@@ -289,7 +304,7 @@ public class Swerve extends SwerveBase{
                 // ChassisSpeeds speeds = new ChassisSpeeds(1.8 * transformToReef.getX(), 1.8 * transformToReef.getY(), getAngularComponentFromRotationOverride(0));
                 SmartDashboard.putString("align to reef speeds", speeds.toString());
 
-                drive(speeds, true);
+                drive(speeds, true, false);
             }
             ).until(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.05);
     }
@@ -413,6 +428,7 @@ public class Swerve extends SwerveBase{
         super.periodic();
         m_field.getObject("target location").setPose(targetLocationPose);
         SmartDashboard.putBoolean("Close to Destination", isCloseToDestination.getAsBoolean());
+        SmartDashboard.putBoolean("At Destination", isAtDestination.getAsBoolean());
     }
 }
 
