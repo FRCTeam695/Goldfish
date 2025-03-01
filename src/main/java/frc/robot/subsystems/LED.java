@@ -1,209 +1,157 @@
-
 package frc.robot.subsystems;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
-
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.AddressableLED;
 import edu.wpi.first.wpilibj.AddressableLEDBuffer;
+import edu.wpi.first.wpilibj.LEDPattern;
+import edu.wpi.first.wpilibj.util.Color;
 
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
 
+public class LED extends SubsystemBase {
+    private AddressableLED realLED;
+    private AddressableLEDBuffer realLEDBuffer;
+    
+    public LED() {
 
+        realLED = new AddressableLED(1);
+        realLEDBuffer = new AddressableLEDBuffer(5);
 
-
-public class LED extends SubsystemBase{
-    AddressableLED myLED;
-    AddressableLEDBuffer myLEDBuffer;
-    boolean isLightOn;
-
-    public LED(){
-      
-        isLightOn = true;
-
-        myLED = new AddressableLED(1);
-        myLEDBuffer = new AddressableLEDBuffer(5);
-        myLED.setLength(myLEDBuffer.getLength());
-        myLED.setData(myLEDBuffer);
-        myLED.start();
-    }
-
-    private void LEDSet(int redAmount, int greenAmount, int blueAmount){
-        AddressableLEDBuffer yourLEDBuffer = new AddressableLEDBuffer(5);
-           if(isLightOn == false){
-             for(var i= 0; i< myLEDBuffer.getLength(); i++){
-              yourLEDBuffer.setRGB(i,redAmount, greenAmount, blueAmount);
-             }
-             isLightOn = true;
-           }else{
-              for(var i= 0; i< myLEDBuffer.getLength(); i++){
-              yourLEDBuffer.setRGB(i,0, 0, 0);
-             }
-             isLightOn = false;
-           }
-       myLED.setData(yourLEDBuffer);
-       myLED.start();
-       }
-
-
-    public Command LEDSetRed(){
-        return new FunctionalCommand(
-            ()-> LEDSet(255, 0, 0),
-
-            ()-> {},
-
-            interrupted->{},
-
-
-            ()-> false,
-
-
-        this);
+        realLED.setLength(realLEDBuffer.getLength());
+        realLED.setData(realLEDBuffer);
+        realLED.start();
 
     }
-    public Command LEDSetGreen(){
-        return new FunctionalCommand(
-            ()-> LEDSet(0,255,0),
+    //___________________________________________________________________________________________
+    //Rainbow Pattern
+    public void rainbow() {
+        LEDPattern rainbow = LEDPattern.rainbow(255, 255); //The first value is saturation, second value is brightness. Max of 255
+        /*
+         * Calculate this by finding the length of your LED Strip. 
+         * Divide 100 by that number and then multiply by the number of leds on your strip that you measured. 
+         * Then divide that number by one. 
+         * That number represents the amount of LEDs per meter of strip, 
+         * which in this case is rounded to 58.8. 
+         * Dividing one by this number is to create a ratio that says "for every one meter, there are 58.8 LEDs"
+         */
+        Distance kLedSpacing = Meters.of(1 / 58.8); 
+        LEDPattern scrollingRainbow = rainbow.scrollAtAbsoluteSpeed(MetersPerSecond.of(0.1), kLedSpacing); //creates scrolling rainbow effect. Change the MetersPerSecond.of() variable to control speed.
 
-            ()-> {},
-
-            interrupted->{},
-
-
-            ()-> false,
-
-
-        this);
-
+        scrollingRainbow.applyTo(realLEDBuffer);
+        realLED.setData(realLEDBuffer);
     }
+    //Turns LED Off
+    public void setLEDOff() {
+        for (int i = 0; i < realLEDBuffer.getLength(); i++) {
 
-    public Command LEDSetBlue(){
-        return new FunctionalCommand(
-            ()-> LEDSet(0,0,255),
+            realLEDBuffer.setRGB(i, 0, 0, 0);
 
-            ()-> {},
+        }
 
-            interrupted->{},
-
-
-            ()-> false,
-
-
-        this);
-
+        realLED.setData(realLEDBuffer);
     }
-
-
-    public Command LEDSetPurple(){
-        return new FunctionalCommand(
-            ()-> LEDSet(255,0,255),
-
-            ()-> {},
-
-            interrupted->{},
-
-
-            ()-> false,
-
-
-        this);
-
+    
+    //Select a number that will correspond to a color. The LED will be set to that color.
+    public LEDPattern colorBase(int colorNumber) {
+        switch (colorNumber) {
+            case 0:
+                return LEDPattern.solid(Color.kRed);
+            case 1:
+                return LEDPattern.solid(Color.kOrange);
+            case 2:
+                return LEDPattern.solid(Color.kYellow);
+            case 3:
+                return LEDPattern.solid(Color.kGreen);
+            case 4:
+                return LEDPattern.solid(Color.kBlue);
+            case 5:
+                return LEDPattern.solid(Color.kPurple);
+            case 6:
+                return LEDPattern.solid(Color.kGray);
+            case 7:
+                return LEDPattern.solid(Color.kBlack);
+            case 8:
+                return LEDPattern.solid(Color.kWhite);
+            default:
+                return LEDPattern.solid(Color.kBlack);
+        }
     }
+    public void setColor(int colorNumber) {
+        LEDPattern color = colorBase(colorNumber);
 
-    public Command LEDSetOrange(){
-        return new FunctionalCommand(
-            ()-> LEDSet(255,25,0),
+        color.applyTo(realLEDBuffer);
 
-            ()-> {},
-
-            interrupted->{},
-
-
-            ()-> false,
-
-
-        this);
-
+        realLED.setData(realLEDBuffer);
     }
+    public void breathingEffect(int colorNumber) {
+        LEDPattern base = colorBase(colorNumber);
+        LEDPattern pattern = base.breathe(Seconds.of(2));
 
-    public Command LEDSetYellow(){
-        return new FunctionalCommand(
-            ()-> LEDSet(255,100,0),
-
-            ()-> {},
-
-            interrupted->{},
-
-
-            ()-> false,
-
-
-        this);
-
+        pattern.applyTo(realLEDBuffer);
+        realLED.setData(realLEDBuffer);
     }
+    
+    //___________________________________________________________________________________________
+    //Commands
 
-
-    private void LEDSetConfetti(){
-        int size = 255;
-        
-        AddressableLEDBuffer yourLEDBuffer = new AddressableLEDBuffer(5);
-       
+    //solid color command
+    public Command solidColor(int colorNumber) {
+        return new FunctionalCommand( 
+            () -> {
+            }, 
             
-
-           if(isLightOn == false){
-
+            () -> {
+                setColor(colorNumber);
+            }, 
             
+            interrupted -> {
+                setLEDOff();
+            }, 
             
-             for(var i= 0; i< myLEDBuffer.getLength(); i++){
-                int randomRed = (int)(Math.random()*(size+1));
-                int randomGreen = (int)(Math.random()*(size+1));
-                int randomBlue = (int)(Math.random()*(size+1));
-              yourLEDBuffer.setRGB(i,randomRed,randomGreen,randomBlue );
-             }
-             isLightOn = true;
-             
+            () -> false, 
             
-        
-           }else{
-              for(var i= 0; i< myLEDBuffer.getLength(); i++){
-              yourLEDBuffer.setRGB(i,0, 0, 0);
-             }
-             isLightOn = false;
-           }
-       myLED.setData(yourLEDBuffer);
-       myLED.start();
-
-
-
-       }
-
-        public Command Confetti(){
-            
-            return new FunctionalCommand(
-                ()-> {},
-    
-                ()-> {
-                    LEDSetConfetti();
-
-                },
-    
-                interrupted->{},
-    
-    
-                ()-> false,
-    
-    
             this);
     }
+    //breatheEffect command
+    public Command breatheEffect(int colorNumber) {
+        return new FunctionalCommand(
 
+                () -> {
 
+                },
 
-    
+                () -> {
+                    breathingEffect(colorNumber);
+                },
 
+                interrupted -> {
+                    setLEDOff();
+                },
 
+                () -> false,
 
-
-
-   
-
+                this);
+    }    //rainbowLED command
+    public Command rainbowLED() {
+        return new FunctionalCommand(
+            () -> {}, 
+            
+            () -> {
+                rainbow();
+            }, 
+        
+            interrupted -> {
+                setLEDOff();
+            }, 
+            
+            () -> false, 
+        
+        this);
+    }
 
 }
