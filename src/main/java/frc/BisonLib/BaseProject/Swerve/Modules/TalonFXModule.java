@@ -118,6 +118,11 @@ public class TalonFXModule{
         config.Slot0.kV = Constants.Swerve.DRIVE_WHEEL_KV; 
         config.Slot0.kS = Constants.Swerve.DRIVE_WHEEL_KS;
 
+        config.Slot0.kP = Constants.Swerve.DRIVE_WHEEL_KP; 
+        config.Slot0.kV = 0.1232; 
+        config.Slot0.kS = 0.45;
+        config.Slot0.kA = 0.0054112;
+
         config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         config.CurrentLimits.StatorCurrentLimit = Constants.Swerve.STATOR_CURRENT_LIMIT;
         config.CurrentLimits.SupplyCurrentLimit = Constants.Swerve.SUPPLY_CURRENT_LIMIT;

@@ -104,12 +104,7 @@ public class Swerve extends SwerveBase{
                 Pose2d robotPose = getSavedPose();
                 // if no location is provided, we grab it from networktables
                 if(location.isEmpty()){
-                    String currentIntakeMode = scoringModeSub.get();
-                    if(currentIntakeMode.equals("Coral")){
-                        targetLocationPose = getCoralScoringLocation(scoringLocationSub.get());
-                    }else{
-                        targetLocationPose = robotPose;
-                    }
+                    targetLocationPose = getCoralScoringLocation(scoringLocationSub.get());
                 }
                 // if a location is provided, we just drive to the provided lcoation
                 else{
@@ -295,9 +290,9 @@ public class Swerve extends SwerveBase{
                 double repulsionX = 0;
                 double repulsionY = 0;
 
-                Transform2d repulsionVector = getRepulsionVector(robotPose, kp_repulse);
-                repulsionX += repulsionVector.getX();
-                repulsionY += repulsionVector.getY();
+                // Transform2d repulsionVector = getRepulsionVector(robotPose, kp_repulse);
+                // repulsionX += repulsionVector.getX();
+                // repulsionY += repulsionVector.getY();
 
                 //need to change rotation
                 ChassisSpeeds speeds = new ChassisSpeeds(-attractX - repulsionX, -attractY - repulsionY, getAngularComponentFromRotationOverride(angle));
