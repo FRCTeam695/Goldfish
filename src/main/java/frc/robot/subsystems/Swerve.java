@@ -175,10 +175,10 @@ public class Swerve extends SwerveBase{
     }
 
 
-    public Command driveForward(){
+    public Command driveBackwards(){
         return run(
             ()->{
-                drive(new ChassisSpeeds(1, 0, 0), true, false);
+                drive(new ChassisSpeeds(-0.5, 0, 0), true, false);
             }
         );
     }
@@ -269,10 +269,11 @@ public class Swerve extends SwerveBase{
                 // the current field relative robot pose
                 Pose2d robotPose = getSavedPose();
 
-                Translation2d transformToFeederRight = robotPose.getTranslation().minus(getFeedLocation("Right").getTranslation());
-                Translation2d transformToFeederLeft = robotPose.getTranslation().minus(getFeedLocation("Left").getTranslation());
+                Translation2d transformToFeederRight = getFeedLocation("Right").getTranslation().minus(robotPose.getTranslation());
+                Translation2d transformToFeederLeft = getFeedLocation("Left").getTranslation().minus(robotPose.getTranslation());
                 Translation2d closestFeederTransform;
                 double angle;
+
                 if(transformToFeederLeft.getNorm() < transformToFeederRight.getNorm()){
                     closestFeederTransform = transformToFeederLeft;
                     angle = getFeedLocation("Left").getRotation().getDegrees();
@@ -290,13 +291,12 @@ public class Swerve extends SwerveBase{
                 double repulsionX = 0;
                 double repulsionY = 0;
 
-                // Transform2d repulsionVector = getRepulsionVector(robotPose, kp_repulse);
-                // repulsionX += repulsionVector.getX();
-                // repulsionY += repulsionVector.getY();
+                Transform2d repulsionVector = getRepulsionVector(robotPose, 0.5);
+                repulsionX += repulsionVector.getX();
+                repulsionY += repulsionVector.getY();
 
                 //need to change rotation
-                ChassisSpeeds speeds = new ChassisSpeeds(-attractX - repulsionX, -attractY - repulsionY, getAngularComponentFromRotationOverride(angle));
-                // ChassisSpeeds speeds = new ChassisSpeeds(1.8 * transformToReef.getX(), 1.8 * transformToReef.getY(), getAngularComponentFromRotationOverride(0));
+                ChassisSpeeds speeds = new ChassisSpeeds(attractX - repulsionX, attractY - repulsionY, getAngularComponentFromRotationOverride(angle));
                 SmartDashboard.putString("align to reef speeds", speeds.toString());
 
                 drive(speeds, true, false);
