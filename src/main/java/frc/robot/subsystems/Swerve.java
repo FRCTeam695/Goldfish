@@ -261,7 +261,7 @@ public class Swerve extends SwerveBase{
     }
 
 
-    public Command driveToNearestFeed(){//"A","B","C"...."I"
+    public Command driveToNearestFeed(){
             
         return 
             run(
@@ -298,7 +298,6 @@ public class Swerve extends SwerveBase{
                 SmartDashboard.putNumber("Repulse Speed", Math.hypot(repulsionX, repulsionY));
                 SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
 
-                //need to change rotation
                 ChassisSpeeds speeds = new ChassisSpeeds(attractX - repulsionX, attractY - repulsionY, getAngularComponentFromRotationOverride(angle));
                 SmartDashboard.putString("align to reef speeds", speeds.toString());
 
