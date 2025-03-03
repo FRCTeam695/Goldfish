@@ -108,7 +108,7 @@ public class Swerve extends SwerveBase{
                 }
                 // if a location is provided, we just drive to the provided lcoation
                 else{
-                    targetLocationPose = getCoralScoringLocation(scoringLocationSub.get());
+                    targetLocationPose = getCoralScoringLocation(location.get());
                 }
 
 
