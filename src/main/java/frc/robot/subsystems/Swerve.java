@@ -69,14 +69,8 @@ public class Swerve extends SwerveBase{
         reefVerticies[3] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65), reefVerticies[0].getY(), new Rotation2d());
         reefVerticies[4] = new Pose2d(reefVerticies[1].getX()+Units.inchesToMeters(65), reefVerticies[1].getY(), new Rotation2d());
         reefVerticies[5] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65/2.), reefVerticies[1].getY() + Units.inchesToMeters(20.25), new Rotation2d());
-
-        isCloseToDestination = new Trigger(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 2.5);
-        isAtDestination = new Trigger(
-            () -> Math.abs(
-                targetLocationPose.getTranslation()
-                .minus(
-                    getSavedPose().getTranslation()
-                ).getNorm()) < 0.01);
+        isCloseToDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 2.5);
+        isAtDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.01);
         collisionDetected = new Trigger(()-> hasDetectedCollision);
         almostRotatedToSetpoint = new Trigger(()-> robotRotationError < 45);
         isApplyingRepulsion = new Trigger(()-> currentlyApplyingRepulsion);
@@ -251,7 +245,7 @@ public class Swerve extends SwerveBase{
             
             ChassisSpeeds speeds = new ChassisSpeeds(attractX, attractY, getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()));
             drive(speeds, true, false);
-        }).until(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.05))
+        }).until(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.05))
 
         // backs up slowly so the algae gets dislodged
         .andThen(run(()-> {
@@ -303,7 +297,7 @@ public class Swerve extends SwerveBase{
 
                 drive(speeds, true, false);
             }
-            ).until(() -> Math.abs(targetLocationPose.getTranslation().minus(getSavedPose().getTranslation()).getNorm()) < 0.05);
+            ).until(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.05);
     }
 
 
