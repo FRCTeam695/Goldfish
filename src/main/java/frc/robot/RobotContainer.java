@@ -189,18 +189,12 @@ public class RobotContainer {
         updateTelemetryState(3)
       )
       .andThen(
-        new WaitUntilCommand(Swerve.isAtDestination)
-        .andThen(
-          updateTelemetryState(4)
-        )
-        .andThen(
-          Coralizer.ejectCoral().asProxy()
-        )
-        .andThen(
-          updateTelemetryState(5)
-        )
-        
-      )); // asProxy because we want to be able to continue intaking while we are aligning
+        Coralizer.ejectCoral().asProxy()
+      ) // asProxy because we want to be able to continue intaking while we are aligning
+      .andThen(
+        updateTelemetryState(4)
+      )
+    );
   }
 
 
