@@ -76,6 +76,7 @@ public class SwerveBase extends SubsystemBase {
     protected double initialGyroAngle = 0;
     protected double[] initialPositions = new double[4];
 
+    // odometry stuff
     protected double lastTime = Timer.getFPGATimestamp();
     private LinearFilter lowpass = LinearFilter.movingAverage(50);
     protected double currentTime = 0;
