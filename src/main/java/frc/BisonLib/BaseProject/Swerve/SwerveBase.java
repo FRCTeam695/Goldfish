@@ -513,22 +513,26 @@ public class SwerveBase extends SubsystemBase {
                             odometryLock.writeLock().unlock();
                         }
                     }
-                    //LL RESET
-                    new Thread(() -> {
-                        try {
-                            for(String cam: camNames){
-                                LimelightHelpers.SetIMUMode(cam, 1);
-                                double startTime = Timer.getFPGATimestamp();
-                                while( Timer.getFPGATimestamp() < startTime + .1){
-                                    LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-                                }
-                                LimelightHelpers.SetIMUMode(cam, 2);
-                            }
-                        } catch (Exception e) {
-                        }
-                    }).start();
+                    seedCameraHeading();
                 }
         ).ignoringDisable(true);
+    }
+
+    public void seedCameraHeading(){
+        //LL RESET
+        new Thread(() -> {
+            try {
+                for(String cam: camNames){
+                    LimelightHelpers.SetIMUMode(cam, 1);
+                    double startTime = Timer.getFPGATimestamp();
+                    while( Timer.getFPGATimestamp() < startTime + .1){
+                        LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
+                    }
+                    LimelightHelpers.SetIMUMode(cam, 2);
+                }
+            } catch (Exception e) {
+            }
+        }).start();
     }
 
     /*
