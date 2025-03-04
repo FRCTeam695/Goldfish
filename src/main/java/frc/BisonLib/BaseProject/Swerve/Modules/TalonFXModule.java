@@ -114,9 +114,9 @@ public class TalonFXModule{
     public void configDriveMotor(){
         TalonFXConfiguration config = new TalonFXConfiguration();
 
-        config.Slot0.kP = Constants.Swerve.DRIVE_WHEEL_KP; 
-        config.Slot0.kV = Constants.Swerve.DRIVE_WHEEL_KV; 
-        config.Slot0.kS = Constants.Swerve.DRIVE_WHEEL_KS;
+        // config.Slot0.kP = Constants.Swerve.DRIVE_WHEEL_KP; 
+        // config.Slot0.kV = Constants.Swerve.DRIVE_WHEEL_KV; 
+        // config.Slot0.kS = Constants.Swerve.DRIVE_WHEEL_KS;
 
         config.Slot0.kP = Constants.Swerve.DRIVE_WHEEL_KP; 
         config.Slot0.kV = 0.1232; 

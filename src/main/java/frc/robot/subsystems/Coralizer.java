@@ -61,9 +61,11 @@ public class Coralizer extends SubsystemBase{
         return
         runIntakeAndCoralizer(()-> 0.6).until(this::beamIsBroken)
         .andThen(
-            runIntakeAndCoralizer(()->0.3).until(this::beamNotBroken)
+            runIntakeAndCoralizer(()->0.2).until(this::beamNotBroken)
         )
         .andThen(setIntakeStateTrue())
+         .andThen(runIntakeAndCoralizer(()-> -0.1).until(this::beamIsBroken))
+        // .andThen(runIntakeAndCoralizer(()-> 0.1).until(this::beamNotBroken))
         .andThen(runIntakeAndCoralizer(()-> 0));
     }
     
@@ -72,6 +74,7 @@ public class Coralizer extends SubsystemBase{
         DutyCycleOut output = new DutyCycleOut(0);
         return run(()->{
             output.Output = speed.getAsDouble();
+
             coralizer.setControl(output);
             intake.setControl(output);
         });

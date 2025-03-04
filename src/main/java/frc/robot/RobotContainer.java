@@ -93,12 +93,15 @@ public class RobotContainer {
 
     driver.leftBumper().onTrue(Coralizer.intake());
 
+
     driver.rightBumper().whileTrue(
       deadline(
         Coralizer.intake(),
         Swerve.driveToNearestFeed()
       )
     );
+
+    driver.y().whileTrue(Swerve.driveBackwards());
 
 
     // check limelight poses

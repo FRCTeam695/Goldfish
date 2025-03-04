@@ -97,7 +97,7 @@ public class Constants {
         public static final double TURN_WHEEL_KP = CHOSEN_CONSTANTS.turnWheelKP;
         public static final double TURN_WHEEL_KS = CHOSEN_CONSTANTS.turnWheelKS;
         public static final double TURN_WHEEL_KD = CHOSEN_CONSTANTS.turnWheelKD;
-        public static final double ROBOT_ROTATION_KP = CHOSEN_CONSTANTS.rotationOverrideKP;
+        public static final double ROBOT_ROTATION_KP = 0.008;
         public static final double PATHPLANNER_OMEGA_KP = CHOSEN_CONSTANTS.pathplannerOmegaKP;
         public static final double PATHPLANNER_TRANSLATION_KP = CHOSEN_CONSTANTS.pathplannerTranslationKP;
         public static final double MAX_WHEEL_ROTATIONAL_SPEED = CHOSEN_CONSTANTS.maxWheelRotationalSpeed;
@@ -163,8 +163,8 @@ public class Constants {
 
     public static final class Vision{     
         public static final class Blue{
-            public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.137,4.182, new Rotation2d());
-            public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(3.137,3.835, new Rotation2d());
+            public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.138,4.197, new Rotation2d());
+            public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(3.143,3.863, new Rotation2d());
             public static final Pose2d CORAL_C_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
             public static final Pose2d CORAL_D_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
             public static final Pose2d CORAL_E_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(120));
