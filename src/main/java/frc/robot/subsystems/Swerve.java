@@ -121,9 +121,11 @@ public class Swerve extends SwerveBase{
                 // calculate the forward distance we need to go in order to get to the target;
                 // if its negative we have to move backwards
                 double distanceForward = dx * targetLocationPose.getRotation().getCos() + dy * targetLocationPose.getRotation().getSin();
+                double distanceToTarget = getDistanceToTranslation(targetLocationPose.getTranslation());
 
+                boolean willCollideWithReef = distanceForward < 0 && distanceToTarget > 0.2;
                 // if we aren't going to collide with the reef then we check if we need to apply repulsion vectors by seeing if the elevator will be in time to avoid a collision with any coral/algae on the reef
-                if(distanceForward >= 0){
+                if(!willCollideWithReef){
                     ChassisSpeeds currentRobotChassisSpeeds = getLatestChassisSpeed();
                     double currentSpeedMagnitude = Math.hypot(currentRobotChassisSpeeds.vxMetersPerSecond, currentRobotChassisSpeeds.vyMetersPerSecond);
                     distanceProfile.calculate(0.02, new TrapezoidProfile.State(Math.hypot(dx, dy), currentSpeedMagnitude), new TrapezoidProfile.State(0, 0));
@@ -136,8 +138,8 @@ public class Swerve extends SwerveBase{
                 if(!willRaiseElevator) elevatorNotInTime = false;
 
                 // if we will collide
-                if(distanceForward < 0 || elevatorNotInTime){
-                    if(distanceForward < 0) hasDetectedCollision = true;
+                if( willCollideWithReef || elevatorNotInTime){
+                    if(willCollideWithReef) hasDetectedCollision = true;
                     currentlyApplyingRepulsion = true;
                     Transform2d repulsionVector;
                     if(elevatorNotInTime && distanceForward >=0) repulsionVector = getRepulsionVector(robotPose, 0.6);
