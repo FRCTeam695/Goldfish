@@ -36,8 +36,7 @@ public class Swerve extends SwerveBase{
     public StringSubscriber scoringModeSub;
     
 
-    // probably turn this up, its low rn (for reference QB's attraction kp was 2.7, 
-    // when ur tuning make sure ur just running the autoalign without the elevator)
+
     public final double kp_attract = 2.6;
 
     // we will tune this on the practice field
@@ -63,12 +62,6 @@ public class Swerve extends SwerveBase{
         scoringLocationSub = sideCarTable.getStringTopic("scoringLocation").subscribe("");
         scoringModeSub = sideCarTable.getStringTopic("currentIntakeMode").subscribe("");
 
-        reefVerticies[0] = new Pose2d(getReefVertexCalibrationLocation().getX()+Units.inchesToMeters(6.125) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, getReefVertexCalibrationLocation().getY() - (Constants.Swerve.TRACK_WIDTH_METERS)/2 - Units.inchesToMeters(7), new Rotation2d());
-        reefVerticies[1] = new Pose2d(getReefVertexCalibrationLocation().getX()+Units.inchesToMeters(6.125) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, getReefVertexCalibrationLocation().getY() + (Constants.Swerve.TRACK_WIDTH_METERS)/2 + Units.inchesToMeters(7), new Rotation2d());
-        reefVerticies[2] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65/2.), reefVerticies[0].getY() - Units.inchesToMeters(20.25), new Rotation2d());
-        reefVerticies[3] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65), reefVerticies[0].getY(), new Rotation2d());
-        reefVerticies[4] = new Pose2d(reefVerticies[1].getX()+Units.inchesToMeters(65), reefVerticies[1].getY(), new Rotation2d());
-        reefVerticies[5] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65/2.), reefVerticies[1].getY() + Units.inchesToMeters(20.25), new Rotation2d());
         isCloseToDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 2.5);
         isAtDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.01);
         collisionDetected = new Trigger(()-> hasDetectedCollision);
@@ -313,6 +306,16 @@ public class Swerve extends SwerveBase{
     }
 
 
+    public void calibrateReefVerticies(){
+        reefVerticies[0] = new Pose2d(getReefVertexCalibrationLocation().getX()+Units.inchesToMeters(6.125) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, getReefVertexCalibrationLocation().getY() - (Constants.Swerve.TRACK_WIDTH_METERS)/2 - Units.inchesToMeters(7), new Rotation2d());
+        reefVerticies[1] = new Pose2d(getReefVertexCalibrationLocation().getX()+Units.inchesToMeters(6.125) + (Constants.Swerve.TRACK_WIDTH_METERS)/2, getReefVertexCalibrationLocation().getY() + (Constants.Swerve.TRACK_WIDTH_METERS)/2 + Units.inchesToMeters(7), new Rotation2d());
+        reefVerticies[2] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65/2.), reefVerticies[0].getY() - Units.inchesToMeters(20.25), new Rotation2d());
+        reefVerticies[3] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65), reefVerticies[0].getY(), new Rotation2d());
+        reefVerticies[4] = new Pose2d(reefVerticies[1].getX()+Units.inchesToMeters(65), reefVerticies[1].getY(), new Rotation2d());
+        reefVerticies[5] = new Pose2d(reefVerticies[0].getX()+Units.inchesToMeters(65/2.), reefVerticies[1].getY() + Units.inchesToMeters(20.25), new Rotation2d());
+    }
+
+
     public Transform2d getRepulsionVector(Pose2d robotPose, double repulsionGain){
         double repulsionX = 0;
         double repulsionY = 0;
@@ -376,14 +379,14 @@ public class Swerve extends SwerveBase{
 
 
     public Pose2d getReefVertexCalibrationLocation(){
-        Pose2d score_location;
+        Pose2d calibrationLocation;
         if(isRedAlliance()){
-            score_location = Constants.Vision.Red.ALGAE_A_DISLODGE_LOCATION;
+            calibrationLocation = Constants.Vision.Red.ALGAE_A_DISLODGE_LOCATION;
         }else{
-            score_location = Constants.Vision.Blue.ALGAE_G_DISLODGE_LOCATION;
+            calibrationLocation = Constants.Vision.Blue.ALGAE_G_DISLODGE_LOCATION;
         }
         
-        return score_location;
+        return calibrationLocation;
     }
 
 
