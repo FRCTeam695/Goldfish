@@ -142,7 +142,7 @@ public class Swerve extends SwerveBase{
                     if(willCollideWithReef) hasDetectedCollision = true;
                     currentlyApplyingRepulsion = true;
                     Transform2d repulsionVector;
-                    if(elevatorNotInTime && distanceForward >=0) repulsionVector = getRepulsionVector(robotPose, 0.6);
+                    if(elevatorNotInTime && !willCollideWithReef) repulsionVector = getRepulsionVector(robotPose, 0.6);
                     else repulsionVector = getRepulsionVector(robotPose, kp_repulse);
                     repulsionX += repulsionVector.getX();
                     repulsionY += repulsionVector.getY();
