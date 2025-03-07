@@ -696,6 +696,10 @@ public class SwerveBase extends SubsystemBase {
         speeds.omegaRadiansPerSecond = omegaFilter.calculate(speeds.omegaRadiansPerSecond);
         //speeds = applyAccelerationLimit(speeds);
 
+        SmartDashboard.putNumber("Zj", speeds.omegaRadiansPerSecond);
+        SmartDashboard.putNumber("Xj", speeds.vxMetersPerSecond);
+        SmartDashboard.putNumber("Yj", speeds.vyMetersPerSecond);
+
         if (fieldOriented) {
             speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getSavedPose().getRotation());
         }

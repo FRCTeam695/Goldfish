@@ -1,6 +1,8 @@
 package frc.robot.subsystems;
 
 
+import java.util.function.Supplier;
+
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -60,6 +62,7 @@ public class DuoTalonLift extends SubsystemBase{
     public NetworkTable sideCarTable;
     public IntegerSubscriber scoringHeight;
     public Trigger atSetpoint;
+    public Trigger isDeployed;
     public double inchesSetpoint = 0;
     public boolean isRunning = false;
 
@@ -70,7 +73,7 @@ public class DuoTalonLift extends SubsystemBase{
         sideCarTable = inst.getTable("sidecarTable");
         scoringHeight = sideCarTable.getIntegerTopic("scoringLevel").subscribe(1);
         atSetpoint = new Trigger(()-> (Math.abs(r_leaderTalon.getPosition().getValueAsDouble() / rotationsPerInch - inchesSetpoint) < 0.25) && isRunning);
-
+        isDeployed = new Trigger(()-> (Math.abs(r_leaderTalon.getPosition().getValueAsDouble() / rotationsPerInch - Heights.Ground.heightInches) > 0.25));
 
         // Right leader control (RIGHT MOTOR IS LEADER)
         r_leaderTalon = new TalonFX(50);
@@ -147,6 +150,7 @@ public class DuoTalonLift extends SubsystemBase{
         }).finallyDo(()-> {isRunning = false;});
     }
 
+
     public Command configureSetpoint(){
         return runOnce(()->{
             double newInchesSetpoint;
@@ -183,6 +187,13 @@ public class DuoTalonLift extends SubsystemBase{
         });
     }
 
+    public Command setHeightLevel (Supplier<Heights> setpoint) {
+        return run(() -> 
+        {
+            elevatorSetInches(setpoint.get().heightInches);
+        });
+    }
+
     // Enum of certain heights
     public enum Heights { // An enum is a class of defined objects
         Ground ("Ground", 0),
@@ -208,7 +219,8 @@ public class DuoTalonLift extends SubsystemBase{
         SmartDashboard.putNumber("Position", r_leaderTalon.getPosition().getValueAsDouble());
         SmartDashboard.putBoolean("Elevator at Setpoint", atSetpoint.getAsBoolean());
         SmartDashboard.putNumber("Elevator Closed Loop Reference", r_leaderTalon.getClosedLoopReference().getValueAsDouble());
-        SmartDashboard.putNumber("ZZZZZZ Elevator Commaded Position", inchesSetpoint);
+        SmartDashboard.putNumber("Elevator Commaded Position", inchesSetpoint);
+        SmartDashboard.putBoolean("Elevator is deployed", isDeployed.getAsBoolean());
 
         // Field variable outputs
         // Position

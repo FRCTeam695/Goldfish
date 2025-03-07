@@ -253,38 +253,40 @@ public class Swerve extends SwerveBase{
     public Command driveToNearestFeed(){
             
         return 
-            run(
+            (run(
             ()->{
                 // the current field relative robot pose
                 Pose2d robotPose = getSavedPose();
 
-                Translation2d transformToFeederRight = getFeedLocation("Right").getTranslation().minus(robotPose.getTranslation());
-                Translation2d transformToFeederLeft = getFeedLocation("Left").getTranslation().minus(robotPose.getTranslation());
-                Translation2d closestFeederTransform;
+                Translation2d rightFeeder = getFeedLocation("Right").getTranslation();
+                Translation2d leftFeeder = getFeedLocation("Left").getTranslation();
                 double angle;
 
-                if(transformToFeederLeft.getNorm() < transformToFeederRight.getNorm()){
-                    closestFeederTransform = transformToFeederLeft;
+                if(leftFeeder.getDistance(robotPose.getTranslation()) < rightFeeder.getDistance(robotPose.getTranslation())){
                     angle = getFeedLocation("Left").getRotation().getDegrees();
                     targetLocationPose = getFeedLocation("Left");
                 }
                 else{
-                    closestFeederTransform = transformToFeederRight;
                     angle = getFeedLocation("Right").getRotation().getDegrees();
                     targetLocationPose = getFeedLocation("Right");
                 }
 
-                double attractX = kp_attract * closestFeederTransform.getX();
-                double attractY = kp_attract * closestFeederTransform.getY();
+                double dx = targetLocationPose.getX() - robotPose.getX();
+                double dy = targetLocationPose.getY() - robotPose.getY();
+
+                SmartDashboard.putNumber("alignment dx", dx);
+                SmartDashboard.putNumber("alignment dy", dy);
+
+                double attractX = kp_attract * dx;
+                double attractY = kp_attract * dy;
 
                 double repulsionX = 0;
                 double repulsionY = 0;
 
                 Transform2d repulsionVector = getRepulsionVector(robotPose, 0.5);
-                repulsionX += repulsionVector.getX();
-                repulsionY += repulsionVector.getY();
+                repulsionX += repulsionVector.getX() < 0.6 ? 0 : repulsionVector.getX();
+                repulsionY += repulsionVector.getY() < 0.6 ? 0 : repulsionVector.getY();
 
-                SmartDashboard.putNumber("Repulse Speed", Math.hypot(repulsionX, repulsionY));
                 SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
 
                 ChassisSpeeds speeds = new ChassisSpeeds(attractX - repulsionX, attractY - repulsionY, getAngularComponentFromRotationOverride(angle));
@@ -292,7 +294,8 @@ public class Swerve extends SwerveBase{
 
                 drive(speeds, true, false);
             }
-            ).until(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.05);
+            ).until(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.05))
+            .andThen(runOnce(()-> driveRobotRelative(new ChassisSpeeds(), false, false)));
     }
 
 
@@ -425,6 +428,7 @@ public class Swerve extends SwerveBase{
         m_field.getObject("target location").setPose(targetLocationPose);
         SmartDashboard.putBoolean("Close to Destination", isCloseToDestination.getAsBoolean());
         SmartDashboard.putBoolean("At Destination", isAtDestination.getAsBoolean());
+        SmartDashboard.putNumber("Distance to target", getDistanceToTranslation(targetLocationPose.getTranslation()));
     }
 }
 

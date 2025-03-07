@@ -22,7 +22,8 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import java.util.Optional;
 
-
+import edu.wpi.first.networktables.IntegerSubscriber;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
@@ -37,6 +38,8 @@ public class RobotContainer {
   public final Swerve Swerve;
   public final DuoTalonLift Elevator;
   public final Coralizer Coralizer;
+  public IntegerSubscriber scoringHeight;
+
 
   private final TalonFXModule[] modules = new TalonFXModule[] 
           {
@@ -55,6 +58,7 @@ public class RobotContainer {
     Swerve = new Swerve(camNames, modules);
     Elevator = new DuoTalonLift();
     Coralizer = new Coralizer();
+    scoringHeight = NetworkTableInstance.getDefault().getTable("sidecarTable").getIntegerTopic("scoringLevel").subscribe(1);
 
     // SmartDashboarding subsystems allow you to see what commands they are running
     SmartDashboard.putData("Swerve Subsystem", Swerve);
@@ -63,6 +67,7 @@ public class RobotContainer {
     configureBindings();
     configureDefaultCommands();
   }
+
 
   
   /**
@@ -75,8 +80,17 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
-    driver.a().whileTrue(Coralizer.runIntakeAndCoralizer(()->0.2));
+    //driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
+    driver.rightBumper().onTrue(Coralizer.ejectCoral().andThen(Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01)).andThen(Elevator.setHeightLevel(Heights.Ground)));
+
+
+    driver.b().onTrue(
+        Elevator.goToScoringHeight()
+    );
+
+
+
+
     driver.povUp().whileTrue(Elevator.goToScoringHeight());
     
 
@@ -94,22 +108,11 @@ public class RobotContainer {
     driver.leftBumper().onTrue(Coralizer.intake());
 
 
-    driver.rightBumper().whileTrue(
-      deadline(
-        Coralizer.intake(),
-        Swerve.driveToNearestFeed()
-      )
+    driver.a().whileTrue(
+        Coralizer.runIntakeAndCoralizer(()-> -0.1)
     );
 
     driver.y().whileTrue(Swerve.driveBackwards());
-
-
-    // check limelight poses
-    // test align to reef
-    // test intake logic
-    
-    // test intake with auto align
-    // test acceleration limit stuff
   }
 
   public void configureDefaultCommands(){
