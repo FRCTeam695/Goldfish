@@ -37,7 +37,7 @@ public class Swerve extends SwerveBase{
     
 
 
-    public final double kp_attract = 2.6;
+    public final double kp_attract = 2.7;
 
     // we will tune this on the practice field
     public final double kp_repulse = 1;

@@ -106,13 +106,24 @@ public class RobotContainer {
     );
 
     driver.leftBumper().onTrue(Coralizer.intake());
-
+    
 
     driver.a().whileTrue(
         Coralizer.runIntakeAndCoralizer(()-> -0.1)
     );
 
     driver.y().whileTrue(Swerve.driveBackwards());
+
+    driver.rightTrigger().whileTrue(
+      Swerve.alignToReef
+      (
+        Optional.empty(), 
+        Elevator::getElevatorTimeToArrival, 
+        false
+      )
+    );
+
+    //driver.leftTrigger().whileTrue(Swerve.driveToNearestFeed());
   }
 
   public void configureDefaultCommands(){

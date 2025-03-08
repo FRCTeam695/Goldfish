@@ -85,8 +85,10 @@ public class SwerveBase extends SubsystemBase {
     protected double avgLoopTIme = 0;
     protected double failedOdometryUpdates = 0;
     protected double successfulOdometryUpdates = 0;
+    protected double limelightUpdateCounter = 0;
 
     public final Trigger atRotationSetpoint = new Trigger(()-> Math.abs(robotRotationError) < 1);
+    public final Trigger almostAtRotationSetpoint = new Trigger(()-> Math.abs(robotRotationError) < 20);
     public PPHolonomicDriveController pathplannerController =  new PPHolonomicDriveController( // HolonomicPathFollowerConfig, this should likely live in your Constants class
                                                                 new PIDConstants(6, 0.0, 0.1), // Translation PID constants (JPK was 6,0,0)
                                                                 new PIDConstants(5, 0.0, 0.0) // Rotation PID constants (JPK was 2)
@@ -525,10 +527,7 @@ public class SwerveBase extends SubsystemBase {
             try {
                 for(String cam: camNames){
                     LimelightHelpers.SetIMUMode(cam, 1);
-                    double startTime = Timer.getFPGATimestamp();
-                    while( Timer.getFPGATimestamp() < startTime + .1){
-                        LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-                    }
+                    LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
                     LimelightHelpers.SetIMUMode(cam, 2);
                 }
             } catch (Exception e) {
@@ -773,7 +772,10 @@ public class SwerveBase extends SubsystemBase {
     /*
      * updateOdometryWithVision uses vision to add measurements to the odometry
      */
-    public void updateOdometryWithVision(){
+    public void updateOdometryWithVision(boolean reSeedGyro){
+        if(reSeedGyro){
+            seedCameraHeading();
+        }
         int inc = 0;
         for(String cam : camNames){  
             LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
@@ -793,7 +795,7 @@ public class SwerveBase extends SubsystemBase {
                         
                         // This way it doesn't trust the rotation reading from the vision
                         // these are all the state stdevs
-                        VecBuilder.fill(mt2_estimate.avgTagDist * 0.4/Units.inchesToMeters(166), mt2_estimate.avgTagDist * 0.1/Units.inchesToMeters(166), 999999999)
+                        VecBuilder.fill(mt2_estimate.avgTagDist * 0.1/4.3, mt2_estimate.avgTagDist * 0.1/Units.inchesToMeters(166), 999999999)
                     );
                 }finally{
                     odometryLock.writeLock().unlock();
@@ -845,7 +847,14 @@ public class SwerveBase extends SubsystemBase {
         SmartDashboard.putNumber("sucessful odometry updates", successfulOdometryUpdates);
         SmartDashboard.putString("Robot Pose", getSavedPose().toString());
 
-        updateOdometryWithVision();
+        limelightUpdateCounter++;
+        if(limelightUpdateCounter > 25){
+            updateOdometryWithVision(true);
+            limelightUpdateCounter = 0;
+        }
+        else{
+            updateOdometryWithVision(false);
+        }
 
        SmartDashboard.putNumber("NavX Position", gyro.getAngle());
        SmartDashboard.putNumber("NavX Modified Position", getGyroHeading().getDegrees());
