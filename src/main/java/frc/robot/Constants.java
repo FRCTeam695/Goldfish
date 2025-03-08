@@ -163,8 +163,8 @@ public class Constants {
 
     public static final class Vision{     
         public static final class Blue{
-            public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.195,4.205, new Rotation2d());
-            public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(3.21,3.84, new Rotation2d());
+            public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.195,4.195, new Rotation2d());
+            public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(3.19,3.86, new Rotation2d());
             public static final Pose2d CORAL_C_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
             public static final Pose2d CORAL_D_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
             public static final Pose2d CORAL_E_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(120));

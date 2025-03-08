@@ -63,7 +63,7 @@ public class Swerve extends SwerveBase{
         scoringModeSub = sideCarTable.getStringTopic("currentIntakeMode").subscribe("");
 
         isCloseToDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 2.5);
-        isAtDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.01);
+        isAtDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.02);
         collisionDetected = new Trigger(()-> hasDetectedCollision);
         almostRotatedToSetpoint = new Trigger(()-> robotRotationError < 45);
         isApplyingRepulsion = new Trigger(()-> currentlyApplyingRepulsion);

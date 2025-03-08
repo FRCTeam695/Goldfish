@@ -81,7 +81,13 @@ public class RobotContainer {
    */
   private void configureBindings() {
     //driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
-    driver.rightBumper().onTrue(Coralizer.ejectCoral().andThen(Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01)).andThen(Elevator.setHeightLevel(Heights.Ground)));
+    driver.rightBumper().onTrue(
+      logTrickshotTrue().andThen(
+      Coralizer.ejectCoral()
+            .andThen(
+              Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
+            .andThen(Elevator.setHeightLevel(Heights.Ground))
+            ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false)));
 
 
     driver.b().onTrue(
@@ -152,6 +158,11 @@ public class RobotContainer {
 
       //Gripper.setDefaultCommand(Gripper.stop());
   }
+
+  public Command logTrickshotTrue(){
+    return runOnce(()-> {SmartDashboard.putBoolean("Trickshot", true);});
+  }
+
 
   // The command specified in here is run in autonomous
   public Command getAutonomousCommand() {
