@@ -528,7 +528,7 @@ public class SwerveBase extends SubsystemBase {
                 for(String cam: camNames){
                     LimelightHelpers.SetIMUMode(cam, 1);
                     LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-                    LimelightHelpers.SetIMUMode(cam, 2);
+                    LimelightHelpers.SetIMUMode(cam, 1);
                 }
             } catch (Exception e) {
             }
@@ -847,14 +847,14 @@ public class SwerveBase extends SubsystemBase {
         SmartDashboard.putNumber("sucessful odometry updates", successfulOdometryUpdates);
         SmartDashboard.putString("Robot Pose", getSavedPose().toString());
 
-        limelightUpdateCounter++;
-        if(limelightUpdateCounter > 25){
-            updateOdometryWithVision(true);
-            limelightUpdateCounter = 0;
-        }
-        else{
+        // limelightUpdateCounter++;
+        // if(limelightUpdateCounter > 25){
+        //     updateOdometryWithVision(true);
+        //     limelightUpdateCounter = 0;
+        // }
+        // else{
             updateOdometryWithVision(false);
-        }
+        //}
 
        SmartDashboard.putNumber("NavX Position", gyro.getAngle());
        SmartDashboard.putNumber("NavX Modified Position", getGyroHeading().getDegrees());
