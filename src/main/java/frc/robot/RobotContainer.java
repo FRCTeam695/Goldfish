@@ -177,6 +177,8 @@ public class RobotContainer {
 
       led.setDefaultCommand(led.breatheEffect(2, 2).ignoringDisable(true));
 
+      Alagizer.setDefaultCommand(Alagizer.goToPosition(()-> 0));
+
       //Gripper.setDefaultCommand(Gripper.stop());
   }
 
