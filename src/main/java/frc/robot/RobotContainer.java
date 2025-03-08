@@ -8,11 +8,13 @@ import frc.BisonLib.BaseProject.Controller.EnhancedCommandController;
 
 // import frc.robot.Subsystems.CoralGripper2Motors;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.AlgaeDislodger;
 import frc.robot.subsystems.Coralizer;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 
 import frc.robot.subsystems.DuoTalonLift;
 import frc.robot.subsystems.DuoTalonLift.Heights;
+import frc.robot.subsystems.LED;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -38,7 +40,9 @@ public class RobotContainer {
   public final Swerve Swerve;
   public final DuoTalonLift Elevator;
   public final Coralizer Coralizer;
+  public final AlgaeDislodger Alagizer;
   public IntegerSubscriber scoringHeight;
+  public static final LED led = new LED();
 
 
   private final TalonFXModule[] modules = new TalonFXModule[] 
@@ -58,6 +62,7 @@ public class RobotContainer {
     Swerve = new Swerve(camNames, modules);
     Elevator = new DuoTalonLift();
     Coralizer = new Coralizer();
+    Alagizer = new AlgaeDislodger();
     scoringHeight = NetworkTableInstance.getDefault().getTable("sidecarTable").getIntegerTopic("scoringLevel").subscribe(1);
 
     // SmartDashboarding subsystems allow you to see what commands they are running
@@ -93,11 +98,6 @@ public class RobotContainer {
     driver.b().onTrue(
         Elevator.goToScoringHeight()
     );
-
-
-
-
-    driver.povUp().whileTrue(Elevator.goToScoringHeight());
     
 
     // make sure you gyro reset by aligning with the reef, not eyeballing it
@@ -111,7 +111,9 @@ public class RobotContainer {
         Swerve.rotateToNearestFeed(driver::getRequestedChassisSpeeds)
     );
 
-    driver.leftBumper().onTrue(Coralizer.intake());
+    driver.leftBumper().onTrue(
+        intake()
+      );
     
 
     driver.a().whileTrue(
@@ -120,7 +122,24 @@ public class RobotContainer {
 
     driver.y().whileTrue(Swerve.driveBackwards());
 
+    driver.povUp().onTrue(Alagizer.goToPosition(()-> Constants.Alagizer.dislodgeAngle));
+    driver.povDown().whileTrue(Swerve.driveToSafeAlgaePosition(Alagizer.atSetpoint));
+    driver.povLeft().whileTrue(Swerve.driveToDislodgeLocation());
+    driver.povRight().whileTrue(Alagizer.goToPosition(()-> Constants.Alagizer.safePos));
+
     driver.rightTrigger().whileTrue(
+      parallel(
+        Swerve.driveToSafeAlgaePosition(Alagizer.atSetpoint),
+        Alagizer.goToPosition(()-> Constants.Alagizer.safePos)
+      )
+      .andThen(Alagizer.goToPosition(()-> Constants.Alagizer.dislodgeAngle))
+      .andThen(
+        Swerve.driveToDislodgeLocation()
+      )
+      .andThen(Swerve.driveBackwards())
+    );
+
+    driver.leftTrigger().whileTrue(
       Swerve.alignToReef
       (
         Optional.empty(), 
@@ -156,8 +175,23 @@ public class RobotContainer {
         Coralizer.runIntakeAndCoralizer(()->0)
       );
 
+      led.setDefaultCommand(led.breatheEffect(2, 2).ignoringDisable(true));
+
       //Gripper.setDefaultCommand(Gripper.stop());
   }
+
+  public Command intake(){
+    return
+      Coralizer.runIntakeAndCoralizer(()-> 0.6).until(Coralizer::beamIsBroken)
+      .andThen(
+        Coralizer.runIntakeAndCoralizer(()->0.2).until(Coralizer::beamNotBroken)
+    )
+    .andThen(
+        Coralizer.setIntakeStateTrue()
+      .andThen(Coralizer.runIntakeAndCoralizer(()-> -0.1).until(Coralizer::beamIsBroken))
+      .andThen(Coralizer.runIntakeAndCoralizer(()-> 0))
+    );
+}
 
   public Command logTrickshotTrue(){
     return runOnce(()-> {SmartDashboard.putBoolean("Trickshot", true);});
@@ -187,38 +221,46 @@ public class RobotContainer {
     return 
       parallel(
         Swerve.driveToNearestFeed().andThen(alignAndScore(location)),
-        Coralizer.intake()
+        intake()
       );
   }
 
   public Command alignAndScore(Optional<String> location){
     return
-      updateTelemetryState(1).andThen(
-      Elevator.configureSetpoint().andThen(
-      parallel(
-        // tells the elevator where is will be going later, 
-        // so it can give semi-accurate time estimates for how long it will take to get there
-        
-        Swerve.alignToReef(location, ()-> Elevator.getElevatorTimeToArrival(), true),
-        
-        new WaitUntilCommand(
-          Swerve.atRotationSetpoint
-          .and(Swerve.collisionDetected.negate())
-          .and(Swerve.isCloseToDestination)
-          .and(Coralizer.doneIntaking)
-        ).andThen(
-          updateTelemetryState(2)
-        ).andThen
-          (
-            Elevator.goToScoringHeight()
-          ).until(Elevator.atSetpoint)
-      ))
-      .andThen(
-        updateTelemetryState(3)
+    updateTelemetryState(1).andThen(
+      deadline(
+        Elevator.configureSetpoint().andThen(
+        parallel(
+          // tells the elevator where is will be going later, 
+          // so it can give semi-accurate time estimates for how long it will take to get there
+          
+          Swerve.alignToReef(location, ()-> Elevator.getElevatorTimeToArrival(), true),
+          
+          new WaitUntilCommand(
+            Swerve.atRotationSetpoint
+            .and(Swerve.collisionDetected.negate())
+            .and(Swerve.isCloseToDestination)
+            
+            .and(Coralizer.doneIntaking)
+          ).andThen(
+            updateTelemetryState(2)
+          ).andThen
+            (
+              Elevator.goToScoringHeight()
+            ).until(Elevator.atSetpoint)
+        ))
+        .andThen(
+          updateTelemetryState(3)
+        ),
+
+      led.solidColor(0)
       )
       .andThen(
-        Coralizer.ejectCoral().asProxy()
-      ) // asProxy because we want to be able to continue intaking while we are aligning
+        deadline(
+          Coralizer.ejectCoral().asProxy(), // asProxy because we want to be able to continue intaking while we are aligning
+          led.solidColor(3)
+        )
+        )
       .andThen(
         updateTelemetryState(4)
       )
@@ -233,7 +275,7 @@ public class RobotContainer {
   public Command alignAndIntake(){
     return
       deadline(
-        Coralizer.intake(),
+        intake(),
         Swerve.driveToNearestFeed()
       );
   }

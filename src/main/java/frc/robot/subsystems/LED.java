@@ -13,15 +13,27 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 
+
+    /*
+     * 0 - Red
+     * 1 - Orange
+     * 2 - Yellow
+     * 3 - Green
+     * 4 - Blue
+     * 5 - Purple
+     * 6 - Grey
+     * 7 - Black (off)
+     * 8 - White
+     * Defaults to off
+     */
 public class LED extends SubsystemBase {
     private AddressableLED realLED;
     private AddressableLEDBuffer realLEDBuffer;
     
     public LED() {
 
-        realLED = new AddressableLED(1);
-        realLEDBuffer = new AddressableLEDBuffer(5);
-
+        realLED = new AddressableLED(9);
+        realLEDBuffer = new AddressableLEDBuffer(18);
         realLED.setLength(realLEDBuffer.getLength());
         realLED.setData(realLEDBuffer);
         realLED.start();
@@ -39,7 +51,7 @@ public class LED extends SubsystemBase {
          * which in this case is rounded to 58.8. 
          * Dividing one by this number is to create a ratio that says "for every one meter, there are 58.8 LEDs"
          */
-        Distance kLedSpacing = Meters.of(1 / 58.8); 
+        Distance kLedSpacing = Meters.of(1 / 58.8); //MAY NEED CHANGE
         LEDPattern scrollingRainbow = rainbow.scrollAtAbsoluteSpeed(MetersPerSecond.of(0.1), kLedSpacing); //creates scrolling rainbow effect. Change the MetersPerSecond.of() variable to control speed.
 
         scrollingRainbow.applyTo(realLEDBuffer);
@@ -88,9 +100,9 @@ public class LED extends SubsystemBase {
 
         realLED.setData(realLEDBuffer);
     }
-    public void breathingEffect(int colorNumber) {
+    public void breathingEffect(int colorNumber, double seconds) {
         LEDPattern base = colorBase(colorNumber);
-        LEDPattern pattern = base.breathe(Seconds.of(2));
+        LEDPattern pattern = base.breathe(Seconds.of(seconds));
 
         pattern.applyTo(realLEDBuffer);
         realLED.setData(realLEDBuffer);
@@ -118,7 +130,7 @@ public class LED extends SubsystemBase {
             this);
     }
     //breatheEffect command
-    public Command breatheEffect(int colorNumber) {
+    public Command breatheEffect(int colorNumber, double seconds) {
         return new FunctionalCommand(
 
                 () -> {
@@ -126,7 +138,7 @@ public class LED extends SubsystemBase {
                 },
 
                 () -> {
-                    breathingEffect(colorNumber);
+                    breathingEffect(colorNumber, seconds);
                 },
 
                 interrupted -> {

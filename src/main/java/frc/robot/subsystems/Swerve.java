@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -198,30 +199,13 @@ public class Swerve extends SwerveBase{
         });     
     }
 
-
-    public Command algaeDislodgeSequence(){
-        return
-        // repulses us out until we are 50 inches away from the center of the reef
-        run(()-> {
+    public Command driveToSafeAlgaePosition(BooleanSupplier armIsAtSetpoint){
+        return run(()-> {
             Pose2d robotPose = getSavedPose();
             Transform2d repulsionVector = getRepulsionVector(robotPose, 2);
             double repulsionX = repulsionVector.getX();
             double repulsionY = repulsionVector.getY();
 
-            ChassisSpeeds speeds = new ChassisSpeeds(-repulsionX,  -repulsionY, 0);
-            drive(speeds, true, false);
-        }).until(
-            ()-> getSavedPose().getTranslation().minus(
-                new Pose2d(
-                    reefVerticies[0].getX() + Units.inchesToMeters(65/2.), 
-                    (reefVerticies[0].getY() + reefVerticies[1].getY())/2, 
-                    new Rotation2d()
-                ).getTranslation()).getNorm() > Units.inchesToMeters(50)
-            )
-        .andThen(
-        // drive to the right location to dislodge
-        run(()->{
-            Pose2d robotPose = getSavedPose();
             Pose2d[] dislodgePositions = getAlgaeDislodgeLocations();
             Translation2d transformToNearestAlgaeDislodgeLocation = robotPose.getTranslation().minus(dislodgePositions[0].getTranslation());
             for(int i = 1; i < dislodgePositions.length; ++i){
@@ -231,22 +215,50 @@ public class Swerve extends SwerveBase{
                     targetLocationPose = dislodgePositions[i];
                 }
                 else{
-                    targetLocationPose = new Pose2d(robotPose.getTranslation().minus(transformToNearestAlgaeDislodgeLocation), new Rotation2d());
+                    targetLocationPose = new Pose2d(robotPose.getTranslation().minus(transformToNearestAlgaeDislodgeLocation), targetLocationPose.getRotation());
                 }
             }
 
-            double attractX = kp_attract * transformToNearestAlgaeDislodgeLocation.getX();
-            double attractY = kp_attract * transformToNearestAlgaeDislodgeLocation.getY();
-            
-            ChassisSpeeds speeds = new ChassisSpeeds(attractX, attractY, getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()));
-            drive(speeds, true, false);
-        }).until(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.05))
+            double attractX = kp_attract * -transformToNearestAlgaeDislodgeLocation.getX();
+            double attractY = kp_attract * -transformToNearestAlgaeDislodgeLocation.getY();
 
-        // backs up slowly so the algae gets dislodged
-        .andThen(run(()-> {
+            ChassisSpeeds speeds = new ChassisSpeeds(attractX-repulsionX,  attractY-repulsionY, getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees() + 180));
+            drive(speeds, true, false);
+        }).until(
+                armIsAtSetpoint
+            );
+    }
+
+    public Command driveToDislodgeLocation(){
+           return  run(()->{
+                Pose2d robotPose = getSavedPose();
+                
+                Pose2d[] dislodgePositions = getAlgaeDislodgeLocations();
+                Translation2d transformToNearestAlgaeDislodgeLocation = robotPose.getTranslation().minus(dislodgePositions[0].getTranslation());
+                for(int i = 1; i < dislodgePositions.length; ++i){
+                    Translation2d translationToLocation = robotPose.getTranslation().minus(dislodgePositions[i].getTranslation());
+                    if (transformToNearestAlgaeDislodgeLocation.getNorm() > translationToLocation.getNorm()) {
+                        transformToNearestAlgaeDislodgeLocation = translationToLocation;
+                        targetLocationPose = dislodgePositions[i];
+                    }
+                    else{
+                        targetLocationPose = new Pose2d(robotPose.getTranslation().minus(transformToNearestAlgaeDislodgeLocation), targetLocationPose.getRotation());
+                    }
+                }
+    
+                double attractX = kp_attract * -transformToNearestAlgaeDislodgeLocation.getX();
+                double attractY = kp_attract * -transformToNearestAlgaeDislodgeLocation.getY();
+
+                ChassisSpeeds speeds = new ChassisSpeeds(attractX, attractY, getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()+180));
+                drive(speeds, true, false);
+            });
+    }
+
+
+    public Command driveBackwardsRobotRelative(){
+        return run(()-> {
             driveRobotRelative(new ChassisSpeeds(-1, 0, 0), false, false);
-            }
-        )).withTimeout(0.5);
+            }).withTimeout(0.5);
     }
 
 

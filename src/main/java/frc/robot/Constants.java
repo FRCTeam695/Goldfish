@@ -160,6 +160,11 @@ public class Constants {
         public static final Translation2d BACK_RIGHT_TRANSLATION = CHOSEN_CONSTANTS.backRightTranslation;
     }
 
+    public static final class Alagizer{
+        public static final double dislodgeAngle = 33.25;
+        public static final double safePos = 27;
+    }
+
 
     public static final class Vision{     
         public static final class Blue{

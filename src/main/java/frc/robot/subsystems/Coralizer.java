@@ -56,18 +56,6 @@ public class Coralizer extends SubsystemBase{
     public boolean beamNotBroken(){
     return !beamIsBroken();
     }
-
-    public Command intake(){
-        return
-        runIntakeAndCoralizer(()-> 0.6).until(this::beamIsBroken)
-        .andThen(
-            runIntakeAndCoralizer(()->0.2).until(this::beamNotBroken)
-        )
-        .andThen(setIntakeStateTrue())
-         .andThen(runIntakeAndCoralizer(()-> -0.1).until(this::beamIsBroken))
-        // .andThen(runIntakeAndCoralizer(()-> 0.1).until(this::beamNotBroken))
-        .andThen(runIntakeAndCoralizer(()-> 0));
-    }
     
 
     public Command runIntakeAndCoralizer(DoubleSupplier speed){
