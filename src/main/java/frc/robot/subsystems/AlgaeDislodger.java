@@ -18,6 +18,7 @@ import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.Constants;
 
 public class AlgaeDislodger extends SubsystemBase{
     private TalonFXS m_talon;
@@ -47,7 +48,7 @@ public class AlgaeDislodger extends SubsystemBase{
         BaseStatusSignal.setUpdateFrequencyForAll(50, m_talon.getPosition(true), m_talon.getVelocity(true),
         m_talon.getClosedLoopReference(true),m_talon.getClosedLoopReferenceSlope(true));
         atSetpoint = new Trigger(
-            ()-> Math.abs(m_talon.getClosedLoopError().getValueAsDouble()) < 3
+            ()-> Math.abs(controlMM.Position - m_talon.getPosition().getValueAsDouble()) < 1
         );
     
         // Configurations
@@ -61,10 +62,11 @@ public class AlgaeDislodger extends SubsystemBase{
         configFXS.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
         configFXS.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 40; //rot
         configFXS.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        configFXS.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -25; //rot
+        configFXS.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -36.64; //rot
 
         configFXS.Commutation.MotorArrangement = MotorArrangementValue.NEO550_JST;
 
+        
         // PID
         configFXS.Slot0.StaticFeedforwardSign = StaticFeedforwardSignValue.UseClosedLoopSign;
         configFXS.Slot0.kS = 0.25;
@@ -73,8 +75,8 @@ public class AlgaeDislodger extends SubsystemBase{
         configFXS.Slot0.kP = 0.5;
 
         // MM
-        configFXS.MotionMagic.MotionMagicCruiseVelocity = 100;
-        configFXS.MotionMagic.MotionMagicAcceleration = 400;
+        configFXS.MotionMagic.MotionMagicCruiseVelocity = 150;
+        configFXS.MotionMagic.MotionMagicAcceleration = 1000;
 
         m_talon.getConfigurator().apply(configFXS);
 
@@ -83,6 +85,12 @@ public class AlgaeDislodger extends SubsystemBase{
 
     public Command goToPosition(DoubleSupplier setpoint) {
         return run(() -> m_talon.setControl(controlMM.withPosition(setpoint.getAsDouble())));
+    }
+
+    public Command dump(){
+        return goToPosition(()-> Constants.Alagizer.dump).until(atSetpoint)
+                    .andThen(goToPosition(()-> Constants.Alagizer.dislodgeAngle).until(atSetpoint))
+                    .andThen(goToPosition(()-> 0).until(atSetpoint));
     }
 
     public Command voltageControl(DoubleSupplier setpoint) {

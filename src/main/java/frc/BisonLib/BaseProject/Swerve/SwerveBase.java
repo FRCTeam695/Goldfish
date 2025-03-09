@@ -117,6 +117,9 @@ public class SwerveBase extends SubsystemBase {
     //private Pigeon2 pigeon = new Pigeon2(8);
 
     private VoltageOut m_voltReq;
+    //6-11
+    // 17 -22
+    public int[] validIDs = {6,7,8,9,10,11,17,18,19,20,21,22};
 
     /**
      * Does all da constructing
@@ -779,6 +782,7 @@ public class SwerveBase extends SubsystemBase {
         int inc = 0;
         for(String cam : camNames){  
             LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
+            LimelightHelpers.SetFiducialIDFiltersOverride(cam, validIDs);
             LimelightHelpers.PoseEstimate mt2_estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cam);
         
             ++inc;

@@ -161,8 +161,10 @@ public class Constants {
     }
 
     public static final class Alagizer{
-        public static final double dislodgeAngle = 33.25;
+        public static final double dislodgeAngle = 35.5;
         public static final double safePos = 27;
+        public static final double dump = -35.7;
+
     }
 
 

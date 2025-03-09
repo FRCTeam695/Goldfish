@@ -229,7 +229,7 @@ public class Swerve extends SwerveBase{
             );
     }
 
-    public Command driveToDislodgeLocation(){
+    public Command rotateToDislodgeLocation(Supplier<ChassisSpeeds> commandedSpeeds){
            return  run(()->{
                 Pose2d robotPose = getSavedPose();
                 
@@ -246,10 +246,8 @@ public class Swerve extends SwerveBase{
                     }
                 }
     
-                double attractX = kp_attract * -transformToNearestAlgaeDislodgeLocation.getX();
-                double attractY = kp_attract * -transformToNearestAlgaeDislodgeLocation.getY();
-
-                ChassisSpeeds speeds = new ChassisSpeeds(attractX, attractY, getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()+180));
+                ChassisSpeeds cs = commandedSpeeds.get();
+                ChassisSpeeds speeds = new ChassisSpeeds(cs.vxMetersPerSecond, cs.vyMetersPerSecond, getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()+180));
                 drive(speeds, true, false);
             });
     }

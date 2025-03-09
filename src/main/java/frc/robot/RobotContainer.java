@@ -122,22 +122,17 @@ public class RobotContainer {
 
     driver.y().whileTrue(Swerve.driveBackwards());
 
-    driver.povUp().onTrue(Alagizer.goToPosition(()-> Constants.Alagizer.dislodgeAngle));
     driver.povDown().whileTrue(Swerve.driveToSafeAlgaePosition(Alagizer.atSetpoint));
-    driver.povLeft().whileTrue(Swerve.driveToDislodgeLocation());
     driver.povRight().whileTrue(Alagizer.goToPosition(()-> Constants.Alagizer.safePos));
 
-    driver.rightTrigger().whileTrue(
+    driver.rightTrigger().toggleOnTrue(
       parallel(
-        Swerve.driveToSafeAlgaePosition(Alagizer.atSetpoint),
-        Alagizer.goToPosition(()-> Constants.Alagizer.safePos)
+        Alagizer.goToPosition(()-> Constants.Alagizer.dislodgeAngle),
+        Swerve.rotateToDislodgeLocation(driver::getRequestedChassisSpeeds)
       )
-      .andThen(Alagizer.goToPosition(()-> Constants.Alagizer.dislodgeAngle))
-      .andThen(
-        Swerve.driveToDislodgeLocation()
-      )
-      .andThen(Swerve.driveBackwards())
     );
+
+    driver.povUp().onTrue(Alagizer.dump());
 
     driver.leftTrigger().whileTrue(
       Swerve.alignToReef
