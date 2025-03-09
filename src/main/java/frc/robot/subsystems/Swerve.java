@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -430,6 +431,44 @@ public class Swerve extends SwerveBase{
         
         return feed_location;
     }
+
+    public Command displayVisionConstants(){
+        return runOnce(
+            ()->{
+                
+                //coral scoring locations
+                Set<String> blueCoralKeys = Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.keySet();
+                for(String coralKey: blueCoralKeys){
+                    String displayString = "Blue Coral " + coralKey;
+                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.get(coralKey));
+                }
+                Set<String> redCoralKeys = Constants.Vision.Red.CORAL_SCORING_LOCATIONS.keySet();
+                for(String coralKey: redCoralKeys){
+                    String displayString = "Red Coral " + coralKey;
+                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.get(coralKey));
+                }
+
+                //algae scoring locations
+                Set<String> blueAlgaeKeys = Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.keySet();
+                for(String algaeKey: blueAlgaeKeys){
+                    String displayString = "Blue Algae " + algaeKey;
+                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.get(algaeKey));
+                }
+                Set<String> redAlgaeKeys = Constants.Vision.Red.CORAL_SCORING_LOCATIONS.keySet();
+                for(String algaeKey: redAlgaeKeys){
+                    String displayString = "Red Algae " + algaeKey;
+                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.get(algaeKey));
+                }
+
+                //reef Verticies
+                for(int vertexNumber = 0; vertexNumber < reefVerticies.length; vertexNumber++){
+                    String displayString = "Blue Vertex " + vertexNumber;
+                    m_field.getObject(displayString).setPose(reefVerticies[vertexNumber]);
+                }
+            }
+        );
+    }
+
 
 
     @Override
