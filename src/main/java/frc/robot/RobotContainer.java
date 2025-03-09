@@ -123,8 +123,8 @@ public class RobotContainer {
     driver.y().whileTrue(Swerve.driveBackwards());
 
     driver.povDown().whileTrue(Swerve.driveToSafeAlgaePosition(Alagizer.atSetpoint));
-    driver.povRight().whileTrue(Alagizer.goToPosition(()-> Constants.Alagizer.safePos));
-
+    driver.povRight().onTrue(Swerve.displayVisionConstants().ignoringDisable(true));
+    
     driver.rightTrigger().toggleOnTrue(
       parallel(
         Alagizer.goToPosition(()-> Constants.Alagizer.dislodgeAngle),

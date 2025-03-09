@@ -780,15 +780,21 @@ public class SwerveBase extends SubsystemBase {
             seedCameraHeading();
         }
         int inc = 0;
+        double avgLLx = 0;
+        double avgLLy = 0;
+        double avgLLomega = 0;
         for(String cam : camNames){  
             LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
             LimelightHelpers.SetFiducialIDFiltersOverride(cam, validIDs);
             LimelightHelpers.PoseEstimate mt2_estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cam);
         
-            ++inc;
             // Only update pose if it is valid and if we arent spinning too fast
             if(mt2_estimate != null && mt2_estimate.tagCount != 0){//remove rotation speed limit
+                ++inc;
                 SmartDashboard.putNumber(inc + " Average Tag Distance", mt2_estimate.avgTagDist);
+                avgLLx += mt2_estimate.pose.getX();
+                avgLLy += mt2_estimate.pose.getY();
+                avgLLomega += mt2_estimate.pose.getRotation().getDegrees();
                 // Finally, we actually add the measurement to our odometry
                 odometryLock.writeLock().lock();
                 try{
@@ -799,7 +805,8 @@ public class SwerveBase extends SubsystemBase {
                         
                         // This way it doesn't trust the rotation reading from the vision
                         // these are all the state stdevs
-                        VecBuilder.fill(mt2_estimate.avgTagDist * 0.1/4.3, mt2_estimate.avgTagDist * 0.1/Units.inchesToMeters(166), 999999999)
+                        //VecBuilder.fill(mt2_estimate.avgTagDist * 0.1/4.3, mt2_estimate.avgTagDist * 0.1/Units.inchesToMeters(166), 999999999)
+                        VecBuilder.fill(mt2_estimate.avgTagDist * 0, mt2_estimate.avgTagDist * 0/Units.inchesToMeters(166), 999999999)
                     );
                 }finally{
                     odometryLock.writeLock().unlock();
@@ -810,6 +817,11 @@ public class SwerveBase extends SubsystemBase {
                 m_field.getObject(cam).setPose(mt2_estimate.pose);
                 SmartDashboard.putString("mt2 pose", mt2_estimate.pose.toString());
             }
+            avgLLx /= inc;
+            avgLLy /= inc;
+            avgLLomega /= inc;
+
+            SmartDashboard.putString("Logged Pose", new Pose2d(avgLLx, avgLLy, Rotation2d.fromDegrees(avgLLomega)).toString());
         }  
     }
 

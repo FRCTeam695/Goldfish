@@ -170,8 +170,8 @@ public class Constants {
 
     public static final class Vision{     
         public static final class Blue{
-            public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.195,4.195, new Rotation2d());
-            public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(3.19,3.86, new Rotation2d());
+            public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(14.36, 3.83, Rotation2d.fromDegrees(180));
+            public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(14.36, 4.19, Rotation2d.fromDegrees(180));
             public static final Pose2d CORAL_C_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
             public static final Pose2d CORAL_D_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
             public static final Pose2d CORAL_E_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(120));
@@ -221,28 +221,46 @@ public class Constants {
             };
         }   
         public static final class Red{
-            public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.137,4.182, new Rotation2d());
-            public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(3.171,3.83, new Rotation2d());
-            public static final Pose2d CORAL_C_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
-            public static final Pose2d CORAL_D_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(60));
-            public static final Pose2d CORAL_E_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(120));
-            public static final Pose2d CORAL_F_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(120));
-            public static final Pose2d CORAL_G_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(180));
-            public static final Pose2d CORAL_H_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(180));
-            public static final Pose2d CORAL_I_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-120));
-            public static final Pose2d CORAL_J_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-120));
-            public static final Pose2d CORAL_K_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-60));
-            public static final Pose2d CORAL_L_SCORING_LOCATION = new Pose2d(2,3.82, Rotation2d.fromDegrees(-60));
+            public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(14.36, 3.83, Rotation2d.fromDegrees(179.99));
+            public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(14.36, 4.19, Rotation2d.fromDegrees(-179.99));;
+            public static final Pose2d CORAL_C_SCORING_LOCATION = new Pose2d(13.90, 5.04, Rotation2d.fromDegrees(-122.16));
+            public static final Pose2d CORAL_D_SCORING_LOCATION = new Pose2d(13.57, 5.24, Rotation2d.fromDegrees(-120.18));
+            public static final Pose2d CORAL_E_SCORING_LOCATION = new Pose2d(12.61,5.27, Rotation2d.fromDegrees(-62.81));
+            public static final Pose2d CORAL_F_SCORING_LOCATION = new Pose2d(12.28,5.09, Rotation2d.fromDegrees(-61.03));
+            public static final Pose2d CORAL_G_SCORING_LOCATION = new Pose2d(11.75,4.24, Rotation2d.fromDegrees(0.11));
+            public static final Pose2d CORAL_H_SCORING_LOCATION = new Pose2d(11.75,3.87, Rotation2d.fromDegrees(0.18));
+            public static final Pose2d CORAL_I_SCORING_LOCATION = new Pose2d(12.22,3.00, Rotation2d.fromDegrees(60.16));
+            public static final Pose2d CORAL_J_SCORING_LOCATION = new Pose2d(12.54,2.82, Rotation2d.fromDegrees(60.24));
+            public static final Pose2d CORAL_K_SCORING_LOCATION = new Pose2d(13.54,2.80, Rotation2d.fromDegrees(118.65));
+            public static final Pose2d CORAL_L_SCORING_LOCATION = new Pose2d(13.87,2.99, Rotation2d.fromDegrees(119.71));
             
-            public static final Pose2d FEED_LOCATION_RIGHT = new Pose2d(0.752, 0.566, new Rotation2d(50));
-            public static final Pose2d FEED_LOCATION_LEFT = new Pose2d(0.752, 0.566, new Rotation2d(-50));
+            public static final Pose2d FEED_LOCATION_RIGHT = new Pose2d((16.46 + 16.4)/2, (7.195 + 7.18)/2, Rotation2d.fromDegrees(-131.875));
+            public static final Pose2d FEED_LOCATION_LEFT = new Pose2d((16.525 + 16.51)/2, (1.25 + 1.31)/2, Rotation2d.fromDegrees(132.32));
 
-            public static final Pose2d ALGAE_A_DISLODGE_LOCATION = new Pose2d(3.16,4.02, new Rotation2d(180));
-            public static final Pose2d ALGAE_C_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-120));
-            public static final Pose2d ALGAE_E_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(-60));
-            public static final Pose2d ALGAE_G_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(0));
-            public static final Pose2d ALGAE_I_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(60));
-            public static final Pose2d ALGAE_K_DISLODGE_LOCATION = new Pose2d(3.16,4.02, Rotation2d.fromDegrees(120));
+            public static final Pose2d ALGAE_A_DISLODGE_LOCATION = new Pose2d(
+                (CORAL_A_SCORING_LOCATION.getX() + CORAL_B_SCORING_LOCATION.getX())/2, 
+                (CORAL_A_SCORING_LOCATION.getY() + CORAL_B_SCORING_LOCATION.getY())/2, 
+                Rotation2d.fromDegrees((CORAL_A_SCORING_LOCATION.getRotation().getDegrees() + CORAL_B_SCORING_LOCATION.getRotation().getDegrees())/2));
+            public static final Pose2d ALGAE_C_DISLODGE_LOCATION = new Pose2d(
+                (CORAL_C_SCORING_LOCATION.getX() + CORAL_D_SCORING_LOCATION.getX())/2, 
+                (CORAL_C_SCORING_LOCATION.getY() + CORAL_D_SCORING_LOCATION.getY())/2, 
+                Rotation2d.fromDegrees((CORAL_C_SCORING_LOCATION.getRotation().getDegrees() + CORAL_D_SCORING_LOCATION.getRotation().getDegrees())/2));
+            public static final Pose2d ALGAE_E_DISLODGE_LOCATION = new Pose2d(
+                (CORAL_E_SCORING_LOCATION.getX() + CORAL_F_SCORING_LOCATION.getX())/2, 
+                (CORAL_E_SCORING_LOCATION.getY() + CORAL_F_SCORING_LOCATION.getY())/2, 
+                Rotation2d.fromDegrees((CORAL_E_SCORING_LOCATION.getRotation().getDegrees() + CORAL_F_SCORING_LOCATION.getRotation().getDegrees())/2));
+            public static final Pose2d ALGAE_G_DISLODGE_LOCATION = new Pose2d(
+                (CORAL_G_SCORING_LOCATION.getX() + CORAL_H_SCORING_LOCATION.getX())/2, 
+                (CORAL_G_SCORING_LOCATION.getY() + CORAL_H_SCORING_LOCATION.getY())/2, 
+                Rotation2d.fromDegrees((CORAL_G_SCORING_LOCATION.getRotation().getDegrees() + CORAL_H_SCORING_LOCATION.getRotation().getDegrees())/2));
+            public static final Pose2d ALGAE_I_DISLODGE_LOCATION = new Pose2d(
+                (CORAL_I_SCORING_LOCATION.getX() + CORAL_J_SCORING_LOCATION.getX())/2, 
+                (CORAL_I_SCORING_LOCATION.getY() + CORAL_J_SCORING_LOCATION.getY())/2, 
+                Rotation2d.fromDegrees((CORAL_I_SCORING_LOCATION.getRotation().getDegrees() + CORAL_J_SCORING_LOCATION.getRotation().getDegrees())/2));
+            public static final Pose2d ALGAE_K_DISLODGE_LOCATION = new Pose2d(
+                (CORAL_K_SCORING_LOCATION.getX() + CORAL_L_SCORING_LOCATION.getX())/2, 
+                (CORAL_K_SCORING_LOCATION.getY() + CORAL_L_SCORING_LOCATION.getY())/2, 
+                Rotation2d.fromDegrees((CORAL_K_SCORING_LOCATION.getRotation().getDegrees() + CORAL_L_SCORING_LOCATION.getRotation().getDegrees())/2));
 
             public static final HashMap<String, Pose2d> CORAL_SCORING_LOCATIONS = new HashMap<String, Pose2d>(){
                 {
