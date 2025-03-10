@@ -420,20 +420,24 @@ public class Swerve extends SwerveBase{
                 }
 
                 //algae scoring locations
-                Set<String> blueAlgaeKeys = Constants.Vision.Blue.ALGAE_SCORING_LOCATIONS.keySet();
-                for(String algaeKey: blueAlgaeKeys){
-                    String displayString = "Blue Algae " + algaeKey;
-                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.ALGAE_SCORING_LOCATIONS.get(algaeKey));
+                String [] charactersforalgae = {"A" , "C", "E", "G", "I", "K"};
+                for(int algaeNum = 0; algaeNum < Constants.Vision.Blue.ALGAE_DISLODGE_POSITIONS.length; algaeNum++){
+                    String displayString = "Blue Algae " + charactersforalgae[algaeNum];
+                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.ALGAE_DISLODGE_POSITIONS[algaeNum]);
                 }
-                Set<String> redAlgaeKeys = Constants.Vision.Red.ALGAE_SCORING_LOCATIONS.keySet();
-                for(String algaeKey: redAlgaeKeys){
-                    String displayString = "Red Algae " + algaeKey;
-                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.ALGAE_SCORING_LOCATIONS.get(algaeKey));
+                for(int algaeNum = 0; algaeNum < Constants.Vision.Red.ALGAE_DISLODGE_POSITIONS.length; algaeNum++){
+                    String displayString = "Red Algae " + charactersforalgae[algaeNum];
+                    m_field.getObject(displayString).setPose(Constants.Vision.Red.ALGAE_DISLODGE_POSITIONS[algaeNum]);
                 }
 
+                //feederstaton
+                m_field.getObject("Blue Feederstation Left").setPose(Constants.Vision.Blue.FEED_LOCATION_LEFT);
+                m_field.getObject("Blue Feederstation Right").setPose(Constants.Vision.Blue.FEED_LOCATION_RIGHT);
+                m_field.getObject("Red Feederstation Left").setPose(Constants.Vision.Red.FEED_LOCATION_LEFT);
+                m_field.getObject("Red Feederstation Right").setPose(Constants.Vision.Red.FEED_LOCATION_RIGHT);
                 //reef Verticies
                 for(int vertexNumber = 0; vertexNumber < reefVerticies.length; vertexNumber++){
-                    String displayString = "Blue Vertex " + vertexNumber;
+                    String displayString = "Vertex " + vertexNumber;
                     m_field.getObject(displayString).setPose(reefVerticies[vertexNumber]);
                 }
             }
