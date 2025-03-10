@@ -420,15 +420,15 @@ public class Swerve extends SwerveBase{
                 }
 
                 //algae scoring locations
-                Set<String> blueAlgaeKeys = Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.keySet();
+                Set<String> blueAlgaeKeys = Constants.Vision.Blue.ALGAE_SCORING_LOCATIONS.keySet();
                 for(String algaeKey: blueAlgaeKeys){
                     String displayString = "Blue Algae " + algaeKey;
-                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.get(algaeKey));
+                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.ALGAE_SCORING_LOCATIONS.get(algaeKey));
                 }
-                Set<String> redAlgaeKeys = Constants.Vision.Red.CORAL_SCORING_LOCATIONS.keySet();
+                Set<String> redAlgaeKeys = Constants.Vision.Red.ALGAE_SCORING_LOCATIONS.keySet();
                 for(String algaeKey: redAlgaeKeys){
                     String displayString = "Red Algae " + algaeKey;
-                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.get(algaeKey));
+                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.ALGAE_SCORING_LOCATIONS.get(algaeKey));
                 }
 
                 //reef Verticies
