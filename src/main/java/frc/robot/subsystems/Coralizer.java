@@ -23,8 +23,10 @@ public class Coralizer extends SubsystemBase{
     //DigitalInput beamBreak;
     private TalonFXS coralizer;
     private TalonFXS intake;
-    private boolean hasFinishedIntaking = true;
-    public Trigger doneIntaking = new Trigger(()-> hasFinishedIntaking);
+    private boolean isSafeToRaiseElevator = true;
+    private boolean hasSeenFirstBreak = false;
+    public Trigger safeToRaiseElevator = new Trigger(()-> isSafeToRaiseElevator);
+    public Trigger seenFirstBreak = new Trigger(()-> hasSeenFirstBreak);
 
     public Coralizer(){
         //beamBreak = new DigitalInput(0);
@@ -77,26 +79,32 @@ public class Coralizer extends SubsystemBase{
     }
 
     public Command runCoralizer(DoubleSupplier speed) {
-        //DutyCycleOut coralizerOut = new DutyCycleOut(0);
         return run(
             () -> {
-                // coralizerOut.Output = speed.getAsDouble();
-                // coralizer.setControl(coralizerOut);
                 coralizer.set(speed.getAsDouble());
+                intake.set(0);
             }
         );
     }
 
     public Command ejectCoral(){
-        return runCoralizer(()-> 0.6).withTimeout(0.2).andThen(setIntakeStateFalse());
+        return runCoralizer(()-> 0.6).withTimeout(0.2).andThen(setDangerousToRaiseElevator()).andThen(setFirstBreakStateFalse());
     }
 
-    public Command setIntakeStateFalse(){
-        return runOnce(()-> hasFinishedIntaking = false);
+    public Command setDangerousToRaiseElevator(){
+        return runOnce(()-> isSafeToRaiseElevator = false);
     }
 
-    public Command setIntakeStateTrue(){
-        return runOnce(()-> hasFinishedIntaking = true);
+    public Command setSafeToRaiseElevator(){
+        return runOnce(()-> isSafeToRaiseElevator = true);
+    }
+
+    public Command setFirstBreakStateTrue(){
+        return runOnce(()-> hasSeenFirstBreak = true);
+    }
+
+    public Command setFirstBreakStateFalse(){
+        return runOnce(()-> hasSeenFirstBreak = false);
     }
 
     public Command requireSubsystem(){
@@ -106,6 +114,7 @@ public class Coralizer extends SubsystemBase{
     @Override
     public void periodic(){
         SmartDashboard.putBoolean("Beambreak", beamIsBroken());
-        SmartDashboard.putBoolean("Has Finished Intaking", doneIntaking.getAsBoolean());
+        SmartDashboard.putBoolean("Has Finished Intaking", safeToRaiseElevator.getAsBoolean());
+        SmartDashboard.putBoolean("Has Seen First Break", hasSeenFirstBreak);
     }
 }

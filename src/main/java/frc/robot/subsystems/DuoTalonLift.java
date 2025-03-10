@@ -181,10 +181,12 @@ public class DuoTalonLift extends SubsystemBase{
     // Setting elevator leader talon to spin to a certain height
     // a, b, x, y, and right bumper control different set heights (for now)
     public Command setHeightLevel(Heights setpoint) {
-        return run(() -> 
+        return 
+        run(() -> 
         {
+            isRunning = true;
             elevatorSetInches(setpoint.heightInches);
-        });
+        }).finallyDo(()-> {isRunning = false;});
     }
 
     public Command setHeightLevel (Supplier<Heights> setpoint) {

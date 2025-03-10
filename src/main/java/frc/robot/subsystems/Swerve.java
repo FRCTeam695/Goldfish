@@ -2,7 +2,6 @@ package frc.robot.subsystems;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -42,7 +41,7 @@ public class Swerve extends SwerveBase{
     public final double kp_attract = 2.7;
 
     // we will tune this on the practice field
-    public final double kp_repulse = 1;
+    public final double kp_repulse = 2;
 
     public boolean hasDetectedCollision = false;
     public boolean currentlyApplyingRepulsion = false;
@@ -200,35 +199,6 @@ public class Swerve extends SwerveBase{
         });     
     }
 
-    public Command driveToSafeAlgaePosition(BooleanSupplier armIsAtSetpoint){
-        return run(()-> {
-            Pose2d robotPose = getSavedPose();
-            Transform2d repulsionVector = getRepulsionVector(robotPose, 2);
-            double repulsionX = repulsionVector.getX();
-            double repulsionY = repulsionVector.getY();
-
-            Pose2d[] dislodgePositions = getAlgaeDislodgeLocations();
-            Translation2d transformToNearestAlgaeDislodgeLocation = robotPose.getTranslation().minus(dislodgePositions[0].getTranslation());
-            for(int i = 1; i < dislodgePositions.length; ++i){
-                Translation2d translationToLocation = robotPose.getTranslation().minus(dislodgePositions[i].getTranslation());
-                if (transformToNearestAlgaeDislodgeLocation.getNorm() > translationToLocation.getNorm()) {
-                    transformToNearestAlgaeDislodgeLocation = translationToLocation;
-                    targetLocationPose = dislodgePositions[i];
-                }
-                else{
-                    targetLocationPose = new Pose2d(robotPose.getTranslation().minus(transformToNearestAlgaeDislodgeLocation), targetLocationPose.getRotation());
-                }
-            }
-
-            double attractX = kp_attract * -transformToNearestAlgaeDislodgeLocation.getX();
-            double attractY = kp_attract * -transformToNearestAlgaeDislodgeLocation.getY();
-
-            ChassisSpeeds speeds = new ChassisSpeeds(attractX-repulsionX,  attractY-repulsionY, getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees() + 180));
-            drive(speeds, true, false);
-        }).until(
-                armIsAtSetpoint
-            );
-    }
 
     public Command rotateToDislodgeLocation(Supplier<ChassisSpeeds> commandedSpeeds){
            return  run(()->{
@@ -236,6 +206,7 @@ public class Swerve extends SwerveBase{
                 
                 Pose2d[] dislodgePositions = getAlgaeDislodgeLocations();
                 Translation2d transformToNearestAlgaeDislodgeLocation = robotPose.getTranslation().minus(dislodgePositions[0].getTranslation());
+                targetLocationPose = new Pose2d(targetLocationPose.getX(), targetLocationPose.getY(), Rotation2d.fromDegrees(dislodgePositions[0].getRotation().getDegrees() + 180));
                 for(int i = 1; i < dislodgePositions.length; ++i){
                     Translation2d translationToLocation = robotPose.getTranslation().minus(dislodgePositions[i].getTranslation());
                     if (transformToNearestAlgaeDislodgeLocation.getNorm() > translationToLocation.getNorm()) {
@@ -395,7 +366,7 @@ public class Swerve extends SwerveBase{
     public Pose2d getReefVertexCalibrationLocation(){
         Pose2d calibrationLocation;
         if(isRedAlliance()){
-            calibrationLocation = Constants.Vision.Red.ALGAE_A_DISLODGE_LOCATION;
+            calibrationLocation = Constants.Vision.Red.ALGAE_G_DISLODGE_LOCATION;
         }else{
             calibrationLocation = Constants.Vision.Blue.ALGAE_G_DISLODGE_LOCATION;
         }
@@ -435,7 +406,7 @@ public class Swerve extends SwerveBase{
     public Command displayVisionConstants(){
         return runOnce(
             ()->{
-                
+                calibrateReefVerticies();
                 //coral scoring locations
                 Set<String> blueCoralKeys = Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.keySet();
                 for(String coralKey: blueCoralKeys){

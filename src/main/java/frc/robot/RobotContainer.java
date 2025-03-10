@@ -26,6 +26,7 @@ import java.util.Optional;
 
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
@@ -43,6 +44,7 @@ public class RobotContainer {
   public final AlgaeDislodger Alagizer;
   public IntegerSubscriber scoringHeight;
   public static final LED led = new LED();
+  SendableChooser<Command> autoChooser = new SendableChooser<>();
 
 
   private final TalonFXModule[] modules = new TalonFXModule[] 
@@ -71,6 +73,39 @@ public class RobotContainer {
     // Configure the trigger bindings
     configureBindings();
     configureDefaultCommands();
+
+
+    autoChooser.addOption("Left", 
+                              Swerve.leftGyroReset()
+                                .andThen(
+                                  alignAndScore(Optional.of("J"))
+                                )
+                                .andThen(
+                                  Elevator.setHeightLevel(Heights.Ground)
+                                ).until(Elevator.atSetpoint)
+                                .andThen(
+                                  pickUpAlignAndScore(Optional.of("K"))
+                                )
+                                .andThen(
+                                  Elevator.setHeightLevel(Heights.Ground)
+                                ).until(Elevator.atSetpoint)
+                          );
+    autoChooser.addOption("Right", 
+                              Swerve.leftGyroReset()
+                              .andThen(
+                                alignAndScore(Optional.of("E"))
+                              )
+                              .andThen(
+                                Elevator.setHeightLevel(Heights.Ground)
+                              ).until(Elevator.atSetpoint)
+                              .andThen(
+                                pickUpAlignAndScore(Optional.of("D"))
+                              )
+                              .andThen(
+                                Elevator.setHeightLevel(Heights.Ground)
+                              ).until(Elevator.atSetpoint)
+    );
+    SmartDashboard.putData(autoChooser);
   }
 
 
@@ -122,8 +157,7 @@ public class RobotContainer {
 
     driver.y().whileTrue(Swerve.driveBackwards());
 
-    driver.povDown().whileTrue(Swerve.driveToSafeAlgaePosition(Alagizer.atSetpoint));
-    driver.povRight().onTrue(Swerve.displayVisionConstants().ignoringDisable(true));
+    driver.povRight().onTrue(Swerve.rightGyroReset());
     
     driver.rightTrigger().toggleOnTrue(
       parallel(
@@ -134,16 +168,15 @@ public class RobotContainer {
 
     driver.povUp().onTrue(Alagizer.dump());
 
-    driver.leftTrigger().whileTrue(
-      Swerve.alignToReef
-      (
-        Optional.empty(), 
-        Elevator::getElevatorTimeToArrival, 
-        false
-      )
+    driver.povLeft().onTrue(
+      Swerve.leftGyroReset()
+      );
+
+    driver.leftTrigger().onTrue(
+      Swerve.displayVisionConstants().ignoringDisable(true)
     );
 
-    //driver.leftTrigger().whileTrue(Swerve.driveToNearestFeed());
+    driver.leftStick().onTrue(Swerve.displayVisionConstants().ignoringDisable(true));
   }
 
   public void configureDefaultCommands(){
@@ -180,14 +213,16 @@ public class RobotContainer {
   public Command intake(){
     return
       Coralizer.runIntakeAndCoralizer(()-> 0.6).until(Coralizer::beamIsBroken)
+      .andThen(Coralizer.setFirstBreakStateTrue())
       .andThen(
         Coralizer.runIntakeAndCoralizer(()->0.2).until(Coralizer::beamNotBroken)
-    )
-    .andThen(
-        Coralizer.setIntakeStateTrue()
-      .andThen(Coralizer.runIntakeAndCoralizer(()-> -0.1).until(Coralizer::beamIsBroken))
-      .andThen(Coralizer.runIntakeAndCoralizer(()-> 0))
-    );
+      )
+      .andThen(
+          Coralizer.setSafeToRaiseElevator()
+        .andThen(Coralizer.runIntakeAndCoralizer(()-> -0.1).until(Coralizer::beamIsBroken))
+        .andThen(Coralizer.runIntakeAndCoralizer(()-> 0))
+      );
+
 }
 
   public Command logTrickshotTrue(){
@@ -197,7 +232,7 @@ public class RobotContainer {
 
   // The command specified in here is run in autonomous
   public Command getAutonomousCommand() {
-    return fourPieceLeft();
+    return autoChooser.getSelected();
   }
 
 
@@ -217,10 +252,13 @@ public class RobotContainer {
   public Command pickUpAlignAndScore(Optional<String> location){
     return 
       parallel(
-        Swerve.driveToNearestFeed().andThen(alignAndScore(location)),
-        intake()
+        Swerve.driveToNearestFeed()
+        .andThen(new WaitUntilCommand(Coralizer.seenFirstBreak))
+        .andThen(alignAndScore(location)),
+        intake().asProxy()
       );
   }
+
 
   public Command alignAndScore(Optional<String> location){
     return
@@ -238,7 +276,7 @@ public class RobotContainer {
             .and(Swerve.collisionDetected.negate())
             .and(Swerve.isCloseToDestination)
             
-            .and(Coralizer.doneIntaking)
+            .and(Coralizer.safeToRaiseElevator)
           ).andThen(
             updateTelemetryState(2)
           ).andThen
@@ -253,15 +291,15 @@ public class RobotContainer {
       led.solidColor(0)
       )
       .andThen(
-        deadline(
-          Coralizer.ejectCoral().asProxy(), // asProxy because we want to be able to continue intaking while we are aligning
-          led.solidColor(3)
-        )
+          deadline(
+            Coralizer.ejectCoral().asProxy(), // asProxy because we want to be able to continue intaking while we are aligning
+            led.solidColor(3)
+          )
         )
       .andThen(
         updateTelemetryState(4)
       )
-    );
+    ).withName("AlignAndScore");
   }
 
 

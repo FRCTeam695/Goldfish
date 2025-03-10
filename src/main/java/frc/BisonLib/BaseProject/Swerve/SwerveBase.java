@@ -519,23 +519,23 @@ public class SwerveBase extends SubsystemBase {
                             odometryLock.writeLock().unlock();
                         }
                     }
-                    seedCameraHeading();
                 }
-        ).ignoringDisable(true);
+        ).ignoringDisable(true).andThen(cameraSeedCommand());
+    }
+
+    public Command cameraSeedCommand(){
+        return runOnce(()-> {
+            seedCameraHeading();
+        }).ignoringDisable(true);
     }
 
     public void seedCameraHeading(){
         //LL RESET
-        new Thread(() -> {
-            try {
-                for(String cam: camNames){
-                    LimelightHelpers.SetIMUMode(cam, 1);
-                    LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-                    LimelightHelpers.SetIMUMode(cam, 1);
-                }
-            } catch (Exception e) {
-            }
-        }).start();
+        for(String cam: camNames){
+            LimelightHelpers.SetIMUMode(cam, 1);
+            LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
+            LimelightHelpers.SetIMUMode(cam, 1);
+        }
     }
 
     /*
@@ -689,10 +689,6 @@ public class SwerveBase extends SubsystemBase {
      * @param fieldOriented A boolean that specifies if the robot should be driven in fieldOriented mode or not
      */
     public void drive(ChassisSpeeds speeds, boolean fieldOriented, boolean useMaxSpeed){
-        if(DriverStation.isAutonomous()){
-            return;
-        }
-
         speeds.vxMetersPerSecond = xFilter.calculate(speeds.vxMetersPerSecond);
         speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
         speeds.omegaRadiansPerSecond = omegaFilter.calculate(speeds.omegaRadiansPerSecond);
@@ -805,8 +801,7 @@ public class SwerveBase extends SubsystemBase {
                         
                         // This way it doesn't trust the rotation reading from the vision
                         // these are all the state stdevs
-                        //VecBuilder.fill(mt2_estimate.avgTagDist * 0.1/4.3, mt2_estimate.avgTagDist * 0.1/Units.inchesToMeters(166), 999999999)
-                        VecBuilder.fill(mt2_estimate.avgTagDist * 0, mt2_estimate.avgTagDist * 0/Units.inchesToMeters(166), 999999999)
+                        VecBuilder.fill(mt2_estimate.avgTagDist * 0.1/4.3, mt2_estimate.avgTagDist * 0.1/4.3, 999999999)
                     );
                 }finally{
                     odometryLock.writeLock().unlock();
