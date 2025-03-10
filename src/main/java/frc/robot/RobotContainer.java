@@ -181,9 +181,19 @@ public class RobotContainer {
 
   public void configureDefaultCommands(){
     // This is the Swerve subsystem default command, this allows the driver to drive the robot
+    // This is the Swerve subsystem default command, this allows the driver to drive the robot
     Swerve.setDefaultCommand
       (
-        Swerve.displayVisionConstants()
+        run
+          (
+            ()-> 
+              Swerve.teleopDefaultCommand(
+                driver::getRequestedChassisSpeeds,
+                true
+              )
+              ,
+              Swerve
+          ).withName("Swerve Drive Command")
       );
 
       Elevator.setDefaultCommand(

@@ -304,10 +304,8 @@ public class Swerve extends SwerveBase{
     public Transform2d getRepulsionVector(Pose2d robotPose, double repulsionGain){
         double repulsionX = 0;
         double repulsionY = 0;
-        int inc = 0;
         for(var vertex : reefVerticies){
             ++inc;
-            m_field.getObject(""+inc).setPose(vertex);
             // get distance to vertex
             Transform2d transformToVertex = vertex.minus(robotPose);
             double vdx = vertex.getX() - robotPose.getX();
@@ -368,7 +366,7 @@ public class Swerve extends SwerveBase{
         if(isRedAlliance()){
             calibrationLocation = Constants.Vision.Red.ALGAE_G_DISLODGE_LOCATION;
         }else{
-            calibrationLocation = Constants.Vision.Blue.ALGAE_G_DISLODGE_LOCATION;
+            calibrationLocation = Constants.Vision.Blue.ALGAE_A_DISLODGE_LOCATION;
         }
         
         return calibrationLocation;
@@ -416,7 +414,7 @@ public class Swerve extends SwerveBase{
                 Set<String> redCoralKeys = Constants.Vision.Red.CORAL_SCORING_LOCATIONS.keySet();
                 for(String coralKey: redCoralKeys){
                     String displayString = "Red Coral " + coralKey;
-                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.get(coralKey));
+                    m_field.getObject(displayString).setPose(Constants.Vision.Red.CORAL_SCORING_LOCATIONS.get(coralKey));
                 }
 
                 //algae scoring locations
