@@ -304,10 +304,8 @@ public class Swerve extends SwerveBase{
     public Transform2d getRepulsionVector(Pose2d robotPose, double repulsionGain){
         double repulsionX = 0;
         double repulsionY = 0;
-        int inc = 0;
         for(var vertex : reefVerticies){
             ++inc;
-            m_field.getObject(""+inc).setPose(vertex);
             // get distance to vertex
             Transform2d transformToVertex = vertex.minus(robotPose);
             double vdx = vertex.getX() - robotPose.getX();
@@ -368,7 +366,7 @@ public class Swerve extends SwerveBase{
         if(isRedAlliance()){
             calibrationLocation = Constants.Vision.Red.ALGAE_G_DISLODGE_LOCATION;
         }else{
-            calibrationLocation = Constants.Vision.Blue.ALGAE_G_DISLODGE_LOCATION;
+            calibrationLocation = Constants.Vision.Blue.ALGAE_A_DISLODGE_LOCATION;
         }
         
         return calibrationLocation;
@@ -416,24 +414,28 @@ public class Swerve extends SwerveBase{
                 Set<String> redCoralKeys = Constants.Vision.Red.CORAL_SCORING_LOCATIONS.keySet();
                 for(String coralKey: redCoralKeys){
                     String displayString = "Red Coral " + coralKey;
-                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.get(coralKey));
+                    m_field.getObject(displayString).setPose(Constants.Vision.Red.CORAL_SCORING_LOCATIONS.get(coralKey));
                 }
 
                 //algae scoring locations
-                Set<String> blueAlgaeKeys = Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.keySet();
-                for(String algaeKey: blueAlgaeKeys){
-                    String displayString = "Blue Algae " + algaeKey;
-                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.get(algaeKey));
+                String [] charactersforalgae = {"A" , "C", "E", "G", "I", "K"};
+                for(int algaeNum = 0; algaeNum < Constants.Vision.Blue.ALGAE_DISLODGE_POSITIONS.length; algaeNum++){
+                    String displayString = "Blue Algae " + charactersforalgae[algaeNum];
+                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.ALGAE_DISLODGE_POSITIONS[algaeNum]);
                 }
-                Set<String> redAlgaeKeys = Constants.Vision.Red.CORAL_SCORING_LOCATIONS.keySet();
-                for(String algaeKey: redAlgaeKeys){
-                    String displayString = "Red Algae " + algaeKey;
-                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.get(algaeKey));
+                for(int algaeNum = 0; algaeNum < Constants.Vision.Red.ALGAE_DISLODGE_POSITIONS.length; algaeNum++){
+                    String displayString = "Red Algae " + charactersforalgae[algaeNum];
+                    m_field.getObject(displayString).setPose(Constants.Vision.Red.ALGAE_DISLODGE_POSITIONS[algaeNum]);
                 }
 
+                //feederstaton
+                m_field.getObject("Blue Feederstation Left").setPose(Constants.Vision.Blue.FEED_LOCATION_LEFT);
+                m_field.getObject("Blue Feederstation Right").setPose(Constants.Vision.Blue.FEED_LOCATION_RIGHT);
+                m_field.getObject("Red Feederstation Left").setPose(Constants.Vision.Red.FEED_LOCATION_LEFT);
+                m_field.getObject("Red Feederstation Right").setPose(Constants.Vision.Red.FEED_LOCATION_RIGHT);
                 //reef Verticies
                 for(int vertexNumber = 0; vertexNumber < reefVerticies.length; vertexNumber++){
-                    String displayString = "Blue Vertex " + vertexNumber;
+                    String displayString = "Vertex " + vertexNumber;
                     m_field.getObject(displayString).setPose(reefVerticies[vertexNumber]);
                 }
             }
