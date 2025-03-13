@@ -92,6 +92,7 @@ public class RobotContainer {
                               .andThen(
                                 Elevator.setHeightLevel(Heights.Ground)
                               ).until(Elevator.atSetpoint)
+                              
                               .andThen(
                                 pickUpAlignAndScore(Optional.of("D"))
                               )
