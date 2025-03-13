@@ -76,10 +76,7 @@ public class RobotContainer {
 
 
     autoChooser.addOption("Left", 
-                              Swerve.leftGyroReset()
-                                .andThen(
-                                  alignAndScore(Optional.of("J"))
-                                )
+                                alignAndScore(Optional.of("J"))
                                 .andThen(
                                   Elevator.setHeightLevel(Heights.Ground)
                                 ).until(Elevator.atSetpoint)
@@ -91,10 +88,7 @@ public class RobotContainer {
                                 ).until(Elevator.atSetpoint)
                           );
     autoChooser.addOption("Right", 
-                              Swerve.leftGyroReset()
-                              .andThen(
                                 alignAndScore(Optional.of("E"))
-                              )
                               .andThen(
                                 Elevator.setHeightLevel(Heights.Ground)
                               ).until(Elevator.atSetpoint)
