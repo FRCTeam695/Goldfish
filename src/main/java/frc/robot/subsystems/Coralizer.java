@@ -7,10 +7,10 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.TalonFXSConfiguration;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFXS;
-import com.ctre.phoenix6.signals.ForwardLimitValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorArrangementValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.signals.ReverseLimitValue;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 //import edu.wpi.first.wpilibj.DigitalInput;
@@ -52,7 +52,7 @@ public class Coralizer extends SubsystemBase{
     }
 
     public boolean beamIsBroken(){
-        return  !(coralizer.getForwardLimit().getValue() == ForwardLimitValue.ClosedToGround);
+        return  coralizer.getReverseLimit().getValue() == ReverseLimitValue.ClosedToGround;
     }
     
     public boolean beamNotBroken(){
