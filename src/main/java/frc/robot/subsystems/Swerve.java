@@ -16,8 +16,11 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringSubscriber;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.BisonLib.BaseProject.Swerve.SwerveBase;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
@@ -282,12 +285,14 @@ public class Swerve extends SwerveBase{
 
 
     public Command leftGyroReset(){
-        return resetGyro(90);
+        return 
+        new ConditionalCommand(resetGyro(90), new WaitCommand(0), ()-> DriverStation.isDisabled());
     }
 
 
     public Command rightGyroReset(){
-        return resetGyro(-90);
+        return 
+        new ConditionalCommand(resetGyro(-90), new WaitCommand(0), ()-> DriverStation.isDisabled());
     }
 
 
