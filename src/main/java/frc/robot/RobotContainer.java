@@ -26,6 +26,7 @@ import java.util.Optional;
 
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -115,6 +116,12 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
+
+    Coralizer.seenFirstBreak.negate().and(Swerve.isWithin10cm).and(()-> DriverStation.isAutonomous()).onTrue(
+      led.solidColor(3)
+    );
+
+    
     driver.rightBumper().onTrue(
       logTrickshotTrue().andThen(
       Coralizer.ejectCoral()
@@ -129,10 +136,6 @@ public class RobotContainer {
 
     driver.leftBumper().onTrue(
         intake()
-    );
-
-    driver.leftBumper().onTrue(
-      led.solidColor(3)
     );
     
 
@@ -152,6 +155,9 @@ public class RobotContainer {
 
     driver.x().whileTrue(
       alignAndScore(Optional.empty())
+    );
+    driver.x().whileTrue(
+      led.solidColor(0)
     );
     
     driver.rightTrigger().toggleOnTrue(
@@ -289,10 +295,7 @@ public class RobotContainer {
       led.solidColor(0)
       )
       .andThen(
-          deadline(
-            Coralizer.ejectCoral().asProxy(), // asProxy because we want to be able to continue intaking while we are aligning
-            led.solidColor(3)
-          )
+            Coralizer.ejectCoral().asProxy() // asProxy because we want to be able to continue intaking while we are aligning
         )
       .andThen(
         updateTelemetryState(4)

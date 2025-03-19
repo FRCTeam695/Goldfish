@@ -54,6 +54,7 @@ public class Swerve extends SwerveBase{
     public Trigger collisionDetected;
     public Trigger almostRotatedToSetpoint;
     public Trigger isApplyingRepulsion;
+    public Trigger isWithin10cm;
     public TrapezoidProfile distanceProfile;
 
     public Swerve(String[] camNames, TalonFXModule[] modules) {
@@ -71,6 +72,7 @@ public class Swerve extends SwerveBase{
         collisionDetected = new Trigger(()-> hasDetectedCollision);
         almostRotatedToSetpoint = new Trigger(()-> robotRotationError < 45);
         isApplyingRepulsion = new Trigger(()-> currentlyApplyingRepulsion);
+        isWithin10cm = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.1);
         distanceProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
     }
     
