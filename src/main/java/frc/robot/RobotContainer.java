@@ -130,6 +130,10 @@ public class RobotContainer {
     driver.leftBumper().onTrue(
         intake()
     );
+
+    driver.leftBumper().onTrue(
+      led.solidColor(3)
+    );
     
 
     // make sure you gyro reset by aligning with the reef, not eyeballing it
