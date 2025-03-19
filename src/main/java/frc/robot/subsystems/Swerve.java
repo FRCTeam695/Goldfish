@@ -168,6 +168,27 @@ public class Swerve extends SwerveBase{
     }
 
 
+    public Command rotateToReefCenter(Supplier<ChassisSpeeds> wantedSpeeds){
+        return run(()->{
+            Pose2d reefCenter;
+            Pose2d robotPose = getSavedPose();
+            if(isRedAlliance()){
+                reefCenter = Constants.Vision.Red.REEF_CENTER;
+            }
+            else{
+                reefCenter = Constants.Vision.Blue.REEF_CENTER;
+            }
+            double dx = reefCenter.getX() - robotPose.getX();
+            double dy = reefCenter.getY() - robotPose.getY();
+            double dTheta = Math.toDegrees(Math.atan(dx/dy));
+
+            ChassisSpeeds speeds = wantedSpeeds.get();
+            speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(dTheta + robotPose.getRotation().getDegrees());
+            drive(speeds, true, true);
+        });
+    }
+
+
     public Command driveBackwards(){
         return run(
             ()->{

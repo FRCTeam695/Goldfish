@@ -115,7 +115,6 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    //driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
     driver.rightBumper().onTrue(
       logTrickshotTrue().andThen(
       Coralizer.ejectCoral()
@@ -123,36 +122,33 @@ public class RobotContainer {
               Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
             .andThen(Elevator.setHeightLevel(Heights.Ground))
             ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false)));
-
-
-    driver.b().onTrue(
-        Elevator.goToScoringHeight()
-    );
     
-
-    // make sure you gyro reset by aligning with the reef, not eyeballing it
-    driver.back().onTrue(Swerve.resetGyro());
-
-    driver.x().whileTrue(
-      alignAndScore(Optional.empty())
-    );
-
     driver.leftBumper().whileTrue(
         Swerve.rotateToNearestFeed(driver::getRequestedChassisSpeeds)
     );
 
     driver.leftBumper().onTrue(
         intake()
-      );
+    );
     
+
+    // make sure you gyro reset by aligning with the reef, not eyeballing it
+    driver.back().onTrue(Swerve.resetGyro());
 
     driver.a().whileTrue(
         Coralizer.runIntakeAndCoralizer(()-> -0.1)
     );
 
+    //driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
+    driver.b().onTrue(
+      Elevator.goToScoringHeight()
+    );
+
     driver.y().whileTrue(Swerve.driveBackwards());
 
-    driver.povRight().onTrue(Swerve.rightGyroReset());
+    driver.x().whileTrue(
+      alignAndScore(Optional.empty())
+    );
     
     driver.rightTrigger().toggleOnTrue(
       parallel(
@@ -166,9 +162,11 @@ public class RobotContainer {
     driver.povLeft().onTrue(
       Swerve.leftGyroReset()
       );
+    
+    driver.povRight().onTrue(Swerve.rightGyroReset());
 
-    driver.leftTrigger().onTrue(
-      Swerve.displayVisionConstants().ignoringDisable(true)
+    driver.leftTrigger().toggleOnTrue(
+      Swerve.rotateToReefCenter(driver::getRequestedChassisSpeeds)
     );
 
     driver.leftStick().onTrue(Swerve.displayVisionConstants().ignoringDisable(true));

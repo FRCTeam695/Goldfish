@@ -211,6 +211,12 @@ public class Constants {
                 (CORAL_K_SCORING_LOCATION.getX() + CORAL_L_SCORING_LOCATION.getX())/2, 
                 (CORAL_K_SCORING_LOCATION.getY() + CORAL_L_SCORING_LOCATION.getY())/2, 
                 CORAL_K_SCORING_LOCATION.getRotation());
+
+            public static Pose2d REEF_CENTER = new Pose2d(
+                (ALGAE_A_DISLODGE_LOCATION.getX() + ALGAE_G_DISLODGE_LOCATION.getX())/2,
+                (ALGAE_A_DISLODGE_LOCATION.getY() + ALGAE_G_DISLODGE_LOCATION.getY())/2,
+                new Rotation2d()
+            );
     
             public static final HashMap<String, Pose2d> CORAL_SCORING_LOCATIONS = new HashMap<String, Pose2d>(){
                 {
@@ -279,6 +285,12 @@ public class Constants {
                 (CORAL_K_SCORING_LOCATION.getX() + CORAL_L_SCORING_LOCATION.getX())/2, 
                 (CORAL_K_SCORING_LOCATION.getY() + CORAL_L_SCORING_LOCATION.getY())/2, 
                 CORAL_K_SCORING_LOCATION.getRotation());
+            
+            public static Pose2d REEF_CENTER = new Pose2d(
+                (ALGAE_A_DISLODGE_LOCATION.getX() + ALGAE_G_DISLODGE_LOCATION.getX())/2,
+                (ALGAE_A_DISLODGE_LOCATION.getY() + ALGAE_G_DISLODGE_LOCATION.getY())/2,
+                new Rotation2d()
+            );
 
             public static final HashMap<String, Pose2d> CORAL_SCORING_LOCATIONS = new HashMap<String, Pose2d>(){
                 {
