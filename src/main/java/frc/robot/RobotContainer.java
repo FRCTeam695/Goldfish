@@ -241,19 +241,6 @@ public class RobotContainer {
   }
 
 
-  public Command fourPieceLeft() {
-    return Swerve.leftGyroReset()
-            .andThen(
-              alignAndScore(Optional.of("T"))
-            ).andThen(
-              pickUpAlignAndScore(Optional.of("K"))
-            ).andThen(
-              pickUpAlignAndScore(Optional.of("L"))
-            ).andThen(
-              pickUpAlignAndScore(Optional.of("A"))
-            );
-  }
-
   public Command pickUpAlignAndScore(Optional<String> location){
     return 
       parallel(
