@@ -27,6 +27,7 @@ public class Coralizer extends SubsystemBase{
     private boolean hasSeenFirstBreak = false;
     public Trigger safeToRaiseElevator = new Trigger(()-> isSafeToRaiseElevator);
     public Trigger seenFirstBreak = new Trigger(()-> hasSeenFirstBreak);
+    public Trigger isStalled;
 
     public Coralizer(){
         //beamBreak = new DigitalInput(0);
@@ -49,6 +50,8 @@ public class Coralizer extends SubsystemBase{
 
         coralizer.getConfigurator().apply(config);
         intake.getConfigurator().apply(config);
+
+        isStalled = new Trigger(()-> intake.getMotorStallCurrent().getValueAsDouble() > 3);
     }
 
     public boolean beamIsBroken(){

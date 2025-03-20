@@ -121,6 +121,8 @@ public class RobotContainer {
       led.solidColor(3)
     );
 
+    //Coralizer.isStalled.whileTrue(led.breatheEffect(4, 0.1));
+
     
     driver.rightBumper().onTrue(
       logTrickshotTrue().andThen(
