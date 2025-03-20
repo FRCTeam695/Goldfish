@@ -79,23 +79,22 @@ public class RobotContainer {
     autoChooser.addOption("Left", 
                                 alignAndScore(Optional.of("J"))
                                 .andThen(
-                                  Elevator.setHeightLevel(Heights.Ground)
-                                ).until(Elevator.atSetpoint)
-                                .andThen(
                                   pickUpAlignAndScore(Optional.of("K"))
+                                )
+                                .andThen(
+                                  pickUpAlignAndScore(Optional.of("L"))
                                 )
                                 .andThen(
                                   Elevator.setHeightLevel(Heights.Ground)
                                 ).until(Elevator.atSetpoint)
                           );
     autoChooser.addOption("Right", 
-                                alignAndScore(Optional.of("E"))
-                              .andThen(
-                                Elevator.setHeightLevel(Heights.Ground)
-                              ).until(Elevator.atSetpoint)
-
+                              alignAndScore(Optional.of("E"))
                               .andThen(
                                 pickUpAlignAndScore(Optional.of("D"))
+                              )
+                              .andThen(
+                                pickUpAlignAndScore(Optional.of("C"))
                               )
                               .andThen(
                                 Elevator.setHeightLevel(Heights.Ground)
@@ -258,7 +257,10 @@ public class RobotContainer {
   public Command pickUpAlignAndScore(Optional<String> location){
     return 
       parallel(
-        Swerve.driveToNearestFeed()
+        parallel(
+          Swerve.driveToNearestFeed(),
+          Elevator.setHeightLevel(Heights.Ground).until(Elevator.atSetpoint)
+        )
         .andThen(new WaitUntilCommand(Coralizer.seenFirstBreak))
         .andThen(alignAndScore(location)),
         intake().asProxy()
