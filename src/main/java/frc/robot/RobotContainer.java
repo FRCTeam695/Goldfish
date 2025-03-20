@@ -171,10 +171,12 @@ public class RobotContainer {
     driver.povUp().onTrue(Alagizer.dump());
 
     driver.povLeft().onTrue(
-      Swerve.leftGyroReset()
+      Swerve.leftGyroReset().onlyIf(()-> DriverStation.isDisabled())
       );
     
-    driver.povRight().onTrue(Swerve.rightGyroReset());
+    driver.povRight().onTrue(
+      Swerve.rightGyroReset().onlyIf(()-> DriverStation.isDisabled())
+    );
 
     driver.leftTrigger().toggleOnTrue(
       Swerve.rotateToReefCenter(driver::getRequestedChassisSpeeds)
