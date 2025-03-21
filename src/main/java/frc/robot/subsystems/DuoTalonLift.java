@@ -118,17 +118,19 @@ public class DuoTalonLift extends SubsystemBase{
         // kP and kD accounts for errors created by in-match hits
         r_leaderConfigs.Slot0.kP = 3; 
         r_leaderConfigs.Slot0.kD = 0.2; 
-
+        
         // Motion Magic (Right leader)
-        r_leaderConfigs.MotionMagic.MotionMagicCruiseVelocity = 250; // rot/sec
-        r_leaderConfigs.MotionMagic.MotionMagicAcceleration = 400; // rot/sec^2
+        int cruiseVel = 250;
+        r_leaderConfigs.MotionMagic.MotionMagicCruiseVelocity = cruiseVel; // rot/sec
+        int maxAccel = 400;
+        r_leaderConfigs.MotionMagic.MotionMagicAcceleration = maxAccel; // rot/sec^2
         r_leaderConfigs.MotionMagic.MotionMagicJerk = 2000; // rot/sec^3
 
         // Applying both kraken's configs
         r_leaderTalon.getConfigurator().apply(r_leaderConfigs);
         l_followerTalon.getConfigurator().apply(l_followerConfigs);
         r_leaderTalon.setPosition(0); // Reset leader's position
-        heightProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(250., 400.));
+        heightProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(cruiseVel, maxAccel));
         SmartDashboard.putNumber("Elevator Set Inches", 0);
     }
 
