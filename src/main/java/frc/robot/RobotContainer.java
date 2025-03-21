@@ -157,9 +157,6 @@ public class RobotContainer {
     driver.x().whileTrue(
       alignAndScore(Optional.empty())
     );
-    driver.x().whileTrue(
-      led.solidColor(0)
-    );
     
     driver.rightTrigger().toggleOnTrue(
       parallel(
@@ -171,11 +168,11 @@ public class RobotContainer {
     driver.povUp().onTrue(Alagizer.dump());
 
     driver.povLeft().onTrue(
-      Swerve.leftGyroReset().onlyIf(()-> DriverStation.isDisabled())
+      Swerve.leftGyroReset()
       );
     
     driver.povRight().onTrue(
-      Swerve.rightGyroReset().onlyIf(()-> DriverStation.isDisabled())
+      Swerve.rightGyroReset()
     );
 
     driver.leftTrigger().toggleOnTrue(
@@ -222,7 +219,7 @@ public class RobotContainer {
       Coralizer.runIntakeAndCoralizer(()-> 0.6).until(Coralizer::beamIsBroken)
       .andThen(Coralizer.setFirstBreakStateTrue())
       .andThen(
-        Coralizer.runIntakeAndCoralizer(()->0.2).until(Coralizer::beamNotBroken)
+        Coralizer.runIntakeAndCoralizer(()->0.4).until(Coralizer::beamNotBroken)
       )
       .andThen(
           Coralizer.setSafeToRaiseElevator()
@@ -260,7 +257,6 @@ public class RobotContainer {
   public Command alignAndScore(Optional<String> location){
     return
     updateTelemetryState(1).andThen(
-      deadline(
         Elevator.configureSetpoint().andThen(
         parallel(
           // tells the elevator where is will be going later, 
@@ -269,7 +265,7 @@ public class RobotContainer {
           Swerve.alignToReef(location, ()-> Elevator.getElevatorTimeToArrival(), true),
           
           new WaitUntilCommand(
-            Swerve.atRotationSetpoint
+            Swerve.almostAtRotationSetpoint
             .and(Swerve.collisionDetected.negate())
             .and(Swerve.isCloseToDestination)
             
@@ -283,12 +279,10 @@ public class RobotContainer {
         ))
         .andThen(
           updateTelemetryState(3)
-        ),
-
-      led.solidColor(0)
-      )
+        )
       .andThen(
-            Coralizer.ejectCoral().asProxy() // asProxy because we want to be able to continue intaking while we are aligning
+            new WaitUntilCommand(Swerve.atRotationSetpoint).andThen(
+            Coralizer.ejectCoral().asProxy()) // asProxy because we want to be able to continue intaking while we are aligning
         )
       .andThen(
         updateTelemetryState(4)
