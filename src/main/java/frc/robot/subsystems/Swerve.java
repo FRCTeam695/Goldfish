@@ -165,7 +165,7 @@ public class Swerve extends SwerveBase{
                     getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()));
                 SmartDashboard.putString("Chassis Speeds Commanded", speeds.toString());
                 drive(speeds, true, false);
-            }).until(isAtDestination.and(isApplyingRepulsion.negate()));
+            }).until(isAtDestination.and(isApplyingRepulsion.negate().and(atRotationSetpoint)));
         // );
     }
 
