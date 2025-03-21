@@ -41,7 +41,7 @@ public class Swerve extends SwerveBase{
     
 
 
-    public final double kp_attract = 5;
+    public final double kp_attract = 2 * Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ/Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS;
 
     // we will tune this on the practice field
     public final double kp_repulse = 2;
