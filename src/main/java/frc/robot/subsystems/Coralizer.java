@@ -24,7 +24,7 @@ public class Coralizer extends SubsystemBase{
     private TalonFXS coralizer;
     private TalonFXS intake;
     private boolean isSafeToRaiseElevator = true;
-    private boolean hasSeenFirstBreak = false;
+    private boolean hasSeenFirstBreak = true;
     public Trigger safeToRaiseElevator = new Trigger(()-> isSafeToRaiseElevator);
     public Trigger seenFirstBreak = new Trigger(()-> hasSeenFirstBreak);
     public Trigger isStalled;
