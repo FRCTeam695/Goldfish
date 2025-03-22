@@ -116,7 +116,7 @@ public class RobotContainer {
    */
   private void configureBindings() {
 
-    Coralizer.seenFirstBreak.negate().and(Swerve.isWithin10cm).and(()-> DriverStation.isAutonomous()).onTrue(
+    Coralizer.seenFirstBreak.negate().and(Swerve.isWithin10cm).and(()-> DriverStation.isAutonomous()).whileTrue(
       led.solidColor(3)
     );
 
