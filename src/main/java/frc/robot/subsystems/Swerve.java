@@ -48,6 +48,7 @@ public class Swerve extends SwerveBase{
 
     public boolean hasDetectedCollision = false;
     public boolean currentlyApplyingRepulsion = false;
+    public boolean currentlyFullyAutonomous = false;
 
     public Trigger isCloseToDestination;
     public Trigger isAtDestination;
@@ -55,6 +56,7 @@ public class Swerve extends SwerveBase{
     public Trigger almostRotatedToSetpoint;
     public Trigger isApplyingRepulsion;
     public Trigger isWithin10cm;
+    public Trigger isFullyAutonomous;
     public TrapezoidProfile distanceProfile;
 
     public Swerve(String[] camNames, TalonFXModule[] modules) {
@@ -165,7 +167,13 @@ public class Swerve extends SwerveBase{
                     getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()));
                 SmartDashboard.putString("Chassis Speeds Commanded", speeds.toString());
                 drive(speeds, true, false);
-            }).until(isAtDestination.and(isApplyingRepulsion.negate().and(atRotationSetpoint)));
+            }).until(isAtDestination.and(isApplyingRepulsion.negate().and(atRotationSetpoint)))
+            .andThen(
+                runOnce(()-> {
+                    driveRobotRelative(new ChassisSpeeds(), false, false);
+                    currentlyFullyAutonomous = false;
+                })
+            );
         // );
     }
 
@@ -303,7 +311,10 @@ public class Swerve extends SwerveBase{
                 drive(speeds, true, false);
             }
             ).until(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.05))
-            .andThen(runOnce(()-> driveRobotRelative(new ChassisSpeeds(), false, false)));
+            .andThen(runOnce(()-> {
+                driveRobotRelative(new ChassisSpeeds(), false, false);
+                currentlyFullyAutonomous = false;
+            }));
     }
 
 
@@ -330,6 +341,7 @@ public class Swerve extends SwerveBase{
 
 
     public Transform2d getRepulsionVector(Pose2d robotPose, double repulsionGain){
+        currentlyFullyAutonomous = true;
         double repulsionX = 0;
         double repulsionY = 0;
         for(var vertex : reefVerticies){

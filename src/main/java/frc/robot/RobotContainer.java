@@ -116,9 +116,18 @@ public class RobotContainer {
    */
   private void configureBindings() {
 
+    // indication for human player to drop coral
     Coralizer.seenFirstBreak.negate().and(Swerve.isWithin10cm).and(()-> DriverStation.isAutonomous()).whileTrue(
       led.solidColor(3)
     );
+
+    // when we are ready to shoot the coral
+    Coralizer.safeToRaiseElevator.and(Swerve.isAtDestination).whileTrue(
+      led.breatheEffect(3, 0.1)
+    );
+
+    // while auto aligning
+    Swerve.isFullyAutonomous.whileTrue(led.breatheEffect(0, 0.2));
 
     //Coralizer.isStalled.whileTrue(led.breatheEffect(4, 0.1));
 
