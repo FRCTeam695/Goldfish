@@ -44,7 +44,7 @@ public class RobotContainer {
   public final Coralizer Coralizer;
   public final AlgaeDislodger Alagizer;
   public IntegerSubscriber scoringHeight;
-  public static final LED led = new LED();
+  public final LED led = new LED();
   SendableChooser<Command> autoChooser = new SendableChooser<>();
 
 
@@ -117,7 +117,7 @@ public class RobotContainer {
   private void configureBindings() {
 
     // indication for human player to drop coral
-    Coralizer.seenFirstBreak.negate().and(Swerve.isWithin10cm).and(()-> DriverStation.isAutonomous()).whileTrue(
+    Swerve.isWithin10cm.and(()-> Coralizer.getCurrentCommand().getName().equals("intake")).and(()-> DriverStation.isAutonomous()).whileTrue(
       led.solidColor(3)
     );
 
@@ -145,7 +145,7 @@ public class RobotContainer {
     );
 
     driver.leftBumper().onTrue(
-        intake()
+        Coralizer.intake()
     );
     
 
@@ -223,21 +223,6 @@ public class RobotContainer {
       //Gripper.setDefaultCommand(Gripper.stop());
   }
 
-  public Command intake(){
-    return
-      Coralizer.runIntakeAndCoralizer(()-> 0.6).until(Coralizer::beamIsBroken)
-      .andThen(Coralizer.setFirstBreakStateTrue())
-      .andThen(
-        Coralizer.runIntakeAndCoralizer(()->0.4).until(Coralizer::beamNotBroken)
-      )
-      .andThen(
-          Coralizer.setSafeToRaiseElevator()
-        .andThen(Coralizer.runIntakeAndCoralizer(()-> -0.1).until(Coralizer::beamIsBroken))
-        .andThen(Coralizer.runIntakeAndCoralizer(()-> 0))
-      );
-
-}
-
   public Command logTrickshotTrue(){
     return runOnce(()-> {SmartDashboard.putBoolean("Trickshot", true);});
   }
@@ -258,7 +243,7 @@ public class RobotContainer {
         )
         .andThen(new WaitUntilCommand(Coralizer.seenFirstBreak))
         .andThen(alignAndScore(location)),
-        intake().asProxy()
+        Coralizer.intake().asProxy()
       );
   }
 
@@ -306,7 +291,7 @@ public class RobotContainer {
   public Command alignAndIntake(){
     return
       deadline(
-        intake(),
+        Coralizer.intake(),
         Swerve.driveToNearestFeed()
       );
   }
