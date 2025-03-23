@@ -120,9 +120,9 @@ public class DuoTalonLift extends SubsystemBase{
         r_leaderConfigs.Slot0.kD = 0.2; 
         
         // Motion Magic (Right leader)
-        int cruiseVel = 80;
+        int cruiseVel = 90;
         r_leaderConfigs.MotionMagic.MotionMagicCruiseVelocity = cruiseVel; // rot/sec
-        int maxAccel = 5000;
+        int maxAccel = 500;
         r_leaderConfigs.MotionMagic.MotionMagicAcceleration = maxAccel; // rot/sec^2
         r_leaderConfigs.MotionMagic.MotionMagicJerk = 5500; // rot/sec^3
 
@@ -202,8 +202,8 @@ public class DuoTalonLift extends SubsystemBase{
     public enum Heights { // An enum is a class of defined objects
         Ground ("Ground", 0),
         L1 ("L1", 9.2), // *rotationsPerInch
-        L2 ("L2", 13.412),
-        L3 ("L3", 29.734),
+        L2 ("L2", 13.412 + 1),
+        L3 ("L3", 29.734 + 0.5),
         L4 ("L4", 55.234);
 
         String level;

@@ -111,6 +111,8 @@ public class SwerveBase extends SubsystemBase {
     private SwerveSetpoint previousSetpoint;
  
     public SlewRateLimiter omegaFilter = new SlewRateLimiter(Math.toRadians(1074.5588535));
+    public SlewRateLimiter xFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
+    public SlewRateLimiter yFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
     //private Pigeon2 pigeon = new Pigeon2(8);
 
     private VoltageOut m_voltReq;
@@ -686,6 +688,8 @@ public class SwerveBase extends SubsystemBase {
      * @param fieldOriented A boolean that specifies if the robot should be driven in fieldOriented mode or not
      */
     public void drive(ChassisSpeeds speeds, boolean fieldOriented, boolean useMaxSpeed){
+        speeds.vxMetersPerSecond = xFilter.calculate(speeds.vxMetersPerSecond);
+        speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
         speeds.omegaRadiansPerSecond = omegaFilter.calculate(speeds.omegaRadiansPerSecond);
         //speeds = applyAccelerationLimit(speeds);
 

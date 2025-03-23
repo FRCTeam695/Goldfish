@@ -29,7 +29,7 @@ public class Coralizer extends SubsystemBase{
     private boolean hasSeenFirstBreak = true;
     public Trigger safeToRaiseElevator = new Trigger(()-> isSafeToRaiseElevator);
     public Trigger seenFirstBreak = new Trigger(()-> hasSeenFirstBreak);
-    public Trigger beenEnoughTime = new Trigger(()-> (Timer.getFPGATimestamp() - startTime) < 0.65);
+    public Trigger beenEnoughTime = new Trigger(this::timeExpired);
     public Trigger isStalled;
 
     public Coralizer(){
@@ -60,6 +60,12 @@ public class Coralizer extends SubsystemBase{
     public boolean beamIsBroken(){
         return  coralizer.getReverseLimit().getValue() == ReverseLimitValue.ClosedToGround;
     }
+
+    public boolean timeExpired(){
+        double timeDiff = Math.abs(Timer.getFPGATimestamp() - startTime);
+        SmartDashboard.putNumber("CORALIZER time difference", timeDiff);
+        return (timeDiff >= 0.65);
+    }
     
     public boolean beamNotBroken(){
     return !beamIsBroken();
@@ -70,7 +76,7 @@ public class Coralizer extends SubsystemBase{
           (runIntakeAndCoralizer(()-> 0.6).until(this::beamIsBroken)
           .andThen(setFirstBreakStateTrue())
           .andThen(
-            runIntakeAndCoralizer(()->0.5).until(beenEnoughTime.and(this::beamNotBroken))
+            runIntakeAndCoralizer(()->0.4).until(beenEnoughTime.and(this::beamNotBroken))
           )
           .andThen(
               setSafeToRaiseElevator()
@@ -108,7 +114,7 @@ public class Coralizer extends SubsystemBase{
     }
 
     public Command ejectCoral(){
-        return runCoralizer(()-> 0.6).withTimeout(0.2).andThen(setDangerousToRaiseElevator()).andThen(setFirstBreakStateFalse());
+        return runCoralizer(()-> 0.6).withTimeout(0.3).andThen(setDangerousToRaiseElevator()).andThen(setFirstBreakStateFalse());
     }
 
     public Command setDangerousToRaiseElevator(){
@@ -142,7 +148,9 @@ public class Coralizer extends SubsystemBase{
         SmartDashboard.putBoolean("Beambreak", beamIsBroken());
         SmartDashboard.putBoolean("Has Finished Intaking", safeToRaiseElevator.getAsBoolean());
         SmartDashboard.putBoolean("Has Seen First Break", hasSeenFirstBreak);
+        SmartDashboard.putBoolean("CORALIZER Been enough time", beenEnoughTime.getAsBoolean());
         SmartDashboard.putNumber("Intake current", intake.getSupplyCurrent().getValueAsDouble());
         SmartDashboard.putNumber("Coralizer current", coralizer.getSupplyCurrent().getValueAsDouble());
+        SmartDashboard.putNumber("CORALIZER Start time", startTime);
     }
 }

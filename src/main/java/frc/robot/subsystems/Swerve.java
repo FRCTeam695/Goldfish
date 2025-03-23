@@ -67,7 +67,7 @@ public class Swerve extends SwerveBase{
         scoringModeSub = sideCarTable.getStringTopic("currentIntakeMode").subscribe("");
 
         isCloseToDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 2.5);
-        isAtDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.02);
+        isAtDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.01);
         collisionDetected = new Trigger(()-> hasDetectedCollision);
         almostRotatedToSetpoint = new Trigger(()-> robotRotationError < 20);
         isApplyingRepulsion = new Trigger(()-> currentlyApplyingRepulsion);
@@ -88,8 +88,8 @@ public class Swerve extends SwerveBase{
      */
     public Command alignToReef(Optional<String> location, DoubleSupplier elevatorTimeToArrival, boolean willRaiseElevator){
         return 
-        // runOnce(()-> hasDetectedCollision = true)
-        // .andThen(
+            runOnce(()-> currentlyFullyAutonomous = true)
+            .andThen(
             run(()->{
                 SmartDashboard.putBoolean("Collision Detected",  collisionDetected.getAsBoolean());
                 SmartDashboard.putBoolean("Close to Destination",  isCloseToDestination.getAsBoolean());
@@ -176,9 +176,11 @@ public class Swerve extends SwerveBase{
             .andThen(
                 runOnce(()-> {
                     driveRobotRelative(new ChassisSpeeds(), false, false);
-                    currentlyFullyAutonomous = false;
                 })
-            );
+            )
+            ).finallyDo(()->{
+                currentlyFullyAutonomous = false;
+            });
         // );
     }
 
@@ -302,8 +304,8 @@ public class Swerve extends SwerveBase{
                 double repulsionY = 0;
 
                 Transform2d repulsionVector = getRepulsionVector(robotPose, 0.5);
-                repulsionX += repulsionVector.getX() < 0.6 ? 0 : repulsionVector.getX();
-                repulsionY += repulsionVector.getY() < 0.6 ? 0 : repulsionVector.getY();
+                repulsionX += repulsionVector.getX() < 1 ? 0 : repulsionVector.getX();
+                repulsionY += repulsionVector.getY() < 1 ? 0 : repulsionVector.getY();
 
                 SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
 
@@ -315,8 +317,9 @@ public class Swerve extends SwerveBase{
             ).until(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.05))
             .andThen(runOnce(()-> {
                 driveRobotRelative(new ChassisSpeeds(), false, false);
+            })).finallyDo(()->{
                 currentlyFullyAutonomous = false;
-            }));
+            });
     }
 
 
