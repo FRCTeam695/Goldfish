@@ -16,6 +16,8 @@ import frc.robot.subsystems.DuoTalonLift;
 import frc.robot.subsystems.DuoTalonLift.Heights;
 import frc.robot.subsystems.LED;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -118,6 +120,11 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
+    // UNUSED BUTTONS
+    // y
+    // a
+    // right bumper
+    // povleft
 
     // indication for human player to drop coral
     Swerve.isWithin10cm.and(Coralizer.seenFirstBreak.negate()).and(()-> DriverStation.isAutonomous()).whileTrue(
@@ -133,15 +140,6 @@ public class RobotContainer {
     Swerve.isFullyAutonomous.and(Swerve.isAtDestination.negate()).whileTrue(led.breatheEffect(0, 0.2));
 
     //Coralizer.isStalled.whileTrue(led.breatheEffect(4, 0.1));
-
-    
-    driver.rightBumper().onTrue(
-      logTrickshotTrue().andThen(
-      Coralizer.ejectCoral()
-            .andThen(
-              Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
-            .andThen(Elevator.setHeightLevel(Heights.Ground))
-            ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false)));
     
     driver.leftBumper().whileTrue(
         Swerve.rotateToNearestFeed(driver::getRequestedChassisSpeeds)
@@ -155,16 +153,19 @@ public class RobotContainer {
     // make sure you gyro reset by aligning with the reef, not eyeballing it
     driver.back().onTrue(Swerve.resetGyro());
 
-    driver.a().whileTrue(
-        Coralizer.runIntakeAndCoralizer(()-> -0.1)
-    );
 
     driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
     // driver.b().onTrue(
     //   Elevator.goToScoringHeight()
     // );
-
-    driver.y().whileTrue(Swerve.driveBackwards());
+    // driver.b().onFalse(
+    //   logTrickshotTrue().andThen(
+    //     Coralizer.ejectCoral()
+    //           .andThen(
+    //             Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
+    //           .andThen(Elevator.setHeightLevel(Heights.Ground))
+    //           ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false))
+    // );
 
     driver.x().whileTrue(
       alignAndScore(Optional.empty())
@@ -180,11 +181,19 @@ public class RobotContainer {
     driver.povUp().onTrue(Alagizer.dump());
 
     driver.povLeft().onTrue(
-      Swerve.leftGyroReset()
-      );
+      new ConditionalCommand(
+        Swerve.leftGyroReset(), 
+        new WaitCommand(0), 
+        ()-> DriverStation.isDisabled()
+      )
+    );
     
-    driver.povRight().onTrue(
-      Swerve.rightGyroReset()
+    driver.povRight().whileTrue(
+      new ConditionalCommand(
+        Swerve.rightGyroReset(), 
+        Coralizer.runIntakeAndCoralizer(()-> -0.1), 
+        ()-> DriverStation.isDisabled()
+      )
     );
 
     driver.leftTrigger().toggleOnTrue(
