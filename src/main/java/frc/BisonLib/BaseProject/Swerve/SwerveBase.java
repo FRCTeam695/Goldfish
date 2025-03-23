@@ -111,9 +111,6 @@ public class SwerveBase extends SubsystemBase {
     private SwerveSetpoint previousSetpoint;
  
     public SlewRateLimiter omegaFilter = new SlewRateLimiter(Math.toRadians(1074.5588535));
-    public SlewRateLimiter xFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
-    public SlewRateLimiter yFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
-    public SlewRateLimiter accelFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
     //private Pigeon2 pigeon = new Pigeon2(8);
 
     private VoltageOut m_voltReq;
@@ -689,8 +686,6 @@ public class SwerveBase extends SubsystemBase {
      * @param fieldOriented A boolean that specifies if the robot should be driven in fieldOriented mode or not
      */
     public void drive(ChassisSpeeds speeds, boolean fieldOriented, boolean useMaxSpeed){
-        speeds.vxMetersPerSecond = xFilter.calculate(speeds.vxMetersPerSecond);
-        speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
         speeds.omegaRadiansPerSecond = omegaFilter.calculate(speeds.omegaRadiansPerSecond);
         //speeds = applyAccelerationLimit(speeds);
 
@@ -703,38 +698,6 @@ public class SwerveBase extends SubsystemBase {
         }
 
         this.driveRobotRelative(speeds, false, useMaxSpeed);
-    }
-
-    public ChassisSpeeds applyAccelerationLimit(ChassisSpeeds desiredSpeeds){
-        // the current measured robot speeds
-        ChassisSpeeds current = getLatestChassisSpeed();
-
-        // acceleration in the x and y direction
-        double ax = (desiredSpeeds.vxMetersPerSecond - current.vxMetersPerSecond)/0.02;
-        double ay = (desiredSpeeds.vyMetersPerSecond - current.vyMetersPerSecond)/0.02;
-
-        // magnitude of the acceleration
-        double magnitude = Math.hypot(ax, ay);
-
-        // rate limited magnitude
-        double newMagnitude = accelFilter.calculate(magnitude);
-
-        if(magnitude != 0){
-            // scale down acceleration in the x and y direction
-            double scale = newMagnitude/magnitude;
-
-            ax *= scale;
-            ay *= scale;
-        }
-
-        // 0.02 is the loop time
-        current.vxMetersPerSecond += (ax * 0.02);
-        current.vyMetersPerSecond += (ay * 0.02);
-
-        //current.vxMetersPerSecond = current.vxMetersPerSecond < 0.05 ? 0 : current.vxMetersPerSecond;
-        //current.vyMetersPerSecond = current.vyMetersPerSecond < 0.05 ? 0 : current.vyMetersPerSecond;
-        current.omegaRadiansPerSecond = desiredSpeeds.omegaRadiansPerSecond;
-        return current;
     }
 
 
