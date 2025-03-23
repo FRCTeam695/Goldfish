@@ -244,27 +244,23 @@ public class Swerve extends SwerveBase{
 
 
     public Command rotateToDislodgeLocation(Supplier<ChassisSpeeds> commandedSpeeds){
-           return  run(()->{
-                Pose2d robotPose = getSavedPose();
+           return  
+           runOnce(()->{
+            Pose2d robotPose = getSavedPose();
                 
-                Pose2d[] dislodgePositions = getAlgaeDislodgeLocations();
-                Translation2d transformToNearestAlgaeDislodgeLocation = robotPose.getTranslation().minus(dislodgePositions[0].getTranslation());
-                targetLocationPose = new Pose2d(targetLocationPose.getX(), targetLocationPose.getY(), Rotation2d.fromDegrees(dislodgePositions[0].getRotation().getDegrees() + 180));
-                for(int i = 1; i < dislodgePositions.length; ++i){
-                    Translation2d translationToLocation = robotPose.getTranslation().minus(dislodgePositions[i].getTranslation());
-                    if (transformToNearestAlgaeDislodgeLocation.getNorm() > translationToLocation.getNorm()) {
-                        transformToNearestAlgaeDislodgeLocation = translationToLocation;
-                        targetLocationPose = dislodgePositions[i];
-                    }
-                    else{
-                        targetLocationPose = new Pose2d(robotPose.getTranslation().minus(transformToNearestAlgaeDislodgeLocation), targetLocationPose.getRotation());
-                    }
+            Pose2d[] dislodgePositions = getAlgaeDislodgeLocations();
+            double closestDislodge = robotPose.getTranslation().minus(dislodgePositions[0].getTranslation()).getNorm();
+            targetLocationPose = new Pose2d(dislodgePositions[0].getX(), dislodgePositions[0].getY(), Rotation2d.fromDegrees(dislodgePositions[0].getRotation().getDegrees() + 180));
+            for(int i = 1; i < dislodgePositions.length; ++i){
+                double distance = robotPose.getTranslation().minus(dislodgePositions[i].getTranslation()).getNorm();
+                if (closestDislodge > distance) {
+                    closestDislodge = distance;
+                    targetLocationPose = new Pose2d(dislodgePositions[i].getX(), dislodgePositions[i].getY(), Rotation2d.fromDegrees(dislodgePositions[i].getRotation().getDegrees() + 180));
                 }
-    
-                ChassisSpeeds cs = commandedSpeeds.get();
-                ChassisSpeeds speeds = new ChassisSpeeds(cs.vxMetersPerSecond, cs.vyMetersPerSecond, getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()+180));
-                drive(speeds, true, false);
-            });
+            }
+           }).andThen(
+            rotateToAngle(()-> targetLocationPose.getRotation().getDegrees(), commandedSpeeds)
+            );
     }
 
 
