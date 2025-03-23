@@ -130,7 +130,7 @@ public class RobotContainer {
     );
 
     // while auto aligning
-    Swerve.isFullyAutonomous.whileTrue(led.breatheEffect(0, 0.2));
+    Swerve.isFullyAutonomous.and(Swerve.isAtDestination.negate()).whileTrue(led.breatheEffect(0, 0.2));
 
     //Coralizer.isStalled.whileTrue(led.breatheEffect(4, 0.1));
 
