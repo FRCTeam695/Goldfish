@@ -866,8 +866,6 @@ public class SwerveBase extends SubsystemBase {
         double averageMT1Heading = 0;
         Optional<Rotation2d> cameraRotationLeft = Optional.of(new Rotation2d());
         Optional<Rotation2d> cameraRotationRight = Optional.of(new Rotation2d());
-        double avgCos = 0;
-        double avgSin = 0;
         //get rotations
         LimelightHelpers.PoseEstimate mt1Left = LimelightHelpers.getBotPoseEstimate_wpiBlue(camNames[0]);
         if(mt1Left != null){
