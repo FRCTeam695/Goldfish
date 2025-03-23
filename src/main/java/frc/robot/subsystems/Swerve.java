@@ -41,7 +41,7 @@ public class Swerve extends SwerveBase{
     
 
 
-    public final double kp_attract = 2 * Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ/Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS;
+    public final double kp_attract = 3.4;
 
     // we will tune this on the practice field
     public final double kp_repulse = 2;
@@ -75,6 +75,7 @@ public class Swerve extends SwerveBase{
         almostRotatedToSetpoint = new Trigger(()-> robotRotationError < 20);
         isApplyingRepulsion = new Trigger(()-> currentlyApplyingRepulsion);
         isWithin10cm = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.1);
+        isFullyAutonomous = new Trigger(()-> currentlyFullyAutonomous);
         distanceProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
     }
     
@@ -143,13 +144,20 @@ public class Swerve extends SwerveBase{
                     if(willCollideWithReef) hasDetectedCollision = true;
                     currentlyApplyingRepulsion = true;
                     Transform2d repulsionVector;
-                    if(elevatorNotInTime && !willCollideWithReef) repulsionVector = getRepulsionVector(robotPose, 0.6);
-                    else repulsionVector = getRepulsionVector(robotPose, kp_repulse);
+                    if(elevatorNotInTime && !willCollideWithReef) {
+                        SmartDashboard.putBoolean("strong repulsion", false);
+                        repulsionVector = getRepulsionVector(robotPose, 0.6);
+                    }
+                    else {
+                        SmartDashboard.putBoolean("strong repulsion", true);
+                        repulsionVector = getRepulsionVector(robotPose, kp_repulse);
+                    }
                     repulsionX += repulsionVector.getX();
                     repulsionY += repulsionVector.getY();
                 }else{
                     currentlyApplyingRepulsion = false;
                     hasDetectedCollision = false;
+                    SmartDashboard.putBoolean("strong repulsion", false);
                 }
 
                 SmartDashboard.putNumber("Repulse Speed", Math.hypot(repulsionX, repulsionY));
@@ -188,12 +196,13 @@ public class Swerve extends SwerveBase{
             else{
                 reefCenter = Constants.Vision.Blue.REEF_CENTER;
             }
+            targetLocationPose = reefCenter;
             double dx = reefCenter.getX() - robotPose.getX();
             double dy = reefCenter.getY() - robotPose.getY();
-            double dTheta = Math.toDegrees(Math.atan(dx/dy));
-
+            double theta = Math.toDegrees(Math.atan2(dy, dx));
+            SmartDashboard.putNumber("Desired Robot Rotation", theta);
             ChassisSpeeds speeds = wantedSpeeds.get();
-            speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(dTheta + robotPose.getRotation().getDegrees());
+            speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(theta);
             drive(speeds, true, true);
         });
     }
@@ -362,10 +371,6 @@ public class Swerve extends SwerveBase{
             // multiply by unit vector to get direction and magnitude
             double f_x = f_mag * unit_vector_x;
             double f_y = f_mag * unit_vector_y;
-
-            // we don't want the repulsion to interfere with our PID align when far away from reef
-            f_x = Math.abs(f_x) < 0.5 ? 0 : f_x;
-            f_y = Math.abs(f_y) < 0.5 ? 0 : f_y;
 
             repulsionX += f_x;
             repulsionY += f_y;

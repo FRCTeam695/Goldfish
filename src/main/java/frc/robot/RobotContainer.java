@@ -26,6 +26,7 @@ import java.util.Optional;
 
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -101,6 +102,8 @@ public class RobotContainer {
                               ).until(Elevator.atSetpoint)
     );
     SmartDashboard.putData(autoChooser);
+
+    DataLogManager.start();
   }
 
 
@@ -117,7 +120,7 @@ public class RobotContainer {
   private void configureBindings() {
 
     // indication for human player to drop coral
-    Swerve.isWithin10cm.and(()-> Coralizer.getCurrentCommand().getName().equals("intake")).and(()-> DriverStation.isAutonomous()).whileTrue(
+    Swerve.isWithin10cm.and(Coralizer.seenFirstBreak.negate()).and(()-> DriverStation.isAutonomous()).whileTrue(
       led.solidColor(3)
     );
 
@@ -156,10 +159,10 @@ public class RobotContainer {
         Coralizer.runIntakeAndCoralizer(()-> -0.1)
     );
 
-    //driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
-    driver.b().onTrue(
-      Elevator.goToScoringHeight()
-    );
+    driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
+    // driver.b().onTrue(
+    //   Elevator.goToScoringHeight()
+    // );
 
     driver.y().whileTrue(Swerve.driveBackwards());
 
