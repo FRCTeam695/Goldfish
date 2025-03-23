@@ -124,7 +124,7 @@ public class DuoTalonLift extends SubsystemBase{
         r_leaderConfigs.MotionMagic.MotionMagicCruiseVelocity = cruiseVel; // rot/sec
         int maxAccel = 5000;
         r_leaderConfigs.MotionMagic.MotionMagicAcceleration = maxAccel; // rot/sec^2
-        r_leaderConfigs.MotionMagic.MotionMagicJerk = 6000; // rot/sec^3
+        r_leaderConfigs.MotionMagic.MotionMagicJerk = 5500; // rot/sec^3
 
         // Applying both kraken's configs
         r_leaderTalon.getConfigurator().apply(r_leaderConfigs);

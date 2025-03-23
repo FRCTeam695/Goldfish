@@ -147,9 +147,9 @@ public class RobotContainer {
 
     //Coralizer.isStalled.whileTrue(led.breatheEffect(4, 0.1));
     
-    driver.leftBumper().whileTrue(
-        Swerve.rotateToNearestFeed(driver::getRequestedChassisSpeeds)
-    );
+    // driver.leftBumper().whileTrue(
+    //     Swerve.rotateToNearestFeed(driver::getRequestedChassisSpeeds)
+    // );
 
     driver.leftBumper().onTrue(
         Coralizer.intake()
@@ -160,18 +160,18 @@ public class RobotContainer {
     driver.back().onTrue(Swerve.resetGyro());
 
 
-    driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
+    //driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
     // driver.b().onTrue(
     //   Elevator.goToScoringHeight()
     // );
-    // driver.b().onFalse(
-    //   logTrickshotTrue().andThen(
-    //     Coralizer.ejectCoral()
-    //           .andThen(
-    //             Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
-    //           .andThen(Elevator.setHeightLevel(Heights.Ground))
-    //           ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false))
-    // );
+    driver.b().onFalse(
+      logTrickshotTrue().andThen(
+        Coralizer.ejectCoral()
+              .andThen(
+                Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
+              .andThen(Elevator.setHeightLevel(Heights.Ground))
+              ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false))
+    );
 
     driver.x().whileTrue(
       alignAndScore(Optional.empty())

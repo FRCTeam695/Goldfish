@@ -12,6 +12,7 @@ import com.ctre.phoenix6.signals.MotorArrangementValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.ReverseLimitValue;
 
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 //import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -23,10 +24,12 @@ public class Coralizer extends SubsystemBase{
     //DigitalInput beamBreak;
     private TalonFXS coralizer;
     private TalonFXS intake;
+    public double startTime = 0;
     private boolean isSafeToRaiseElevator = true;
     private boolean hasSeenFirstBreak = true;
     public Trigger safeToRaiseElevator = new Trigger(()-> isSafeToRaiseElevator);
     public Trigger seenFirstBreak = new Trigger(()-> hasSeenFirstBreak);
+    public Trigger beenEnoughTime = new Trigger(()-> (Timer.getFPGATimestamp() - startTime) < 0.65);
     public Trigger isStalled;
 
     public Coralizer(){
@@ -67,14 +70,13 @@ public class Coralizer extends SubsystemBase{
           (runIntakeAndCoralizer(()-> 0.6).until(this::beamIsBroken)
           .andThen(setFirstBreakStateTrue())
           .andThen(
-            runIntakeAndCoralizer(()->0.4).until(this::beamNotBroken)
+            runIntakeAndCoralizer(()->0.5).until(beenEnoughTime.and(this::beamNotBroken))
           )
           .andThen(
               setSafeToRaiseElevator()
             .andThen(runIntakeAndCoralizer(()-> -0.1).until(this::beamIsBroken))
             .andThen(runIntakeAndCoralizer(()-> 0))
           )).withName("intake");
-    
     }
     
 
@@ -114,11 +116,17 @@ public class Coralizer extends SubsystemBase{
     }
 
     public Command setSafeToRaiseElevator(){
-        return runOnce(()-> isSafeToRaiseElevator = true);
+        return runOnce(()-> {
+            isSafeToRaiseElevator = true;
+            SmartDashboard.putNumber("Beambreak Time", Timer.getFPGATimestamp() - startTime);
+        });
     }
 
     public Command setFirstBreakStateTrue(){
-        return runOnce(()-> hasSeenFirstBreak = true);
+        return runOnce(()-> {
+            hasSeenFirstBreak = true;
+            startTime = Timer.getFPGATimestamp();
+        });
     }
 
     public Command setFirstBreakStateFalse(){
@@ -134,5 +142,7 @@ public class Coralizer extends SubsystemBase{
         SmartDashboard.putBoolean("Beambreak", beamIsBroken());
         SmartDashboard.putBoolean("Has Finished Intaking", safeToRaiseElevator.getAsBoolean());
         SmartDashboard.putBoolean("Has Seen First Break", hasSeenFirstBreak);
+        SmartDashboard.putNumber("Intake current", intake.getSupplyCurrent().getValueAsDouble());
+        SmartDashboard.putNumber("Coralizer current", coralizer.getSupplyCurrent().getValueAsDouble());
     }
 }
