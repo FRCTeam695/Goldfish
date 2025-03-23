@@ -88,6 +88,9 @@ public class RobotContainer {
                                   pickUpAlignAndScore(Optional.of("L"))
                                 )
                                 .andThen(
+                                  pickUpAlignAndScore(Optional.of("A"))
+                                )
+                                .andThen(
                                   Elevator.setHeightLevel(Heights.Ground)
                                 ).until(Elevator.atSetpoint)
                           );
@@ -98,6 +101,9 @@ public class RobotContainer {
                               )
                               .andThen(
                                 pickUpAlignAndScore(Optional.of("C"))
+                              )
+                              .andThen(
+                                pickUpAlignAndScore(Optional.of("B"))
                               )
                               .andThen(
                                 Elevator.setHeightLevel(Heights.Ground)
