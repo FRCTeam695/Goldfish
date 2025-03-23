@@ -489,6 +489,7 @@ public class Swerve extends SwerveBase{
         m_field.getObject("target location").setPose(targetLocationPose);
         SmartDashboard.putBoolean("Close to Destination", isCloseToDestination.getAsBoolean());
         SmartDashboard.putBoolean("At Destination", isAtDestination.getAsBoolean());
+        SmartDashboard.putBoolean("Fully Autonomous", isFullyAutonomous.getAsBoolean());
         SmartDashboard.putNumber("Distance to target", getDistanceToTranslation(targetLocationPose.getTranslation()));
     }
 }
