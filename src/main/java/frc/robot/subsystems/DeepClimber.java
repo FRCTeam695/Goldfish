@@ -1,0 +1,31 @@
+package frc.robot.subsystems;
+
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.hardware.TalonFX;
+
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
+public class DeepClimber extends SubsystemBase{
+    private TalonFX m_talon;
+    private TalonFXConfiguration m_configs;
+
+    public DeepClimber() {
+        m_talon = new TalonFX(56); // ID?
+        m_configs = new TalonFXConfiguration();
+
+        m_configs.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
+        m_configs.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 0; // Arbitrary numbers for rn
+        m_configs.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
+        m_configs.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 0;
+    }
+
+    public Command runClimb() {
+        DutyCycleOut output = new DutyCycleOut(0);
+        return run(() -> {
+            output.Output = 0.5; // Speed of climb (Random value for rn)
+            m_talon.setControl(output);
+        });
+    }
+}
