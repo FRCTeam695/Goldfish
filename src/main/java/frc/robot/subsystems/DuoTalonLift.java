@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 
 import java.util.function.Supplier;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
@@ -55,9 +56,12 @@ public class DuoTalonLift extends SubsystemBase{
     // Velocity
     private final DoublePublisher velocityPub = elevatorTable.getDoubleTopic("Velocity").publish(PubSubOption.periodic(0.02));
     private final DoublePublisher velocityTargetPub = elevatorTable.getDoubleTopic("Velocity Target").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher accelerationPub = elevatorTable.getDoubleTopic("Acceleration").publish(PubSubOption.periodic(0.02));
     // kS & kG (Feed forward)
     private final DoublePublisher closedLoopPub = elevatorTable.getDoubleTopic("Closed Loop Output").publish(PubSubOption.periodic(0.02));
     private final DoublePublisher FFPub = elevatorTable.getDoubleTopic("Feed Forward").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher motorVoltagePub = elevatorTable.getDoubleTopic("Motor Voltage").publish(PubSubOption.periodic(0.02));
+
 
     public NetworkTable sideCarTable;
     public IntegerSubscriber scoringHeight;
@@ -93,6 +97,12 @@ public class DuoTalonLift extends SubsystemBase{
         
         //r_voltReq = new VoltageOut(0);
 
+        // Update frequency
+        BaseStatusSignal.setUpdateFrequencyForAll(50, 
+            r_leaderTalon.getClosedLoopReference(), r_leaderTalon.getClosedLoopReferenceSlope(),
+            r_leaderTalon.getClosedLoopProportionalOutput(), r_leaderTalon.getClosedLoopFeedForward(),
+            r_leaderTalon.getMotorVoltage());
+
         // Limits and modes 
         r_leaderConfigs.MotorOutput.NeutralMode = NeutralModeValue.Brake; // Set leader neutral mode
         l_followerConfigs.MotorOutput.NeutralMode = NeutralModeValue.Brake; // Set follower neutral mode
@@ -120,11 +130,11 @@ public class DuoTalonLift extends SubsystemBase{
         r_leaderConfigs.Slot0.kD = 0.2; 
         
         // Motion Magic (Right leader)
-        int cruiseVel = 250;
+        double cruiseVel = 80;
         r_leaderConfigs.MotionMagic.MotionMagicCruiseVelocity = cruiseVel; // rot/sec
-        int maxAccel = 400;
+        double maxAccel = 500;
         r_leaderConfigs.MotionMagic.MotionMagicAcceleration = maxAccel; // rot/sec^2
-        r_leaderConfigs.MotionMagic.MotionMagicJerk = 2000; // rot/sec^3
+        r_leaderConfigs.MotionMagic.MotionMagicJerk = 6000; // rot/sec^3
 
         // Applying both kraken's configs
         r_leaderTalon.getConfigurator().apply(r_leaderConfigs);
@@ -233,8 +243,10 @@ public class DuoTalonLift extends SubsystemBase{
         // Velocity
         velocityPub.set(r_leaderTalon.getVelocity(true).getValueAsDouble());
         velocityTargetPub.set(r_leaderTalon.getClosedLoopReferenceSlope(true).getValueAsDouble());
+        accelerationPub.set(r_leaderTalon.getAcceleration(true).getValueAsDouble());
         // kS & kG (Feed forward)
         closedLoopPub.set(r_leaderTalon.getClosedLoopProportionalOutput(true).getValueAsDouble());
         FFPub.set(r_leaderTalon.getClosedLoopFeedForward(true).getValueAsDouble());
+        motorVoltagePub.set(r_leaderTalon.getMotorVoltage(true).getValueAsDouble());
     }
 }

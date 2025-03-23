@@ -19,13 +19,22 @@ public class DeepClimber extends SubsystemBase{
         m_configs.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 0; // Arbitrary numbers for rn
         m_configs.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
         m_configs.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 0;
+
+        m_talon.getConfigurator().apply(m_configs);
+        m_talon.setPosition(0);
     }
 
-    public Command runClimb() {
+    private Command runClimb(double value) {
         DutyCycleOut output = new DutyCycleOut(0);
         return run(() -> {
-            output.Output = 0.5; // Speed of climb (Random value for rn)
+            output.Output = value; // Speed of climb (Random value for rn)
             m_talon.setControl(output);
         });
+    }
+    public Command climbOut() {
+        return runClimb(0.5);
+    }
+    public Command climbIn() {
+        return runClimb(-0.5);
     }
 }
