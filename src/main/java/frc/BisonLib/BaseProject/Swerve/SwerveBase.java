@@ -4,6 +4,8 @@ import static edu.wpi.first.units.Units.Volts;
 import static edu.wpi.first.wpilibj2.command.Commands.deadline;
 import static edu.wpi.first.wpilibj2.command.Commands.waitSeconds;
 
+import java.lang.StackWalker.Option;
+import java.util.Optional;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -849,10 +851,67 @@ public class SwerveBase extends SubsystemBase {
         }
         return pose;
     }
+    public Rotation2d averageAngles(Rotation2d a, Rotation2d b){
+        //average rotations
+        //wonky formula because angles are wonky, IDK if this averaging works or not so must test
+        //see this link: https://www.themathdoctors.org/averaging-angles/
+        double avgCos = (a.getCos() + b.getCos())/2;
+        double avgSin = (a.getSin() + b.getSin())/2;
+
+        Rotation2d averageAngle = new Rotation2d(avgCos,avgSin);
+        return averageAngle;
+    }
+
+    public void resetGyroMT1(){
+        double averageMT1Heading = 0;
+        Optional<Rotation2d> cameraRotationLeft = Optional.of(new Rotation2d());
+        Optional<Rotation2d> cameraRotationRight = Optional.of(new Rotation2d());
+        double avgCos = 0;
+        double avgSin = 0;
+        //get rotations
+        LimelightHelpers.PoseEstimate mt1Left = LimelightHelpers.getBotPoseEstimate_wpiBlue(camNames[0]);
+        if(mt1Left != null){
+            cameraRotationLeft = Optional.of(mt1Left.pose.getRotation());
+        }
+        else
+            cameraRotationLeft = Optional.empty();
+        
+
+        LimelightHelpers.PoseEstimate mt1Right = LimelightHelpers.getBotPoseEstimate_wpiBlue(camNames[1]);
+        if(mt1Right != null){
+            cameraRotationRight = Optional.of(mt1Right.pose.getRotation());
+        }
+        else
+        cameraRotationRight = Optional.empty();
+        
+        if(cameraRotationLeft.isPresent() && cameraRotationRight.isPresent()){
+            averageMT1Heading = averageAngles(cameraRotationLeft.get(), cameraRotationRight.get()).getDegrees();
+        }
+        if(cameraRotationLeft.isEmpty() && cameraRotationRight.isPresent()){
+            averageMT1Heading = cameraRotationRight.get().getDegrees();
+            SmartDashboard.putNumber("mt1 heading 0", cameraRotationLeft.get().getDegrees());
+        }
+        if(cameraRotationLeft.isPresent() && cameraRotationRight.isEmpty()){
+            averageMT1Heading = cameraRotationRight.get().getDegrees();
+
+            SmartDashboard.putNumber("mt1 heading 1", cameraRotationRight.get().getDegrees());
+        }
+        if(cameraRotationLeft.isEmpty() && cameraRotationRight.isEmpty()){//do not reset if both empty
+            return;
+        }
+      
+
+        resetGyro(averageMT1Heading);
+        
+        SmartDashboard.putNumber("mt1 heading average", averageMT1Heading);
+    }
 
 
     @Override
     public void periodic() {
+        if(DriverStation.isDisabled()){
+            resetGyroMT1();
+        }
         SmartDashboard.putNumber("average odometry loop time", avgLoopTIme);
         SmartDashboard.putNumber("failed odometry updates", failedOdometryUpdates);
         SmartDashboard.putNumber("sucessful odometry updates", successfulOdometryUpdates);
