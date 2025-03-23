@@ -887,12 +887,12 @@ public class SwerveBase extends SubsystemBase {
         }
         if(cameraRotationLeft.isEmpty() && cameraRotationRight.isPresent()){
             averageMT1Heading = cameraRotationRight.get().getDegrees();
-            SmartDashboard.putNumber("mt1 heading 0", cameraRotationLeft.get().getDegrees());
+            SmartDashboard.putNumber("mt1 heading 0", cameraRotationRight.get().getDegrees());
         }
         if(cameraRotationLeft.isPresent() && cameraRotationRight.isEmpty()){
             averageMT1Heading = cameraRotationRight.get().getDegrees();
 
-            SmartDashboard.putNumber("mt1 heading 1", cameraRotationRight.get().getDegrees());
+            SmartDashboard.putNumber("mt1 heading 1", cameraRotationLeft.get().getDegrees());
         }
         if(cameraRotationLeft.isEmpty() && cameraRotationRight.isEmpty()){//do not reset if both empty
             return;
