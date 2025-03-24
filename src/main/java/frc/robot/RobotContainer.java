@@ -316,12 +316,4 @@ public class RobotContainer {
   private Command updateTelemetryState(int state) {
     return runOnce(()-> SmartDashboard.putNumber("Align State", state));
   }
-
-  public Command alignAndIntake(){
-    return
-      deadline(
-        Coralizer.intake(),
-        Swerve.driveToNearestFeed()
-      );
-  }
 }
