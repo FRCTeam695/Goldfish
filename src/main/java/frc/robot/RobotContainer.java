@@ -280,13 +280,13 @@ public class RobotContainer {
   public Command alignAndScore(Optional<String> location){
     return
     updateTelemetryState(1).andThen(
+        // tells the elevator where is will be going later, so it can give semi-accurate time estimates for how long it will take to get there
         Elevator.configureSetpoint().andThen(
         parallel(
-          // tells the elevator where is will be going later, 
-          // so it can give semi-accurate time estimates for how long it will take to get there
           
           Swerve.alignToReef(location, ()-> Elevator.getElevatorTimeToArrival(), true),
           
+          // all these things need 2 be true b4 it's safe to raise the elevator
           new WaitUntilCommand(
             Swerve.almostAtRotationSetpoint
             .and(Swerve.collisionDetected.negate())

@@ -117,13 +117,15 @@ public class Swerve extends SwerveBase{
 
                 boolean elevatorNotInTime = false;
 
-                // calculate the forward distance we need to go in order to get to the target;
+                // calculate the robot relative forward distance we need to go in order to get to the target;
                 // if its negative we have to move backwards
                 double distanceForward = dx * targetLocationPose.getRotation().getCos() + dy * targetLocationPose.getRotation().getSin();
                 double distanceToTarget = getDistanceToTranslation(targetLocationPose.getTranslation());
 
+                // if we are within 20 cm of target its impossible 4 us 2 collide
                 boolean willCollideWithReef = distanceForward < 0 && distanceToTarget > 0.2;
-                // if we aren't going to collide with the reef then we check if we need to apply repulsion vectors by seeing if the elevator will be in time to avoid a collision with any coral/algae on the reef
+
+                // if we aren't going to collide with the reef then check if we need to apply repulsion vectors by seeing if the elevator will hit any coral/algae already on the reef if we raise rn
                 if(!willCollideWithReef){
                     ChassisSpeeds currentRobotChassisSpeeds = getLatestChassisSpeed();
                     double currentSpeedMagnitude = Math.hypot(currentRobotChassisSpeeds.vxMetersPerSecond, currentRobotChassisSpeeds.vyMetersPerSecond);
@@ -131,12 +133,16 @@ public class Swerve extends SwerveBase{
                     double swerveTimeToArrival = distanceProfile.timeLeftUntil(0);
 
                     SmartDashboard.putNumber("Swerve ETA", swerveTimeToArrival);
+
+                    // if the elevator gets to height BEFORE we arrive at the target position, we aren't going to hit anything
                     elevatorNotInTime = elevatorTimeToArrival.getAsDouble() > swerveTimeToArrival;
                 }
 
+                // if we are just testing the auto align and don't plan on actually raising the elevator, 
+                // we don't care about elevator hitting anything on the way up
                 if(!willRaiseElevator) elevatorNotInTime = false;
 
-                // if we will collide
+                // if we will collide with something
                 if( willCollideWithReef || elevatorNotInTime){
                     if(willCollideWithReef) hasDetectedCollision = true;
                     currentlyApplyingRepulsion = true;
@@ -145,6 +151,7 @@ public class Swerve extends SwerveBase{
                         SmartDashboard.putBoolean("strong repulsion", false);
                         repulsionVector = getRepulsionVector(robotPose, 0.6);
                     }
+                    // no collision with the reef but the elevator is getting to height late, so we need to back up/slow down
                     else {
                         SmartDashboard.putBoolean("strong repulsion", true);
                         repulsionVector = getRepulsionVector(robotPose, kp_repulse);
@@ -175,6 +182,7 @@ public class Swerve extends SwerveBase{
             }).until(isAtDestination.and(isApplyingRepulsion.negate().and(atRotationSetpoint)))
             .andThen(
                 runOnce(()-> {
+                    // stops robot when command ends so we don't keep driving bcs of residual speeds
                     driveRobotRelative(new ChassisSpeeds(), false, false);
                 })
             )
