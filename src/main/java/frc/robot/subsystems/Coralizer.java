@@ -12,7 +12,6 @@ import com.ctre.phoenix6.signals.MotorArrangementValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.ReverseLimitValue;
 
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 //import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -24,12 +23,11 @@ public class Coralizer extends SubsystemBase{
     //DigitalInput beamBreak;
     private TalonFXS coralizer;
     private TalonFXS intake;
-    public double startTime = 0;
     private boolean isSafeToRaiseElevator = true;
     private boolean hasSeenFirstBreak = true;
     public Trigger safeToRaiseElevator = new Trigger(()-> isSafeToRaiseElevator);
     public Trigger seenFirstBreak = new Trigger(()-> hasSeenFirstBreak);
-    public Trigger beenEnoughTime = new Trigger(this::timeExpired);
+    public Trigger intakeCurrentBelowThreshold;
     public Trigger isStalled;
 
     public Coralizer(){
@@ -55,16 +53,11 @@ public class Coralizer extends SubsystemBase{
         intake.getConfigurator().apply(config);
 
         isStalled = new Trigger(()-> intake.getMotorStallCurrent().getValueAsDouble() > 3);
+        intakeCurrentBelowThreshold = new Trigger(()-> intake.getSupplyCurrent().getValueAsDouble() < 3.5);
     }
 
     public boolean beamIsBroken(){
         return  coralizer.getReverseLimit().getValue() == ReverseLimitValue.ClosedToGround;
-    }
-
-    public boolean timeExpired(){
-        double timeDiff = Math.abs(Timer.getFPGATimestamp() - startTime);
-        SmartDashboard.putNumber("CORALIZER time difference", timeDiff);
-        return (timeDiff >= 0.65);
     }
     
     public boolean beamNotBroken(){
@@ -76,7 +69,7 @@ public class Coralizer extends SubsystemBase{
           (runIntakeAndCoralizer(()-> 0.6).until(this::beamIsBroken)
           .andThen(setFirstBreakStateTrue())
           .andThen(
-            runIntakeAndCoralizer(()->0.4).until(beenEnoughTime.and(this::beamNotBroken))
+            runIntakeAndCoralizer(()->0.4).until(intakeCurrentBelowThreshold.and(this::beamNotBroken))
           )
           .andThen(
               setSafeToRaiseElevator()
@@ -114,7 +107,7 @@ public class Coralizer extends SubsystemBase{
     }
 
     public Command ejectCoral(){
-        return runCoralizer(()-> 0.6).withTimeout(0.3).andThen(setDangerousToRaiseElevator()).andThen(setFirstBreakStateFalse());
+        return runCoralizer(()-> 0.6).withTimeout(0.2).andThen(setDangerousToRaiseElevator()).andThen(setFirstBreakStateFalse());
     }
 
     public Command setDangerousToRaiseElevator(){
@@ -124,14 +117,12 @@ public class Coralizer extends SubsystemBase{
     public Command setSafeToRaiseElevator(){
         return runOnce(()-> {
             isSafeToRaiseElevator = true;
-            SmartDashboard.putNumber("Beambreak Time", Timer.getFPGATimestamp() - startTime);
         });
     }
 
     public Command setFirstBreakStateTrue(){
         return runOnce(()-> {
             hasSeenFirstBreak = true;
-            startTime = Timer.getFPGATimestamp();
         });
     }
 
@@ -148,9 +139,7 @@ public class Coralizer extends SubsystemBase{
         SmartDashboard.putBoolean("Beambreak", beamIsBroken());
         SmartDashboard.putBoolean("Has Finished Intaking", safeToRaiseElevator.getAsBoolean());
         SmartDashboard.putBoolean("Has Seen First Break", hasSeenFirstBreak);
-        SmartDashboard.putBoolean("CORALIZER Been enough time", beenEnoughTime.getAsBoolean());
         SmartDashboard.putNumber("Intake current", intake.getSupplyCurrent().getValueAsDouble());
         SmartDashboard.putNumber("Coralizer current", coralizer.getSupplyCurrent().getValueAsDouble());
-        SmartDashboard.putNumber("CORALIZER Start time", startTime);
     }
 }
