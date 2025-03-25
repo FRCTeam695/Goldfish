@@ -164,6 +164,7 @@ public class Constants {
         public static final double dislodgeAngle = 36;
         public static final double safePos = 27;
         public static final double dump = -35.7;
+        public static final double holdRamp = -50;
 
     }
 

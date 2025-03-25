@@ -62,7 +62,7 @@ public class AlgaeDislodger extends SubsystemBase{
         configFXS.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
         configFXS.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 40; //rot
         configFXS.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        configFXS.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -36.64; //rot
+        configFXS.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -54; //rot
 
         configFXS.Commutation.MotorArrangement = MotorArrangementValue.NEO550_JST;
 

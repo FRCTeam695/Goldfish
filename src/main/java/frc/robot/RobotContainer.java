@@ -10,6 +10,7 @@ import frc.BisonLib.BaseProject.Controller.EnhancedCommandController;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.AlgaeDislodger;
 import frc.robot.subsystems.Coralizer;
+import frc.robot.subsystems.Climber;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 
 import frc.robot.subsystems.DuoTalonLift;
@@ -46,6 +47,7 @@ public class RobotContainer {
   public final DuoTalonLift Elevator;
   public final Coralizer Coralizer;
   public final AlgaeDislodger Alagizer;
+  public final Climber Climber;
   public IntegerSubscriber scoringHeight;
   public final LED led = new LED();
   SendableChooser<Command> autoChooser = new SendableChooser<>();
@@ -69,6 +71,7 @@ public class RobotContainer {
     Elevator = new DuoTalonLift();
     Coralizer = new Coralizer();
     Alagizer = new AlgaeDislodger();
+    Climber = new Climber();
     scoringHeight = NetworkTableInstance.getDefault().getTable("sidecarTable").getIntegerTopic("scoringLevel").subscribe(1);
 
     // SmartDashboarding subsystems allow you to see what commands they are running
@@ -129,8 +132,10 @@ public class RobotContainer {
     // UNUSED BUTTONS
     // y
     // a
-    // right bumper
-    // povleft
+    // povdown
+
+
+    // rollback became "povright" and all manual play became "b"
 
     // indication for human player to drop coral
     Swerve.isWithin10cm.and(Coralizer.seenFirstBreak.negate()).and(()-> DriverStation.isAutonomous()).whileTrue(
@@ -183,6 +188,21 @@ public class RobotContainer {
     //           .andThen(Elevator.setHeightLevel(Heights.Ground))
     //           ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false))
     // );
+
+    driver.y().onTrue(
+      Alagizer.goToPosition(()-> Constants.Alagizer.dump)
+          .andThen(Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp))
+          .andThen(Climber.climbOut())
+    );
+
+    driver.a().onTrue(Climber.climbIn());
+
+    driver.povDown().onTrue(
+        Climber.climbIn()
+        .andThen(
+          Alagizer.dump()
+        )
+    );
 
     driver.x().whileTrue(
       alignAndScore(Optional.empty())
