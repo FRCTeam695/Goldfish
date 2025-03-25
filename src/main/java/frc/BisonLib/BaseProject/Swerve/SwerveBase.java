@@ -69,7 +69,6 @@ public class SwerveBase extends SubsystemBase {
     private final BaseStatusSignal[] allOdomSignals;
 
     protected double max_accel = 0;
-    protected double speed = 0;
     protected double robotRotationError = 0;
 
     // used for wheel characterization
@@ -400,12 +399,6 @@ public class SwerveBase extends SubsystemBase {
             odometryLock.readLock().unlock();
         }
         return states;
-    }
-    
-    
-
-    public double getLatestSpeed(){
-        return speed;
     }
 
 
@@ -845,6 +838,8 @@ public class SwerveBase extends SubsystemBase {
         SmartDashboard.putNumber("Module 2 Angle deg", modStates[1].angle.getDegrees());
         SmartDashboard.putNumber("Module 3 Angle deg", modStates[2].angle.getDegrees());
         SmartDashboard.putNumber("Module 4 Angle deg", modStates[3].angle.getDegrees());
+        ChassisSpeeds lastSpeeds = getLatestChassisSpeed();
+        SmartDashboard.putNumber("Chassis Velocity", Math.hypot(lastSpeeds.vxMetersPerSecond, lastSpeeds.vyMetersPerSecond));
         
         
         SmartDashboard.putBoolean("Robot Rotation at Setpoint", atRotationSetpoint.getAsBoolean());

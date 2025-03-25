@@ -139,6 +139,7 @@ public class Coralizer extends SubsystemBase{
         SmartDashboard.putBoolean("Beambreak", beamIsBroken());
         SmartDashboard.putBoolean("Has Finished Intaking", safeToRaiseElevator.getAsBoolean());
         SmartDashboard.putBoolean("Has Seen First Break", hasSeenFirstBreak);
+        SmartDashboard.putNumber("Coralizer speed", coralizer.getVelocity().getValueAsDouble());
         SmartDashboard.putNumber("Intake current", intake.getSupplyCurrent().getValueAsDouble());
         SmartDashboard.putNumber("Coralizer current", coralizer.getSupplyCurrent().getValueAsDouble());
     }
