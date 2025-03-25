@@ -129,12 +129,6 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    // UNUSED BUTTONS
-    // y
-    // a
-    // povdown
-
-
     // rollback became "povright" and all manual play became "b"
 
     // indication for human player to drop coral
@@ -150,20 +144,22 @@ public class RobotContainer {
     // while auto aligning
     Swerve.isFullyAutonomous.and(Swerve.isAtDestination.negate()).whileTrue(led.breatheEffect(0, 0.2));
 
-    //Coralizer.isStalled.whileTrue(led.breatheEffect(4, 0.1));
-    
+    // rotate towards the nearest feeder station
     driver.leftBumper().whileTrue(
         Swerve.rotateToNearestFeed(driver::getRequestedChassisSpeeds)
     );
 
+    // starts the intake
     driver.leftBumper().onTrue(
         Coralizer.intake()
     );
 
+    // starts the intake
     driver.rightBumper().onTrue(
         Coralizer.intake()
     );
 
+    // drives to the nearest feeder station
     driver.rightBumper().whileTrue(
         parallel(
           Swerve.driveToNearestFeed(),
@@ -189,14 +185,17 @@ public class RobotContainer {
     //           ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false))
     // );
 
+    // enter "climb mode"
     driver.y().onTrue(
       Alagizer.goToPosition(()-> Constants.Alagizer.dump)
           .andThen(Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp))
           .andThen(Climber.climbOut())
     );
 
+    // climbs
     driver.a().onTrue(Climber.climbIn());
 
+    // leave "climb mode"
     driver.povDown().onTrue(
         Climber.climbIn()
         .andThen(
@@ -204,10 +203,12 @@ public class RobotContainer {
         )
     );
 
+    // auto score
     driver.x().whileTrue(
       alignAndScore(Optional.empty())
     );
     
+    // enter "algae dislodge mode"
     driver.rightTrigger().toggleOnTrue(
       parallel(
         Alagizer.goToPosition(()-> Constants.Alagizer.dislodgeAngle),
@@ -215,8 +216,10 @@ public class RobotContainer {
       )
     );
 
+    // dumps algae/coral out of ramp
     driver.povUp().onTrue(Alagizer.dump());
 
+    // left gyro reset before auton
     driver.povLeft().onTrue(
       new ConditionalCommand(
         Swerve.leftGyroReset(), 
@@ -225,23 +228,30 @@ public class RobotContainer {
       )
     );
     
-    driver.povRight().whileTrue(
+    // right gyro reset before auton
+    driver.povRight().onTrue(
       new ConditionalCommand(
         Swerve.rightGyroReset(), 
-        Coralizer.runIntakeAndCoralizer(()-> -0.1), 
+        new WaitCommand(0), 
         ()-> DriverStation.isDisabled()
       )
     );
 
+    // coral rollback if pressed in teleop
+    driver.povRight().whileTrue(
+      Coralizer.runIntakeAndCoralizer(()-> -0.1)
+    );
+
+    // rotates chassis towards center of reef
     driver.leftTrigger().toggleOnTrue(
       Swerve.rotateToReefCenter(driver::getRequestedChassisSpeeds)
     );
 
+    // display all calibrated field constants on glass
     driver.leftStick().onTrue(Swerve.displayVisionConstants().ignoringDisable(true));
   }
 
   public void configureDefaultCommands(){
-    // This is the Swerve subsystem default command, this allows the driver to drive the robot
     // This is the Swerve subsystem default command, this allows the driver to drive the robot
     Swerve.setDefaultCommand
       (
