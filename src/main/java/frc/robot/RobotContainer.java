@@ -173,46 +173,49 @@ public class RobotContainer {
 
 
 
-    driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
-    // driver.b().onTrue(
-    //   Elevator.goToScoringHeight()
-    // );
-    // driver.b().onFalse(
-    //   logTrickshotTrue().andThen(
-    //     Coralizer.ejectCoral()
-    //           .andThen(
-    //             Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
-    //           .andThen(Elevator.setHeightLevel(Heights.Ground))
-    //           ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false))
-    // );
+    //driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
+    driver.b().onTrue(
+      Elevator.goToScoringHeight()
+    );
+    driver.b().onFalse(
+      logTrickshotTrue().andThen(
+        Coralizer.ejectCoral()
+              .andThen(
+                Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
+              .andThen(Elevator.setHeightLevel(Heights.Ground))
+              ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false))
+    );
 
 
     //driver.b().whileTrue(Climber.climbOut(-0.1));
 
     // enter "climb mode"
-    // driver.y().onTrue(
-    //   parallel(
+    driver.y().onTrue(
+      parallel(
         
-    //     Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp),
-    //     Climber.climbOut(1)
-    //   )
-    // );
+        Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp),
+        Climber.runClimb(1)
+      )
+    );
 
-    // // climbs
-    // driver.a().onTrue(
-    //   Climber.climbIn(0.6).alongWith(Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp))
-    // );
+    // climbs
+    driver.a().whileTrue(
+      parallel(
+        Climber.runClimb(-0.6).until(Climber.closeToZero).andThen(Climber.climbInNoSoftlimits()),
+        Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp)
+      )
+    );
 
-    // // leave "climb mode"
-    // driver.povDown().onTrue(
-    //     Climber.climbIn(1).alongWith(
-    //       new WaitUntilCommand(Climber.closeToZero)
-    //       .andThen(
-    //         Alagizer.goToPosition(()-> Constants.Alagizer.dislodgeAngle).until(Alagizer.atSetpoint)
-    //         .andThen(Alagizer.goToPosition(()-> 0).until(Alagizer.atSetpoint))
-    //       )
-    //     )
-    // );
+    // leave "climb mode"
+    driver.povDown().onTrue(
+        Climber.runClimb(-1).alongWith(
+          new WaitUntilCommand(Climber.closeToZero)
+          .andThen(
+            Alagizer.goToPosition(()-> Constants.Alagizer.dislodgeAngle).until(Alagizer.atSetpoint)
+            .andThen(Alagizer.goToPosition(()-> 0).until(Alagizer.atSetpoint))
+          )
+        )
+    );
 
     // auto score
     driver.x().whileTrue(

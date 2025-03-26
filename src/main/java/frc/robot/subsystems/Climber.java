@@ -32,24 +32,31 @@ public class Climber extends SubsystemBase{
         closeToZero = new Trigger(()-> climberMotor.getPosition().getValueAsDouble() < 1);
     }
 
-    private Command runClimb(double value) {
+    private Command climbDutyCycle(double value) {
         DutyCycleOut output = new DutyCycleOut(0);
         return run(() -> {
             output.Output = value;
             climberMotor.setControl(output);
         });
     }
-    public Command climbOut() {
-        return runClimb(0.5).finallyDo(()->climberMotor.setControl(new DutyCycleOut(0)));
+
+    public Command runClimb(double speed) {
+        return climbDutyCycle(speed).finallyDo(()->climberMotor.setControl(new DutyCycleOut(0)));
     }
-    public Command climbOut(double speed) {
-        return runClimb(speed).finallyDo(()->climberMotor.setControl(new DutyCycleOut(0)));
-    }
-    public Command climbIn() {
-        return runClimb(-0.5).finallyDo(()->climberMotor.setControl(new DutyCycleOut(0)));
-    }
-    public Command climbIn(double speed) {
-        return runClimb(-speed).finallyDo(()->climberMotor.setControl(new DutyCycleOut(0)));
+    public Command climbInNoSoftlimits() {
+        return 
+        runOnce(()->{
+            m_configs = new TalonFXConfiguration();
+
+            m_configs.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
+            m_configs.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 170;
+            m_configs.SoftwareLimitSwitch.ReverseSoftLimitEnable = false;
+            m_configs.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    
+            climberMotor.getConfigurator().apply(m_configs);
+        }).andThen(
+            runClimb(-0.1)
+        ).finallyDo(()->climberMotor.setControl(new DutyCycleOut(0)));
     }
 
     @Override
