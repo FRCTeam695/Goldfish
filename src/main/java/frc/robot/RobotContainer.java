@@ -172,6 +172,7 @@ public class RobotContainer {
     driver.back().onTrue(Swerve.resetGyro());
 
 
+
     driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
     // driver.b().onTrue(
     //   Elevator.goToScoringHeight()
@@ -185,35 +186,51 @@ public class RobotContainer {
     //           ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false))
     // );
 
+
+    //driver.b().whileTrue(Climber.climbOut(-0.1));
+
     // enter "climb mode"
-    driver.y().onTrue(
-      Alagizer.goToPosition(()-> Constants.Alagizer.dump)
-          .andThen(Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp))
-          .andThen(Climber.climbOut())
-    );
+    // driver.y().onTrue(
+    //   parallel(
+        
+    //     Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp),
+    //     Climber.climbOut(1)
+    //   )
+    // );
 
-    // climbs
-    driver.a().onTrue(Climber.climbIn());
+    // // climbs
+    // driver.a().onTrue(
+    //   Climber.climbIn(0.6).alongWith(Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp))
+    // );
 
-    // leave "climb mode"
-    driver.povDown().onTrue(
-        Climber.climbIn()
-        .andThen(
-          Alagizer.dump()
-        )
-    );
+    // // leave "climb mode"
+    // driver.povDown().onTrue(
+    //     Climber.climbIn(1).alongWith(
+    //       new WaitUntilCommand(Climber.closeToZero)
+    //       .andThen(
+    //         Alagizer.goToPosition(()-> Constants.Alagizer.dislodgeAngle).until(Alagizer.atSetpoint)
+    //         .andThen(Alagizer.goToPosition(()-> 0).until(Alagizer.atSetpoint))
+    //       )
+    //     )
+    // );
 
     // auto score
     driver.x().whileTrue(
       alignAndScore(Optional.empty())
     );
+
     
     // enter "algae dislodge mode"
-    driver.rightTrigger().toggleOnTrue(
+    driver.rightTrigger().whileTrue(
       parallel(
-        Alagizer.goToPosition(()-> Constants.Alagizer.dislodgeAngle),
+        Alagizer.goToPosition(()-> Constants.Alagizer.safePos),
         Swerve.rotateToDislodgeLocation(driver::getRequestedChassisSpeeds)
       )
+    );
+
+    driver.rightTrigger().onFalse(
+      Alagizer.goToPosition(()-> Constants.Alagizer.dislodgeAngle).until(Alagizer.atSetpoint)
+      .andThen(Swerve.driveForwards().withTimeout(0.5))
     );
 
     // dumps algae/coral out of ramp

@@ -181,9 +181,9 @@ public class Swerve extends SwerveBase{
                 drive(speeds, true, false);
             }).until(isAtDestination.and(isApplyingRepulsion.negate().and(atRotationSetpoint)))
             .andThen(
-                runOnce(()-> {
+                run(()-> {
                     // stops robot when command ends so we don't keep driving bcs of residual speeds
-                    driveRobotRelative(new ChassisSpeeds(), false, false);
+                    drive(new ChassisSpeeds(), false, false);
                 })
             )
             ).finallyDo(()->{
@@ -215,10 +215,10 @@ public class Swerve extends SwerveBase{
     }
 
 
-    public Command driveBackwards(){
+    public Command driveForwards(){
         return run(
             ()->{
-                drive(new ChassisSpeeds(-0.5, 0, 0), true, false);
+                driveRobotRelative(new ChassisSpeeds(1, 0, 0), false, false);
             }
         );
     }

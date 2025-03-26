@@ -202,8 +202,8 @@ public class DuoTalonLift extends SubsystemBase{
     public enum Heights { // An enum is a class of defined objects
         Ground ("Ground", 0),
         L1 ("L1", 9.2), // *rotationsPerInch
-        L2 ("L2", 13.412 + 1),
-        L3 ("L3", 29.734 + 0.5),
+        L2 ("L2", 13.412+0.85),
+        L3 ("L3", 29.734),
         L4 ("L4", 55.234);
 
         String level;

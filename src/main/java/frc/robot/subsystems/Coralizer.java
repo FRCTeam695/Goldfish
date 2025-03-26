@@ -53,7 +53,7 @@ public class Coralizer extends SubsystemBase{
         intake.getConfigurator().apply(config);
 
         isStalled = new Trigger(()-> intake.getMotorStallCurrent().getValueAsDouble() > 3);
-        intakeCurrentBelowThreshold = new Trigger(()-> intake.getSupplyCurrent().getValueAsDouble() < 3);
+        intakeCurrentBelowThreshold = new Trigger(()-> intake.getSupplyCurrent().getValueAsDouble() < 3.5);
     }
 
     public boolean beamIsBroken(){
