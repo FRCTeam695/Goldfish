@@ -174,17 +174,20 @@ public class RobotContainer {
 
 
     //driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
-    driver.b().onTrue(
-      Elevator.goToScoringHeight()
-    );
-    driver.b().onFalse(
-      logTrickshotTrue().andThen(
-        Coralizer.ejectCoral()
-              .andThen(
-                Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
-              .andThen(Elevator.setHeightLevel(Heights.Ground))
-              ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false))
-    );
+    // driver.b().onTrue(
+    //   Elevator.goToScoringHeight()
+    // );
+    // driver.b().onFalse(
+    //   logTrickshotTrue().andThen(
+    //     Coralizer.ejectCoral()
+    //           .andThen(
+    //             Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
+    //           .andThen(Elevator.setHeightLevel(Heights.Ground))
+    //           ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false))
+    // );
+
+    driver.b().onTrue(Elevator.goToScoringHeight().until(Elevator.atSetpoint)
+                      .andThen(Coralizer.ejectCoral()));
 
 
     //driver.b().whileTrue(Climber.climbOut(-0.1));

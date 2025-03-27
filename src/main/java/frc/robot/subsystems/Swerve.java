@@ -67,7 +67,7 @@ public class Swerve extends SwerveBase{
         scoringModeSub = sideCarTable.getStringTopic("currentIntakeMode").subscribe("");
 
         isCloseToDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 2.5);
-        isAtDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.01);
+        isAtDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.02);
         collisionDetected = new Trigger(()-> hasDetectedCollision);
         almostRotatedToSetpoint = new Trigger(()-> robotRotationError < 20);
         isApplyingRepulsion = new Trigger(()-> currentlyApplyingRepulsion);
@@ -179,11 +179,10 @@ public class Swerve extends SwerveBase{
                     getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()));
                 SmartDashboard.putString("Chassis Speeds Commanded", speeds.toString());
                 drive(speeds, true, false);
-            }).until(isAtDestination.and(isApplyingRepulsion.negate().and(atRotationSetpoint)))
+            }).until(isAtDestination.and(isApplyingRepulsion.negate()).and(atRotationSetpoint))
             .andThen(
-                run(()-> {
-                    // stops robot when command ends so we don't keep driving bcs of residual speeds
-                    drive(new ChassisSpeeds(), false, false);
+                runOnce(()-> {
+                    this.stopModules();
                 })
             )
             ).finallyDo(()->{
@@ -314,16 +313,9 @@ public class Swerve extends SwerveBase{
                 double attractX = kp_attract * dx;
                 double attractY = kp_attract * dy;
 
-                double repulsionX = 0;
-                double repulsionY = 0;
-
-                Transform2d repulsionVector = getRepulsionVector(robotPose, 0.5);
-                repulsionX += repulsionVector.getX() < 1 ? 0 : repulsionVector.getX();
-                repulsionY += repulsionVector.getY() < 1 ? 0 : repulsionVector.getY();
-
                 SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
 
-                ChassisSpeeds speeds = new ChassisSpeeds(attractX - repulsionX, attractY - repulsionY, getAngularComponentFromRotationOverride(angle));
+                ChassisSpeeds speeds = new ChassisSpeeds(attractX, attractY, getAngularComponentFromRotationOverride(angle));
                 SmartDashboard.putString("align to reef speeds", speeds.toString());
 
                 drive(speeds, true, false);
@@ -502,6 +494,7 @@ public class Swerve extends SwerveBase{
         super.periodic();
         m_field.getObject("target location").setPose(targetLocationPose);
         SmartDashboard.putBoolean("Close to Destination", isCloseToDestination.getAsBoolean());
+        SmartDashboard.putBoolean("Is Applying Repulsion", isApplyingRepulsion.getAsBoolean());
         SmartDashboard.putBoolean("At Destination", isAtDestination.getAsBoolean());
         SmartDashboard.putBoolean("Fully Autonomous", isFullyAutonomous.getAsBoolean());
         SmartDashboard.putNumber("Distance to target", getDistanceToTranslation(targetLocationPose.getTranslation()));
