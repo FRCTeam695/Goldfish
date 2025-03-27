@@ -14,7 +14,8 @@ public class Climber extends SubsystemBase{
     private TalonFX climberMotor;
     private TalonFXConfiguration m_configs;
     
-    public Trigger closeToZero;
+    public Trigger closeToReverseLimit;
+    public Trigger closeToForwardLimit;
 
     public Climber() {
         climberMotor = new TalonFX(56); // ID?
@@ -29,7 +30,8 @@ public class Climber extends SubsystemBase{
         climberMotor.getConfigurator().apply(m_configs);
         climberMotor.setPosition(0);
 
-        closeToZero = new Trigger(()-> climberMotor.getPosition().getValueAsDouble() < 1);
+        closeToReverseLimit = new Trigger(()-> climberMotor.getPosition().getValueAsDouble() < 1);
+        closeToForwardLimit = new Trigger(()-> climberMotor.getPosition().getValueAsDouble() > 169);
     }
 
     private Command climbDutyCycle(double value) {
@@ -55,13 +57,28 @@ public class Climber extends SubsystemBase{
     
             climberMotor.getConfigurator().apply(m_configs);
         }).andThen(
-            runClimb(-0.1)
+            runClimb(-0.3)
+        ).finallyDo(()->climberMotor.setControl(new DutyCycleOut(0)));
+    }
+
+    public Command climbOutNoSoftLimits() {
+        return 
+        runOnce(()->{
+            m_configs = new TalonFXConfiguration();
+
+            m_configs.SoftwareLimitSwitch.ForwardSoftLimitEnable = false;
+            m_configs.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
+            m_configs.MotorOutput.NeutralMode = NeutralModeValue.Brake;
+    
+            climberMotor.getConfigurator().apply(m_configs);
+        }).andThen(
+            runClimb(0.1)
         ).finallyDo(()->climberMotor.setControl(new DutyCycleOut(0)));
     }
 
     @Override
     public void periodic() {
         SmartDashboard.putNumber("Climber Position", climberMotor.getPosition().getValueAsDouble());
-        SmartDashboard.putBoolean("Climber Close to Zero", closeToZero.getAsBoolean());
+        SmartDashboard.putBoolean("Climber Close to Zero", closeToReverseLimit.getAsBoolean());
     }
 }

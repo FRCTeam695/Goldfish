@@ -137,7 +137,6 @@ public class DuoTalonLift extends SubsystemBase{
     public Command goToScoringHeight(){
         return run(()->{
             double newInchesSetpoint;
-            isRunning = true;
             int networkTablesHeight = (int)Math.round(scoringHeight.get(2));
             if(networkTablesHeight == 1) newInchesSetpoint = Heights.L1.heightInches;
             else if(networkTablesHeight == 2) newInchesSetpoint = Heights.L2.heightInches;
@@ -149,6 +148,7 @@ public class DuoTalonLift extends SubsystemBase{
             else newInchesSetpoint = Heights.L1.heightInches;
 
             elevatorSetInches(newInchesSetpoint);
+            isRunning = true;
         }).finallyDo(()-> {isRunning = false;});
     }
 
@@ -198,6 +198,12 @@ public class DuoTalonLift extends SubsystemBase{
         });
     }
 
+    public Command holdHeight(){
+        return run(()->{
+            elevatorSetInches(r_leaderTalon.getPosition().getValueAsDouble()/rotationsPerInch);
+        });
+    }
+
     // Enum of certain heights
     public enum Heights { // An enum is a class of defined objects
         Ground ("Ground", 0),
@@ -225,6 +231,7 @@ public class DuoTalonLift extends SubsystemBase{
         SmartDashboard.putNumber("Elevator Closed Loop Reference", r_leaderTalon.getClosedLoopReference().getValueAsDouble());
         SmartDashboard.putNumber("Elevator Commaded Position", inchesSetpoint);
         SmartDashboard.putBoolean("Elevator is deployed", isDeployed.getAsBoolean());
+        SmartDashboard.putBoolean("Elevator is running", isRunning);
 
         // Field variable outputs
         // Position

@@ -246,7 +246,7 @@ public class Constants {
             };
         }   
         public static final class Red{
-            public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(14.35, 3.86, Rotation2d.fromDegrees(180));
+            public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(14.35, 3.87, Rotation2d.fromDegrees(180));
             public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(14.35, 4.21, Rotation2d.fromDegrees(180));;
             public static final Pose2d CORAL_C_SCORING_LOCATION = new Pose2d(13.85, 5.08, Rotation2d.fromDegrees(-120));
             public static final Pose2d CORAL_D_SCORING_LOCATION = new Pose2d(13.57, 5.24, Rotation2d.fromDegrees(-120));

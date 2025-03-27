@@ -190,36 +190,43 @@ public class RobotContainer {
     //driver.b().whileTrue(Climber.climbOut(-0.1));
 
     // enter "climb mode"
-    driver.y().onTrue(
+    driver.y().whileTrue(
       parallel(
-        
         Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp),
-        Climber.runClimb(1)
+        Climber.runClimb(1).until(Climber.closeToForwardLimit).andThen(Climber.climbOutNoSoftLimits())
       )
     );
+
+    driver.y().onFalse(Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp));
 
     // climbs
     driver.a().whileTrue(
+      //Climber.climbInNoSoftlimits()
       parallel(
-        Climber.runClimb(-0.6).until(Climber.closeToZero).andThen(Climber.climbInNoSoftlimits()),
+        Climber.runClimb(-0.6).until(Climber.closeToReverseLimit).andThen(Climber.climbInNoSoftlimits()),
         Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp)
       )
     );
+    
 
-    // leave "climb mode"
-    driver.povDown().onTrue(
-        Climber.runClimb(-1).alongWith(
-          new WaitUntilCommand(Climber.closeToZero)
-          .andThen(
-            Alagizer.goToPosition(()-> Constants.Alagizer.dislodgeAngle).until(Alagizer.atSetpoint)
-            .andThen(Alagizer.goToPosition(()-> 0).until(Alagizer.atSetpoint))
-          )
-        )
-    );
+    driver.a().onFalse(Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp));
+
 
     // auto score
     driver.x().whileTrue(
       alignAndScore(Optional.empty())
+    );
+
+
+    driver.x().onFalse(
+      new ConditionalCommand(
+        deadline(
+          Swerve.driveBackwards().withTimeout(0.5),
+          Elevator.holdHeight()
+        ), 
+        new WaitCommand(0),
+        Coralizer.safeToRaiseElevator // have not ejected the coral yet, we want to avoid a collision when we lower the elevator
+      )
     );
 
     
