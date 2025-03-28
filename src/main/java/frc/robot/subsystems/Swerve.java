@@ -314,8 +314,8 @@ public class Swerve extends SwerveBase{
                 double attractX;
                 double attractY;
                 if(DriverStation.isAutonomous()){
-                    attractY = 2.7 * dy;
-                    attractX = 2.7 * dx;
+                    attractY = kp_attract * dy;
+                    attractX = kp_attract * dx;
                 }
                 else{
                     attractX = kp_attract * dx;
@@ -323,8 +323,13 @@ public class Swerve extends SwerveBase{
                 }
 
                 SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
-
-                ChassisSpeeds speeds = new ChassisSpeeds(attractX, attractY, getAngularComponentFromRotationOverride(angle));
+                
+                ChassisSpeeds speeds =
+                    new ChassisSpeeds(
+                        MathUtil.clamp(attractX, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS), 
+                        MathUtil.clamp(attractY, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS),
+                    getAngularComponentFromRotationOverride(angle)
+                );
                 SmartDashboard.putString("align to reef speeds", speeds.toString());
 
                 drive(speeds, true, false);
