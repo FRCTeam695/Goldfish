@@ -16,6 +16,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringSubscriber;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -310,8 +311,16 @@ public class Swerve extends SwerveBase{
                 SmartDashboard.putNumber("alignment dx", dx);
                 SmartDashboard.putNumber("alignment dy", dy);
 
-                double attractX = kp_attract * dx;
-                double attractY = kp_attract * dy;
+                double attractX;
+                double attractY;
+                if(DriverStation.isAutonomous()){
+                    attractY = 2.7 * dy;
+                    attractX = 2.7 * dx;
+                }
+                else{
+                    attractX = kp_attract * dx;
+                    attractY = kp_attract * dy;
+                }
 
                 SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
 
@@ -322,7 +331,7 @@ public class Swerve extends SwerveBase{
             }
             ).until(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.05))
             .andThen(runOnce(()-> {
-                driveRobotRelative(new ChassisSpeeds(), false, false);
+                this.stopModules();
             })).finallyDo(()->{
                 currentlyFullyAutonomous = false;
             });
