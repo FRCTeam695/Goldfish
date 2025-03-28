@@ -16,7 +16,6 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringSubscriber;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -56,6 +55,8 @@ public class Swerve extends SwerveBase{
     public Trigger isWithin10cm;
     public Trigger isFullyAutonomous;
     public TrapezoidProfile distanceProfile;
+    public TrapezoidProfile xProfile;
+    public TrapezoidProfile yProfile;
 
     public Swerve(String[] camNames, TalonFXModule[] modules) {
         super(camNames, modules);
@@ -75,6 +76,8 @@ public class Swerve extends SwerveBase{
         isWithin10cm = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.1);
         isFullyAutonomous = new Trigger(()-> currentlyFullyAutonomous);
         distanceProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
+        xProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
+        yProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
     }
     
 
@@ -126,9 +129,9 @@ public class Swerve extends SwerveBase{
                 // if we are within 20 cm of target its impossible 4 us 2 collide
                 boolean willCollideWithReef = distanceForward < 0 && distanceToTarget > 0.2;
 
+                ChassisSpeeds currentRobotChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
                 // if we aren't going to collide with the reef then check if we need to apply repulsion vectors by seeing if the elevator will hit any coral/algae already on the reef if we raise rn
                 if(!willCollideWithReef){
-                    ChassisSpeeds currentRobotChassisSpeeds = getLatestChassisSpeed();
                     double currentSpeedMagnitude = Math.hypot(currentRobotChassisSpeeds.vxMetersPerSecond, currentRobotChassisSpeeds.vyMetersPerSecond);
                     distanceProfile.calculate(0.02, new TrapezoidProfile.State(Math.hypot(dx, dy), currentSpeedMagnitude), new TrapezoidProfile.State(0, 0));
                     double swerveTimeToArrival = distanceProfile.timeLeftUntil(0);
@@ -162,6 +165,9 @@ public class Swerve extends SwerveBase{
                 }else{
                     currentlyApplyingRepulsion = false;
                     hasDetectedCollision = false;
+
+                    attractX = xProfile.calculate(0.02, new TrapezoidProfile.State(dx, currentRobotChassisSpeeds.vxMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+                    attractY = yProfile.calculate(0.02, new TrapezoidProfile.State(dy, currentRobotChassisSpeeds.vyMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
                     SmartDashboard.putBoolean("strong repulsion", false);
                 }
 
@@ -311,16 +317,17 @@ public class Swerve extends SwerveBase{
                 SmartDashboard.putNumber("alignment dx", dx);
                 SmartDashboard.putNumber("alignment dy", dy);
 
-                double attractX;
-                double attractY;
-                if(DriverStation.isAutonomous()){
-                    attractY = kp_attract * dy;
-                    attractX = kp_attract * dx;
-                }
-                else{
-                    attractX = kp_attract * dx;
-                    attractY = kp_attract * dy;
-                }
+                ChassisSpeeds currentRobotChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
+                double attractX = xProfile.calculate(0.02, new TrapezoidProfile.State(dx, currentRobotChassisSpeeds.vxMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+                double attractY = yProfile.calculate(0.02, new TrapezoidProfile.State(dy, currentRobotChassisSpeeds.vyMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;;
+                // if(DriverStation.isAutonomous()){
+                //     attractY = kp_attract * dy;
+                //     attractX = kp_attract * dx;
+                // }
+                // else{
+                //     attractX = kp_attract * dx;
+                //     attractY = kp_attract * dy;
+                // }
 
                 SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
                 
