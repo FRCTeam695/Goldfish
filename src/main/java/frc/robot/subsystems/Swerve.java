@@ -319,7 +319,7 @@ public class Swerve extends SwerveBase{
 
                 ChassisSpeeds currentRobotChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
                 double attractX = xProfile.calculate(0.02, new TrapezoidProfile.State(dx, currentRobotChassisSpeeds.vxMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
-                double attractY = yProfile.calculate(0.02, new TrapezoidProfile.State(dy, currentRobotChassisSpeeds.vyMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;;
+                double attractY = yProfile.calculate(0.02, new TrapezoidProfile.State(dy, currentRobotChassisSpeeds.vyMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
                 // if(DriverStation.isAutonomous()){
                 //     attractY = kp_attract * dy;
                 //     attractX = kp_attract * dx;
