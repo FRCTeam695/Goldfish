@@ -168,6 +168,14 @@ public class Swerve extends SwerveBase{
 
                     attractX = xProfile.calculate(0.02, new TrapezoidProfile.State(dx, currentRobotChassisSpeeds.vxMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
                     attractY = yProfile.calculate(0.02, new TrapezoidProfile.State(dy, currentRobotChassisSpeeds.vyMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+
+                    // double maxDist = Math.max(Math.abs(dx), Math.abs(dy));
+                    // double scaleX = Math.abs(dx) / maxDist;
+                    // double scaleY = Math.abs(dy) / maxDist;
+
+                    // double targetVelocity = Math.hypot(attractX, attractY);
+                    // attractX = scaleX * targetVelocity;
+                    // attractY = scaleY * targetVelocity;
                     SmartDashboard.putBoolean("strong repulsion", false);
                 }
 
