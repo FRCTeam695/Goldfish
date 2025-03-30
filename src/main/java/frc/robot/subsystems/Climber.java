@@ -21,7 +21,7 @@ public class Climber extends SubsystemBase{
         climberMotor = new TalonFX(56); // ID?
         m_configs = new TalonFXConfiguration();
 
-        m_configs.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
+        m_configs.SoftwareLimitSwitch.ForwardSoftLimitEnable = false;
         m_configs.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 170;
         m_configs.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
         m_configs.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 0;

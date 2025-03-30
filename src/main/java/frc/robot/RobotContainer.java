@@ -135,7 +135,6 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
-    // rollback became "povright" and all manual play became "b"
 
     // indication for human player to drop coral
     Swerve.isWithin10cm.and(Coralizer.seenFirstBreak.negate()).and(()-> DriverStation.isAutonomous()).whileTrue(
@@ -161,12 +160,12 @@ public class RobotContainer {
     );
 
     // starts the intake
-    driver.rightBumper().onTrue(
+    driver.leftTrigger().onTrue(
         Coralizer.intake()
     );
 
     // drives to the nearest feeder station
-    driver.rightBumper().whileTrue(
+    driver.leftTrigger().whileTrue(
         parallel(
           Swerve.driveToNearestFeed(),
           Elevator.setHeightLevel(Heights.Ground).until(Elevator.atSetpoint)
@@ -180,14 +179,15 @@ public class RobotContainer {
 
 
     //driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
-    driver.b().onTrue(
+    driver.rightBumper().onTrue(
       Elevator.goToScoringHeight()
     );
-    driver.b().onFalse(
+    driver.rightBumper().onFalse(
       logTrickshotTrue().andThen(
         Coralizer.ejectCoral()
               .andThen(
                 Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
+                .andThen(Elevator.goToScoringHeight())
               .andThen(Elevator.setHeightLevel(Heights.Ground))
               ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false))
     );
@@ -202,7 +202,8 @@ public class RobotContainer {
     driver.y().whileTrue(
       parallel(
         Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp),
-        Climber.runClimb(1).until(Climber.closeToForwardLimit).andThen(Climber.climbOutNoSoftLimits())
+        Climber.runClimb(1),
+        Swerve.rotateToAngle(()-> (Swerve.isRedAlliance() ? -90 : 90), driver::getRequestedChassisSpeeds)
       )
     );
 
@@ -278,10 +279,6 @@ public class RobotContainer {
       Coralizer.runIntakeAndCoralizer(()-> -0.1)
     );
 
-    // rotates chassis towards center of reef
-    driver.leftTrigger().toggleOnTrue(
-      Swerve.rotateToReefCenter(driver::getRequestedChassisSpeeds)
-    );
 
     // display all calibrated field constants on glass
     driver.leftStick().onTrue(Swerve.displayVisionConstants().ignoringDisable(true));
