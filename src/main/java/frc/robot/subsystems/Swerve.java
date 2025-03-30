@@ -16,6 +16,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringSubscriber;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -166,8 +167,8 @@ public class Swerve extends SwerveBase{
                     currentlyApplyingRepulsion = false;
                     hasDetectedCollision = false;
 
-                    attractX = xProfile.calculate(0.02, new TrapezoidProfile.State(dx, currentRobotChassisSpeeds.vxMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
-                    attractY = yProfile.calculate(0.02, new TrapezoidProfile.State(dy, currentRobotChassisSpeeds.vyMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+                    // attractX = xProfile.calculate(0.02, new TrapezoidProfile.State(dx, currentRobotChassisSpeeds.vxMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+                    // attractY = yProfile.calculate(0.02, new TrapezoidProfile.State(dy, currentRobotChassisSpeeds.vyMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
 
                     // UNCOMMENT FOR SCALING APPROACH
                     // double maxDist = Math.max(Math.abs(dx), Math.abs(dy));
@@ -356,17 +357,19 @@ public class Swerve extends SwerveBase{
                 SmartDashboard.putNumber("alignment dx", dx);
                 SmartDashboard.putNumber("alignment dy", dy);
 
-                ChassisSpeeds currentRobotChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
-                double attractX = xProfile.calculate(0.02, new TrapezoidProfile.State(dx, currentRobotChassisSpeeds.vxMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
-                double attractY = yProfile.calculate(0.02, new TrapezoidProfile.State(dy, currentRobotChassisSpeeds.vyMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
-                // if(DriverStation.isAutonomous()){
-                //     attractY = kp_attract * dy;
-                //     attractX = kp_attract * dx;
-                // }
-                // else{
-                //     attractX = kp_attract * dx;
-                //     attractY = kp_attract * dy;
-                // }
+                //ChassisSpeeds currentRobotChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
+                // double attractX = xProfile.calculate(0.02, new TrapezoidProfile.State(dx, currentRobotChassisSpeeds.vxMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+                // double attractY = yProfile.calculate(0.02, new TrapezoidProfile.State(dy, currentRobotChassisSpeeds.vyMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+                double attractX;
+                double attractY;
+                if(DriverStation.isAutonomous()){
+                    attractY = kp_attract * dy;
+                    attractX = kp_attract * dx;
+                }
+                else{
+                    attractX = kp_attract * dx;
+                    attractY = kp_attract * dy;
+                }
 
                 SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
                 
