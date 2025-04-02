@@ -828,6 +828,7 @@ public class SwerveBase extends SubsystemBase {
         //}
 
        SmartDashboard.putNumber("NavX Position", gyro.getAngle());
+       SmartDashboard.putNumber("NavX temperature", gyro.getTempC());
        SmartDashboard.putNumber("NavX Modified Position", getGyroHeading().getDegrees());
 
         m_field.setRobotPose(getSavedPose());

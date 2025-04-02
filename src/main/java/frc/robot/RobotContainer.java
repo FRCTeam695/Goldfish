@@ -187,7 +187,6 @@ public class RobotContainer {
         Coralizer.ejectCoral()
               .andThen(
                 Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
-                .andThen(Elevator.goToScoringHeight())
               .andThen(Elevator.setHeightLevel(Heights.Ground))
               ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false))
     );
@@ -274,8 +273,8 @@ public class RobotContainer {
       )
     );
 
-    // coral rollback if pressed in teleop
-    driver.povRight().whileTrue(
+    // coral rollback
+    driver.b().whileTrue(
       Coralizer.runIntakeAndCoralizer(()-> -0.1)
     );
 
