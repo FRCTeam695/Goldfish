@@ -103,7 +103,7 @@ public class DuoTalonLift extends SubsystemBase{
         l_followerConfigs.CurrentLimits.SupplyCurrentLimit = 40; // Amps
         // Soft limits (Just leader because follower's encoder is useless)
         r_leaderConfigs.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        r_leaderConfigs.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 60; // Rotations
+        r_leaderConfigs.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Heights.L4.heightInches * rotationsPerInch; // Rotations
         r_leaderConfigs.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
         r_leaderConfigs.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 0;
 
@@ -210,7 +210,7 @@ public class DuoTalonLift extends SubsystemBase{
         L1 ("L1", 9.2), // *rotationsPerInch
         L2 ("L2", 13.412+0.85),
         L3 ("L3", 29.734),
-        L4 ("L4", 55.234);
+        L4 ("L4", 55.234 + 0.5);
 
         String level;
         double heightInches;

@@ -186,7 +186,7 @@ public class Constants {
             
             
             public static final Pose2d FEED_LOCATION_RIGHT = new Pose2d(((1.06+1.23)/2 + 1.06)/2, ((1.03+1.16)/2 + 1.03)/2, Rotation2d.fromDegrees(53.40));
-            public static final Pose2d FEED_LOCATION_LEFT = new Pose2d((1.17 + 1.21)/2, (6.99 + 6.88)/2, Rotation2d.fromDegrees(-54.9));
+            public static final Pose2d FEED_LOCATION_LEFT = new Pose2d(1.105, (6.99 + 6.88)/2, Rotation2d.fromDegrees(-54.9));
 
             /*
             public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(3.19, 4.19, Rotation2d.fromDegrees(0));
