@@ -12,6 +12,7 @@ import com.ctre.phoenix6.signals.MotorArrangementValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.ReverseLimitValue;
 
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 //import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -29,6 +30,8 @@ public class Coralizer extends SubsystemBase{
     public Trigger seenFirstBreak = new Trigger(()-> hasSeenFirstBreak);
     public Trigger intakeCurrentBelowThreshold;
     public Trigger isStalled;
+    public Trigger debounceBeamIsMade;
+    public Debouncer beambreakDebouncer;
 
     public Coralizer(){
         //beamBreak = new DigitalInput(0);
@@ -54,11 +57,17 @@ public class Coralizer extends SubsystemBase{
 
         isStalled = new Trigger(()-> intake.getMotorStallCurrent().getValueAsDouble() > 3);
         intake.getSupplyCurrent().setUpdateFrequency(20);
-        intakeCurrentBelowThreshold = new Trigger(()-> intake.getSupplyCurrent().getValueAsDouble() < 3.5);
+        intakeCurrentBelowThreshold = new Trigger(()-> ((intake.getSupplyCurrent().getValueAsDouble() < 3.0) && (intake.getSupplyCurrent().getValueAsDouble() > 0)));
+        beambreakDebouncer = new Debouncer(0.07);
+        debounceBeamIsMade = new Trigger(()-> !beambreakDebouncer.calculate(beamIsBroken()));
     }
 
     public boolean beamIsBroken(){
-        return  coralizer.getReverseLimit().getValue() == ReverseLimitValue.ClosedToGround;
+        return  debounceBeamIsMade.getAsBoolean();
+    }
+
+    public boolean notDecbouncedBeambreak(){
+        return coralizer.getReverseLimit().getValue() == ReverseLimitValue.ClosedToGround;
     }
     
     public boolean beamNotBroken(){
@@ -143,5 +152,6 @@ public class Coralizer extends SubsystemBase{
         SmartDashboard.putNumber("Coralizer speed", coralizer.getVelocity().getValueAsDouble());
         SmartDashboard.putNumber("Intake current", intake.getSupplyCurrent().getValueAsDouble());
         SmartDashboard.putNumber("Coralizer current", coralizer.getSupplyCurrent().getValueAsDouble());
+        SmartDashboard.putBoolean("Debounce Testing", debounceBeamIsMade.getAsBoolean());
     }
 }

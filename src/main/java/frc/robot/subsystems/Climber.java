@@ -50,7 +50,7 @@ public class Climber extends SubsystemBase{
         runOnce(()->{
             m_configs = new TalonFXConfiguration();
 
-            m_configs.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
+            m_configs.SoftwareLimitSwitch.ForwardSoftLimitEnable = false;
             m_configs.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 170;
             m_configs.SoftwareLimitSwitch.ReverseSoftLimitEnable = false;
             m_configs.MotorOutput.NeutralMode = NeutralModeValue.Brake;
