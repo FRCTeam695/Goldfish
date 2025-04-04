@@ -30,7 +30,7 @@ public class Coralizer extends SubsystemBase{
     public Trigger seenFirstBreak = new Trigger(()-> hasSeenFirstBreak);
     public Trigger intakeCurrentBelowThreshold;
     public Trigger isStalled;
-    public Trigger debounceBeamIsMade;
+    public Trigger beamIsMadeDebounced;
     public Debouncer beambreakDebouncer;
 
     public Coralizer(){
@@ -59,15 +59,15 @@ public class Coralizer extends SubsystemBase{
         intake.getSupplyCurrent().setUpdateFrequency(20);
         intakeCurrentBelowThreshold = new Trigger(()-> ((intake.getSupplyCurrent().getValueAsDouble() < 3.0) && (intake.getSupplyCurrent().getValueAsDouble() > 0)));
         beambreakDebouncer = new Debouncer(0.07);
-        debounceBeamIsMade = new Trigger(()-> !beambreakDebouncer.calculate(beamIsBroken()));
+        beamIsMadeDebounced = new Trigger(()-> !beambreakDebouncer.calculate(beamBrokenUndebounced()));
+    }
+
+    public boolean beamBrokenUndebounced(){
+        return  coralizer.getReverseLimit().getValue() == ReverseLimitValue.ClosedToGround;
     }
 
     public boolean beamIsBroken(){
-        return  debounceBeamIsMade.getAsBoolean();
-    }
-
-    public boolean notDecbouncedBeambreak(){
-        return coralizer.getReverseLimit().getValue() == ReverseLimitValue.ClosedToGround;
+        return  !beamIsMadeDebounced.getAsBoolean();
     }
     
     public boolean beamNotBroken(){
@@ -152,6 +152,5 @@ public class Coralizer extends SubsystemBase{
         SmartDashboard.putNumber("Coralizer speed", coralizer.getVelocity().getValueAsDouble());
         SmartDashboard.putNumber("Intake current", intake.getSupplyCurrent().getValueAsDouble());
         SmartDashboard.putNumber("Coralizer current", coralizer.getSupplyCurrent().getValueAsDouble());
-        SmartDashboard.putBoolean("Debounce Testing", debounceBeamIsMade.getAsBoolean());
     }
 }
