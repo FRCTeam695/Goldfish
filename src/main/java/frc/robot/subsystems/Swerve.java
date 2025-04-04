@@ -113,6 +113,9 @@ public class Swerve extends SwerveBase{
                 double dx = targetLocationPose.getX()-robotPose.getX();
                 double dy = targetLocationPose.getY() - robotPose.getY();
 
+                SmartDashboard.putNumber("alignment dx", dx);
+                SmartDashboard.putNumber("alignment dy", dy);
+
                 // calculate attraction forces
                 double attractX = kp_attract * dx;
                 double attractY = kp_attract * dy;
