@@ -83,7 +83,7 @@ public class Coralizer extends SubsystemBase{
           )
           .andThen(
               setSafeToRaiseElevator()
-            .andThen(runIntakeAndCoralizer(()-> -0.1).until(this::beamIsBroken))
+            .andThen(runIntakeAndCoralizer(()-> -0.1).until(this::beamBrokenUndebounced))
             .andThen(runIntakeAndCoralizer(()-> 0))
           )).withName("intake");
     }
