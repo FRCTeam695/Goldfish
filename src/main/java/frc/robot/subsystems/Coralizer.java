@@ -147,6 +147,7 @@ public class Coralizer extends SubsystemBase{
     @Override
     public void periodic(){
         SmartDashboard.putBoolean("Beambreak", beamIsBroken());
+        SmartDashboard.putBoolean("Beambreak No Debounce", beamBrokenUndebounced());
         SmartDashboard.putBoolean("Has Finished Intaking", safeToRaiseElevator.getAsBoolean());
         SmartDashboard.putBoolean("Has Seen First Break", hasSeenFirstBreak);
         SmartDashboard.putNumber("Coralizer speed", coralizer.getVelocity().getValueAsDouble());
