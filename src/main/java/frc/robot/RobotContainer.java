@@ -129,11 +129,10 @@ public class RobotContainer {
     // UNUSED BUTTONS
     // y
     // a
-    // right bumper
-    // povleft
-    driver.y().onTrue(Elevator.setHeightLevel(Heights.L4));
-    driver.a().onTrue(Elevator.setHeightLevel(Heights.L2));
-    driver.rightBumper().onTrue(Elevator.setHeightLevel(Heights.Ground));
+
+    // Use for L1 corals after thew reef is filled (MANUAL DRIVING)
+    driver.rightBumper().onTrue(parallel(Elevator.setHeightLevel(Heights.L2), Coralizer.ejectCoral()));
+    // set delays?
 
     // indication for human player to drop coral
     Swerve.isWithin10cm.and(Coralizer.seenFirstBreak.negate()).and(()-> DriverStation.isAutonomous()).whileTrue(
