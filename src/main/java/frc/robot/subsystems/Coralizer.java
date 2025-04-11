@@ -13,6 +13,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.ReverseLimitValue;
 
 import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 //import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -32,6 +33,7 @@ public class Coralizer extends SubsystemBase{
     public Trigger isStalled;
     public Trigger beamIsMadeDebounced;
     public Debouncer beambreakDebouncer;
+    public DigitalInput fixedBeambreak;
 
     public Coralizer(){
         //beamBreak = new DigitalInput(0);
@@ -60,6 +62,7 @@ public class Coralizer extends SubsystemBase{
         intakeCurrentBelowThreshold = new Trigger(()-> ((intake.getSupplyCurrent().getValueAsDouble() < 3.0) && (intake.getSupplyCurrent().getValueAsDouble() > 0)));
         beambreakDebouncer = new Debouncer(0.07);
         beamIsMadeDebounced = new Trigger(()-> !beambreakDebouncer.calculate(beamBrokenUndebounced()));
+        fixedBeambreak = new DigitalInput(9);
     }
 
     public boolean beamBrokenUndebounced(){
@@ -67,7 +70,8 @@ public class Coralizer extends SubsystemBase{
     }
 
     public boolean beamIsBroken(){
-        return  !beamIsMadeDebounced.getAsBoolean();
+        return fixedBeambreak.get();
+        //return  !beamIsMadeDebounced.getAsBoolean();
     }
     
     public boolean beamNotBroken(){
@@ -118,6 +122,10 @@ public class Coralizer extends SubsystemBase{
 
     public Command ejectCoral(){
         return runCoralizer(()-> 0.6).withTimeout(0.2).andThen(setDangerousToRaiseElevator()).andThen(setFirstBreakStateFalse());
+    }
+
+    public Command fastEjectCoral(){
+        return runCoralizer(()-> 1).withTimeout(0.3).andThen(setDangerousToRaiseElevator()).andThen(setFirstBreakStateFalse());
     }
 
     public Command setDangerousToRaiseElevator(){

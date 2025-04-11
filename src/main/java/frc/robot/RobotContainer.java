@@ -275,12 +275,31 @@ public class RobotContainer {
 
     // coral rollback
     driver.b().whileTrue(
-      Coralizer.runIntakeAndCoralizer(()-> -0.1)
+      Alagizer.goToPosition(()-> Constants.Alagizer.dump)
+      //Coralizer.runIntakeAndCoralizer(()-> -0.1)
+    );
+
+    driver.b().onFalse(
+      Alagizer.goToPosition(()-> Constants.Alagizer.dump).until(Alagizer.atSetpoint)
+      .andThen(
+        Swerve.driveForwards().withTimeout(0.5)
+      )
+      .andThen(Alagizer.dump())
     );
 
 
     // display all calibrated field constants on glass
     driver.leftStick().onTrue(Swerve.displayVisionConstants().ignoringDisable(true));
+
+    // driver.rightStick().whileTrue(
+    //   Elevator.setHeightLevel(Heights.L2).until(Elevator.atSetpoint).andThen(
+    //     parallel(
+    //       Coralizer.fastEjectCoral(),
+    //       Elevator.slowRaise(-0.1)
+    //     ).withTimeout(0.4)
+    //   ).andThen(new WaitCommand(0.6))
+    //   .andThen(Coralizer.runCoralizer(()-> 0).alongWith(Elevator.slowRaise(0)))
+    // );
   }
 
   public void configureDefaultCommands(){
