@@ -27,6 +27,7 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import java.util.Optional;
 
+
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
@@ -283,24 +284,27 @@ public class RobotContainer {
 
     // coral rollback
     driver.b().whileTrue(
-      Coralizer.runIntakeAndCoralizer(()-> -0.3).withTimeout(0.4)
-      // .andThen(
-      //   Alagizer.goToPosition(()-> Constants.Alagizer.dump)
-      // )
+      Coralizer.runIntakeAndCoralizer(()-> -1).withTimeout(0.2)
+      .andThen(
+        parallel(
+          Alagizer.goToPosition(()-> Constants.Alagizer.dump).until(Alagizer.atSetpoint).andThen(Alagizer.goToPosition(()-> -38.59)),
+          Coralizer.runIntakeAndCoralizer(()-> -1)
+        )
+      )
     );
 
     driver.b().onFalse(
       Alagizer.goToPosition(()-> Constants.Alagizer.dump).until(Alagizer.atSetpoint)
       .andThen(
-        Swerve.driveForwards().withTimeout(0.5)
+        Swerve.driveForwards().withTimeout(0.25)
       )
       .andThen(Alagizer.dump())
     );
 
-    driver.povDown().onTrue(
+    driver.povDown().whileTrue(
       either(
         Swerve.backwardsResetGyro(),
-        new WaitCommand(0), 
+        Coralizer.runIntakeAndCoralizer(()-> -0.3),
         ()-> DriverStation.isDisabled()
       )
     );

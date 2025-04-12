@@ -37,6 +37,7 @@ public class Coralizer extends SubsystemBase{
     public Trigger intakeCurrentBelowThreshold;
     public Trigger isStalled;
     public Trigger beamIsMadeDebounced;
+    public Trigger intakeCurrentAboveFive;
     public Debouncer beambreakDebouncer;
     public DigitalInput fixedBeambreak;
 
@@ -71,6 +72,7 @@ public class Coralizer extends SubsystemBase{
         intakeCurrentBelowThreshold = new Trigger(()-> ((intake.getSupplyCurrent().getValueAsDouble() < 3.0) && (intake.getSupplyCurrent().getValueAsDouble() > 0)));
         beambreakDebouncer = new Debouncer(0.07);
         beamIsMadeDebounced = new Trigger(()-> !beambreakDebouncer.calculate(beamBrokenUndebounced()));
+        intakeCurrentAboveFive = new Trigger(()-> (intake.getSupplyCurrent().getValueAsDouble() > 5));
         fixedBeambreak = new DigitalInput(9);
         sideCarTable = inst.getTable("sidecarTable");
         scoringHeight = sideCarTable.getIntegerTopic("scoringLevel").subscribe(1);
@@ -81,8 +83,8 @@ public class Coralizer extends SubsystemBase{
     }
 
     public boolean beamIsBroken(){
-        return fixedBeambreak.get();
-        //return  !beamIsMadeDebounced.getAsBoolean();
+        //return fixedBeambreak.get();
+        return  !beamIsMadeDebounced.getAsBoolean();
     }
     
     public boolean beamNotBroken(){
@@ -91,16 +93,22 @@ public class Coralizer extends SubsystemBase{
 
     public Command intake(){
         return
-          (runIntakeAndCoralizer(()-> 0.6).until(this::beamIsBroken)
-          .andThen(setFirstBreakStateTrue())
-          .andThen(
-            either(new WaitCommand(0),             
-                runIntakeAndCoralizer(()->0.4).until(intakeCurrentBelowThreshold.and(this::beamNotBroken))
-                .andThen(setSafeToRaiseElevator())
-                .andThen(runIntakeAndCoralizer(()-> -0.1).until(this::beamBrokenUndebounced))
-                .andThen(runIntakeAndCoralizer(()-> 0))
-                , ()-> (int)Math.round(scoringHeight.get(2)) == 1)
-          )).withName("intake");
+        either(
+                runIntakeAndCoralizer(()-> 0.6).withTimeout(0.03)
+                .andThen(new WaitCommand(0.2-0.03))
+                .andThen(runIntakeAndCoralizer(()-> 0.6).until(this::beamIsBroken)
+                .andThen(runIntakeAndCoralizer(()-> -0.1).withTimeout(1.1))
+                .andThen(runIntakeAndCoralizer(()-> 0.0))
+            ),
+            (runIntakeAndCoralizer(()-> 0.6).until(this::beamIsBroken)
+            .andThen(setFirstBreakStateTrue())
+            .andThen(          
+                  runIntakeAndCoralizer(()->0.4).until(intakeCurrentBelowThreshold.and(this::beamNotBroken))
+                  .andThen(setSafeToRaiseElevator())
+                  .andThen(runIntakeAndCoralizer(()-> -0.1).until(this::beamBrokenUndebounced))
+                  .andThen(runIntakeAndCoralizer(()-> 0))
+            )),
+            ()-> (int)Math.round(scoringHeight.get(2)) == 1).withName("intake");
     }
     
 
@@ -172,5 +180,6 @@ public class Coralizer extends SubsystemBase{
         SmartDashboard.putNumber("Coralizer speed", coralizer.getVelocity().getValueAsDouble());
         SmartDashboard.putNumber("Intake current", intake.getSupplyCurrent().getValueAsDouble());
         SmartDashboard.putNumber("Coralizer current", coralizer.getSupplyCurrent().getValueAsDouble());
+        SmartDashboard.putBoolean("Intake Current Above Five", intakeCurrentAboveFive.getAsBoolean());
     }
 }
