@@ -1,6 +1,8 @@
 package frc.robot.subsystems;
 
 
+import static edu.wpi.first.wpilibj2.command.Commands.either;
+
 import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -13,6 +15,9 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.ReverseLimitValue;
 
 import edu.wpi.first.math.filter.Debouncer;
+import edu.wpi.first.networktables.IntegerSubscriber;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 //import edu.wpi.first.wpilibj.DigitalInput;
@@ -34,6 +39,10 @@ public class Coralizer extends SubsystemBase{
     public Trigger beamIsMadeDebounced;
     public Debouncer beambreakDebouncer;
     public DigitalInput fixedBeambreak;
+
+    private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
+    public NetworkTable sideCarTable;
+    public IntegerSubscriber scoringHeight;
 
     public Coralizer(){
         //beamBreak = new DigitalInput(0);
@@ -63,6 +72,8 @@ public class Coralizer extends SubsystemBase{
         beambreakDebouncer = new Debouncer(0.07);
         beamIsMadeDebounced = new Trigger(()-> !beambreakDebouncer.calculate(beamBrokenUndebounced()));
         fixedBeambreak = new DigitalInput(9);
+        sideCarTable = inst.getTable("sidecarTable");
+        scoringHeight = sideCarTable.getIntegerTopic("scoringLevel").subscribe(1);
     }
 
     public boolean beamBrokenUndebounced(){
@@ -83,12 +94,12 @@ public class Coralizer extends SubsystemBase{
           (runIntakeAndCoralizer(()-> 0.6).until(this::beamIsBroken)
           .andThen(setFirstBreakStateTrue())
           .andThen(
-            runIntakeAndCoralizer(()->0.4).until(intakeCurrentBelowThreshold.and(this::beamNotBroken))
-          )
-          .andThen(
-              setSafeToRaiseElevator()
-            .andThen(runIntakeAndCoralizer(()-> -0.1).until(this::beamBrokenUndebounced))
-            .andThen(runIntakeAndCoralizer(()-> 0))
+            either(new WaitCommand(0),             
+                runIntakeAndCoralizer(()->0.4).until(intakeCurrentBelowThreshold.and(this::beamNotBroken))
+                .andThen(setSafeToRaiseElevator())
+                .andThen(runIntakeAndCoralizer(()-> -0.1).until(this::beamBrokenUndebounced))
+                .andThen(runIntakeAndCoralizer(()-> 0))
+                , ()-> (int)Math.round(scoringHeight.get(2)) == 1)
           )).withName("intake");
     }
     

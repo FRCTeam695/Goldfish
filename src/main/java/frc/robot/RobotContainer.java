@@ -180,15 +180,21 @@ public class RobotContainer {
 
     //driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
     driver.rightBumper().onTrue(
-      Elevator.goToScoringHeight()
+      either(
+        Elevator.goToScoringHeight(), new WaitCommand(0), Coralizer.safeToRaiseElevator
+      )
     );
     driver.rightBumper().onFalse(
-      logTrickshotTrue().andThen(
-        Coralizer.ejectCoral()
-              .andThen(
-                Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
-              .andThen(Elevator.setHeightLevel(Heights.Ground))
-              ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false))
+      either(
+        logTrickshotTrue().andThen(
+          Coralizer.ejectCoral()
+                .andThen(
+                  Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
+                .andThen(Elevator.setHeightLevel(Heights.Ground))
+                ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false)),
+        new WaitCommand(0), 
+        Coralizer.safeToRaiseElevator
+        )
     );
 
     // driver.b().onTrue(Elevator.goToScoringHeight().until(Elevator.atSetpoint)
@@ -275,8 +281,10 @@ public class RobotContainer {
 
     // coral rollback
     driver.b().whileTrue(
-      Alagizer.goToPosition(()-> Constants.Alagizer.dump)
-      //Coralizer.runIntakeAndCoralizer(()-> -0.1)
+      Coralizer.runIntakeAndCoralizer(()-> -0.3).withTimeout(0.4)
+      // .andThen(
+      //   Alagizer.goToPosition(()-> Constants.Alagizer.dump)
+      // )
     );
 
     driver.b().onFalse(
