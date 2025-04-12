@@ -489,6 +489,11 @@ public class SwerveBase extends SubsystemBase {
     public Command resetGyro() {
         return resetGyro(180);
     }
+
+    
+    public Command backwardsResetGyro(){
+        return resetGyro(0);
+    }
     
 
     public Command resetGyro(double angle){

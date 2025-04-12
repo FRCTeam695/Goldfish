@@ -118,6 +118,8 @@ public class RobotContainer {
                                 Elevator.setHeightLevel(Heights.Ground)
                               ).until(Elevator.atSetpoint)
     );
+    autoChooser.addOption("Mid Right", alignAndScore(Optional.of("G")).andThen(Elevator.setHeightLevel(Heights.Ground).until(Elevator.atSetpoint)));
+    autoChooser.addOption("Mid Left", alignAndScore(Optional.of("H")).andThen(Elevator.setHeightLevel(Heights.Ground).until(Elevator.atSetpoint)));
     SmartDashboard.putData(autoChooser);
 
     DataLogManager.start();
@@ -293,6 +295,14 @@ public class RobotContainer {
         Swerve.driveForwards().withTimeout(0.5)
       )
       .andThen(Alagizer.dump())
+    );
+
+    driver.povDown().onTrue(
+      either(
+        Swerve.backwardsResetGyro(),
+        new WaitCommand(0), 
+        ()-> DriverStation.isDisabled()
+      )
     );
 
 
