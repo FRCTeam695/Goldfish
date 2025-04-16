@@ -282,7 +282,7 @@ public class RobotContainer {
       )
     );
 
-    // coral rollback
+    // L1 play
     driver.b().whileTrue(
       Coralizer.runIntakeAndCoralizer(()-> -1).withTimeout(0.2)
       .andThen(
