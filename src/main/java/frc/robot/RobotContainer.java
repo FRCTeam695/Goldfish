@@ -284,10 +284,13 @@ public class RobotContainer {
 
     // L1 play
     driver.b().whileTrue(
-      Coralizer.runIntakeAndCoralizer(()-> -1).withTimeout(0.2)
+      deadline(
+        Coralizer.runIntakeAndCoralizer(()-> -1).withTimeout(0.2),
+        Alagizer.goToPosition(()-> -20.1)
+      )
       .andThen(
         parallel(
-          Alagizer.goToPosition(()-> Constants.Alagizer.dump).until(Alagizer.atSetpoint).andThen(Alagizer.goToPosition(()-> -38.59)),
+          Alagizer.goToPosition(()-> Constants.Alagizer.dump),
           Coralizer.runIntakeAndCoralizer(()-> -1)
         )
       )

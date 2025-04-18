@@ -217,7 +217,7 @@ public class DuoTalonLift extends SubsystemBase{
         L1 ("L1", 8.5), // *rotationsPerInch
         L2 ("L2", 13.412+0.85),
         L3 ("L3", 29.734),
-        L4 ("L4", 55.234 + 0.5 + Units.metersToInches(0.02));
+        L4 ("L4", 55.234 + 0.5 + Units.metersToInches(0.01));
 
         String level;
         double heightInches;
