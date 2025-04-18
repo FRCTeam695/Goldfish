@@ -299,7 +299,7 @@ public class RobotContainer {
     driver.b().onFalse(
       Alagizer.goToPosition(()-> Constants.Alagizer.dump).until(Alagizer.atSetpoint)
       .andThen(
-        Swerve.driveForwards().withTimeout(0.25)
+        new WaitCommand(0.25)
       )
       .andThen(Alagizer.dump())
     );
