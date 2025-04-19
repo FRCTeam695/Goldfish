@@ -13,7 +13,6 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTable;
@@ -217,7 +216,7 @@ public class DuoTalonLift extends SubsystemBase{
         L1 ("L1", 8.5), // *rotationsPerInch
         L2 ("L2", 13.412+0.85),
         L3 ("L3", 29.734),
-        L4 ("L4", 55.234 + 0.5 + Units.metersToInches(0.01));
+        L4 ("L4", 56.4214672108);
 
         String level;
         double heightInches;

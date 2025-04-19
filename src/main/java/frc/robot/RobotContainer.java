@@ -193,7 +193,9 @@ public class RobotContainer {
           Coralizer.ejectCoral()
                 .andThen(
                   Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
-                .andThen(Elevator.setHeightLevel(Heights.Ground))
+                .andThen(
+                  Elevator.setHeightLevel(Heights.Ground)
+                )
                 ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false)),
         new WaitCommand(0), 
         Coralizer.safeToRaiseElevator
@@ -277,6 +279,7 @@ public class RobotContainer {
     driver.povRight().onTrue(
       new ConditionalCommand(
         Swerve.rightGyroReset(), 
+        //Elevator.goToScoringHeight().until(Elevator.atSetpoint).andThen(Coralizer.ejectCoral()).andThen(Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01)).andThen(new WaitCommand(5)),
         new WaitCommand(0), 
         ()-> DriverStation.isDisabled()
       )
