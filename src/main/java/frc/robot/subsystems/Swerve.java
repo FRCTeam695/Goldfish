@@ -59,8 +59,8 @@ public class Swerve extends SwerveBase{
     public TrapezoidProfile xProfile;
     public TrapezoidProfile yProfile;
 
-    public Swerve(String[] camNames, TalonFXModule[] modules) {
-        super(camNames, modules);
+    public Swerve(String[] camNames, TalonFXModule[] modules, int[] reefTags) {
+        super(camNames, modules, reefTags);
 
         targetLocationPose = new Pose2d();
 

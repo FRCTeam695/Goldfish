@@ -53,6 +53,8 @@ public class RobotContainer {
   public final LED led = new LED();
   SendableChooser<Command> autoChooser = new SendableChooser<>();
 
+  public int[] reefTags = {6,7,8,9,10,11,17,18,19,20,21,22};
+
 
   private final TalonFXModule[] modules = new TalonFXModule[] 
           {
@@ -68,7 +70,7 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    Swerve = new Swerve(camNames, modules);
+    Swerve = new Swerve(camNames, modules, reefTags);
     Elevator = new DuoTalonLift();
     Coralizer = new Coralizer();
     Alagizer = new AlgaeDislodger();

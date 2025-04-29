@@ -117,15 +117,16 @@ public class SwerveBase extends SubsystemBase {
     private VoltageOut m_voltReq;
     //6-11
     // 17 -22
-    public int[] validIDs = {6,7,8,9,10,11,17,18,19,20,21,22};
+    public int[] validTagIDs;
 
     /**
      * Does all da constructing
      * 
      * @param cameras An array of cameras used for pose estinmation
      * @param moduleTypes The type of swerve module on the swerve drive
+     * @param validTagIDs April Tag IDs which are safe to use for pose estimation (stable tags that don't move around too much)
      */
-    public SwerveBase(String[] camNames, TalonFXModule[] modules) {
+    public SwerveBase(String[] camNames, TalonFXModule[] modules, int[] validTagIDs) {
         //pigeon.setYaw(0);
         // 4 modules * 3 signals per module
         allOdomSignals = new BaseStatusSignal[(4 * 3)];
@@ -140,6 +141,8 @@ public class SwerveBase extends SubsystemBase {
 
         // Holds all the modules
         this.modules = modules;
+
+        this.validTagIDs = validTagIDs;
 
         RobotConfig config;
         try{
@@ -746,7 +749,7 @@ public class SwerveBase extends SubsystemBase {
         double avgLLomega = 0;
         for(String cam : camNames){  
             LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-            LimelightHelpers.SetFiducialIDFiltersOverride(cam, validIDs);
+            LimelightHelpers.SetFiducialIDFiltersOverride(cam, validTagIDs);
             LimelightHelpers.PoseEstimate mt2_estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cam);
         
             // Only update pose if it is valid and if we arent spinning too fast
