@@ -76,9 +76,9 @@ public class Swerve extends SwerveBase{
         isApplyingRepulsion = new Trigger(()-> currentlyApplyingRepulsion);
         isWithin10cm = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.1);
         isFullyAutonomous = new Trigger(()-> currentlyFullyAutonomous);
-        distanceProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
-        xProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
-        yProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
+        distanceProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
+        xProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
+        yProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
     }
     
 
@@ -209,8 +209,8 @@ public class Swerve extends SwerveBase{
 
                 //clamp speeds to avoid desaturation killing our rotational movement
                 ChassisSpeeds speeds = new ChassisSpeeds(
-                    MathUtil.clamp(xSpeed, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS), 
-                    MathUtil.clamp(ySpeed, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS), 
+                    MathUtil.clamp(xSpeed, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
+                    MathUtil.clamp(ySpeed, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
                     getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()));
                 SmartDashboard.putString("Chassis Speeds Commanded", speeds.toString());
                 drive(speeds, true, false);
@@ -363,8 +363,8 @@ public class Swerve extends SwerveBase{
                 
                 ChassisSpeeds speeds =
                     new ChassisSpeeds(
-                        MathUtil.clamp(attractX, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS), 
-                        MathUtil.clamp(attractY, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS),
+                        MathUtil.clamp(attractX, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
+                        MathUtil.clamp(attractY, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND),
                     getAngularComponentFromRotationOverride(angle)
                 );
                 SmartDashboard.putString("align to reef speeds", speeds.toString());

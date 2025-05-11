@@ -89,7 +89,7 @@ public class Constants {
 
         // miscellaneous constants
         public static final double MAX_SPEED_METERS_PER_SECONDS_TELEOP = Units.feetToMeters(12.9);
-        public static final double MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS = 3;
+        public static final double MAX_TRACKABLE_SPEED_METERS_PER_SECOND = 3;
         public static final double MAX_ANGULAR_SPEED_RAD_PER_SECOND = CHOSEN_CONSTANTS.maxAngularSpeedRadPerSec;
         public static final double TURNING_GEAR_RATIO = CHOSEN_CONSTANTS.turningGearRatio;
         public static final double DRIVING_GEAR_RATIO = CHOSEN_CONSTANTS.drivingGearRatio;

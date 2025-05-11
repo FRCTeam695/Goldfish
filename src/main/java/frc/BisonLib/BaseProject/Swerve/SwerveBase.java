@@ -307,7 +307,7 @@ public class SwerveBase extends SubsystemBase {
      */
     public void setModules(SwerveModuleState[] desiredStates, boolean useMaxSpeed) {
         if(useMaxSpeed) SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP);
-        else SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS);
+        else SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
 
         for(var module : modules){
             //SmartDashboard.putString("Swerve/Module State " + module.index, desiredStates[module.index].toString());
@@ -359,10 +359,6 @@ public class SwerveBase extends SubsystemBase {
             return new Rotation2d(-Math.toRadians(Math.IEEEremainder(gyro.getAngle()/0.99622314806, 360)));
         }
     }
-
-    // protected double getGyroRate() {
-    //     return pigeon.getAngularVelocityZWorld().getValueAsDouble();
-    // }
 
 
     /**
@@ -649,7 +645,7 @@ public class SwerveBase extends SubsystemBase {
         if(!useSetpointGenerator){
             var tmpStates = Constants.Swerve.kDriveKinematics.toSwerveModuleStates(chassisSpeeds);
             if(useMaxSpeed) SwerveDriveKinematics.desaturateWheelSpeeds(tmpStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP);
-            else SwerveDriveKinematics.desaturateWheelSpeeds(tmpStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS);
+            else SwerveDriveKinematics.desaturateWheelSpeeds(tmpStates, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
             var speeds = Constants.Swerve.kDriveKinematics.toChassisSpeeds(tmpStates);
             // discretizes the chassis speeds (acccounts for robot skew)
             chassisSpeeds = ChassisSpeeds.discretize(speeds, Constants.Swerve.DISCRETIZE_TIMESTAMP);
