@@ -170,30 +170,45 @@ public class Swerve extends SwerveBase{
                     currentlyApplyingRepulsion = false;
                     hasDetectedCollision = false;
 
-                    //attractX = xProfile.calculate(0.02, new TrapezoidProfile.State(dx, currentRobotChassisSpeeds.vxMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
-                    //attractY = yProfile.calculate(0.02, new TrapezoidProfile.State(dy, currentRobotChassisSpeeds.vyMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+                    // attractX = xProfile.calculate(0.02, new TrapezoidProfile.State(dx, currentRobotChassisSpeeds.vxMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+                    // attractY = yProfile.calculate(0.02, new TrapezoidProfile.State(dy, currentRobotChassisSpeeds.vyMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+
+                    // UNCOMMENT FOR SCALING APPROACH
+                    // double maxDist = Math.max(Math.abs(dx), Math.abs(dy));
+                    // double scaleX = Math.abs(dx) / maxDist;
+                    // double scaleY = Math.abs(dy) / maxDist;
+
+                    // double targetVelocity = Math.hypot(attractX, attractY);
+                    // attractX = scaleX * targetVelocity;
+                    // attractY = scaleY * targetVelocity;
 
                     // UNCOMMENT FOR RADIAL/TANGENTIAL APPROACH
-                    double totalDistance = Math.hypot(dx, dy);
+                    // double totalDistance = Math.hypot(dx, dy);
 
-                    // Unit vector toward target
-                    double dirX = dx / totalDistance;
-                    double dirY = dy / totalDistance;
-                    double vx_initial = currentRobotChassisSpeeds.vxMetersPerSecond;
-                    double vy_initial = currentRobotChassisSpeeds.vyMetersPerSecond;
+                    // // Unit vector toward target
+                    // double dirX = dx / totalDistance;
+                    // double dirY = dy / totalDistance;
+                    // double vx_initial = currentRobotChassisSpeeds.vxMetersPerSecond;
+                    // double vy_initial = currentRobotChassisSpeeds.vyMetersPerSecond;
 
-                    // radial velocity (toward target)
-                    double v_radial = vx_initial * dirX + vy_initial * dirY;
+                    // // radial velocity (toward target)
+                    // double v_parallel = vx_initial * dirX + vy_initial * dirY;
 
                     // // tangential velocity (sideways)
                     // double v_perp_x = vx_initial - (v_parallel * dirX);
                     // double v_perp_y = vy_initial - (v_parallel * dirY);
 
-                    double wantedRadialVel = distanceProfile.calculate(0.02, new TrapezoidProfile.State(totalDistance, v_radial), new TrapezoidProfile.State(0, 0)).velocity;
+                    // double v_parallel_new = distanceProfile.calculate(0.02, new TrapezoidProfile.State(totalDistance, v_parallel), new TrapezoidProfile.State(0, 0)).velocity;
 
+                    // double v_perp_x_new = 0;
+                    // double v_perp_y_new = 0;
+                    // // if this doesn't work then try uncommenting this and see if it's better or worse
+                    // // double kP_perp = 1;
+                    // // v_perp_x_new = v_perp_x * (1 - kP_perp * 0.02);
+                    // // v_perp_y_new = v_perp_y * (1 - kP_perp * 0.02);
 
-                    attractX = wantedRadialVel * dirX;
-                    attractY = wantedRadialVel * dirY;
+                    // attractX = (v_parallel_new * dirX) + v_perp_x_new;
+                    // attractY = (v_parallel_new * dirY) + v_perp_y_new;
 
 
                     SmartDashboard.putBoolean("strong repulsion", false);
