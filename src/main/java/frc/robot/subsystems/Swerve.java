@@ -198,6 +198,13 @@ public class Swerve extends SwerveBase{
                 currentlyFullyAutonomous = false;
             });
     }
+
+    public Command driveToIntermediatePose(Pose2d intermediaryPose, double distanceEndFromIntermediary, 
+    Pose2d finalPose, double distanceEndFinal) {
+        return driveToTargetPoseStraight(intermediaryPose, distanceEndFromIntermediary)
+        .andThen(driveToTargetPoseStraight(finalPose, distanceEndFinal));
+    }
+
     public Command leftGyroReset(){
         return resetGyro(90);
     }
