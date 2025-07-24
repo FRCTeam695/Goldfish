@@ -155,6 +155,68 @@ public class Swerve extends SwerveBase{
             });
     }
 
+    public Command driveToIntermediaryPose(Pose2d targetPose, double distanceEnd, double desiredSpeed){
+            
+        return 
+            (run(
+            ()->{
+
+                double kP = kp_attract;
+                double speed;
+
+                double attractX;
+                double attractY;
+
+                // meant to calculate the kP value so the second we hit distanceEnd, the robot speed will be the desired speed.
+                kP = desiredSpeed/distanceEnd;
+                
+                // the current field relative robot pose
+                Pose2d robotPose = getSavedPose();
+
+                double dx = targetPose.getX() - robotPose.getX();
+                double dy = targetPose.getY() - robotPose.getY();
+
+                // convert to unit vector and get direction towards target
+                double distance = Math.hypot(dx, dy);
+                double unitX = dx / distance;
+                double unitY = dy / distance;
+
+                SmartDashboard.putNumber("alignment dx", dx);
+                SmartDashboard.putNumber("alignment dy", dy);
+
+                if (getDistanceToTranslation(targetPose.getTranslation()) == distanceEnd) { // not sure if == equal is the best way to go, maybe need some sort of range?
+                    speed = MathUtil.clamp(desiredSpeed, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
+                } else {
+                    speed = MathUtil.clamp(kP * distance, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
+                }
+
+                attractY = unitY * speed;
+                attractX = unitX * speed;
+            
+                SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
+                
+                ChassisSpeeds speeds =
+                    new ChassisSpeeds(
+                        MathUtil.clamp(attractX, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
+                        MathUtil.clamp(attractY, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND),
+                    getAngularComponentFromRotationOverride(targetPose.getRotation().getDegrees())
+                );
+                SmartDashboard.putString("align to reef speeds", speeds.toString());
+
+                drive(speeds, true, false);
+            }
+            ).until(() -> getDistanceToTranslation(targetPose.getTranslation()) < distanceEnd))
+            .finallyDo(()->{
+                currentlyFullyAutonomous = false;
+            });
+    }
+
+
+    public Command driveToTargetPoseWithPath(Pose2d intermediaryPose, double distanceEndFromIntermediary, double speed, Pose2d finalPose, double distanceEndFinal) {
+        return driveToIntermediaryPose(intermediaryPose, distanceEndFromIntermediary, speed)
+        .andThen(driveToTargetPoseStraight(finalPose, distanceEndFinal));
+    }
+
     public Command driveToTargetPoseCurved(Pose2d targetPose, double distanceEnd){
             
         return 
@@ -197,12 +259,6 @@ public class Swerve extends SwerveBase{
             })).finallyDo(()->{
                 currentlyFullyAutonomous = false;
             });
-    }
-
-    public Command driveToIntermediatePose(Pose2d intermediaryPose, double distanceEndFromIntermediary, 
-    Pose2d finalPose, double distanceEndFinal) {
-        return driveToTargetPoseStraight(intermediaryPose, distanceEndFromIntermediary)
-        .andThen(driveToTargetPoseStraight(finalPose, distanceEndFinal));
     }
 
     public Command leftGyroReset(){

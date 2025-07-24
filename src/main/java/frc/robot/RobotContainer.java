@@ -132,8 +132,8 @@ public class RobotContainer {
     // );
 
     //Test 4
-    driver.x().whileTrue(
-      Swerve.driveToIntermediatePose(new Pose2d(1,0.1, new Rotation2d(0)), 0.5, new Pose2d(2,2.5, new Rotation2d(0)), 0.1)
+    driver.x().whileTrue( // here is just an arbitrary value for speed that hasn't been tested
+      Swerve.driveToTargetPoseWithPath(new Pose2d(1,0.1, new Rotation2d(0)), 0.5, 1,  new Pose2d(2,2.5, new Rotation2d(0)), 0.1)
     );
   }
 
