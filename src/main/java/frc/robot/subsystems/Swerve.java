@@ -183,13 +183,9 @@ public class Swerve extends SwerveBase{
 
                 SmartDashboard.putNumber("alignment dx", dx);
                 SmartDashboard.putNumber("alignment dy", dy);
-
-                if (getDistanceToTranslation(targetPose.getTranslation()) == distanceEnd) { // not sure if == equal is the best way to go, maybe need some sort of range?
-                    speed = MathUtil.clamp(desiredSpeed, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
-                } else {
-                    speed = MathUtil.clamp(kP * distance, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
-                }
-
+                
+                speed = MathUtil.clamp(kP * distance, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
+    
                 attractY = unitY * speed;
                 attractX = unitX * speed;
             

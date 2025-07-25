@@ -12,6 +12,7 @@ import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
+import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -114,7 +115,8 @@ public class RobotContainer {
     );
 
     driver.a().whileTrue(
-      Swerve.driveToTargetPoseStraight(new Pose2d(2,2.5, new Rotation2d(0)), 0.5)
+      Swerve.driveToTargetPoseStraight(new Pose2d(2,1.25, new Rotation2d(0)), 0.01)
+      .andThen(new PrintCommand("I'm Done!"))
     );
 
     driver.b().whileTrue(
@@ -133,7 +135,7 @@ public class RobotContainer {
 
     //Test 4
     driver.x().whileTrue( // here is just an arbitrary value for speed that hasn't been tested
-      Swerve.driveToTargetPoseWithPath(new Pose2d(1,0.1, new Rotation2d(0)), 0.5, 1,  new Pose2d(2,2.5, new Rotation2d(0)), 0.1)
+      Swerve.driveToTargetPoseWithPath(new Pose2d(1.4,1, Rotation2d.fromDegrees(45)), 0.1, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND,  new Pose2d(2,2.5, Rotation2d.fromDegrees(90)), 0.1)
     );
   }
 
