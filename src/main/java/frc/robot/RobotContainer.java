@@ -28,7 +28,6 @@ public class RobotContainer {
   private void configureBindings() {
     m_driverController.a().whileTrue(
       coralizer.runIntakeAndCoralizer(() -> m_driverController.getLeftY())
-
     );
     coralizer.setDefaultCommand(coralizer.runIntakeAndCoralizer(() -> 0));
   }

@@ -49,15 +49,16 @@ public class Coralizer extends SubsystemBase {
     }
 
     public Command runIntakeAndCoralizer(DoubleSupplier speed){
-    DutyCycleOut output = new DutyCycleOut(0);
-    return run(()->{
-    output.Output = speed.getAsDouble();
+        DutyCycleOut output = new DutyCycleOut(0);
+        DutyCycleOut coralizerOutput = new DutyCycleOut(0);
+        return run(()->{
+            output.Output = speed.getAsDouble();
+            coralizerOutput.Output = .5;
 
-    coralizer.setControl(output);
-    intake.setControl(output);
 
-    
-    });
+            coralizer.setControl(output);
+            intake.setControl(coralizerOutput);
+        });
     }
 
     // public Command runIntakeAndCoralizer(DoubleSupplier speed) {
@@ -91,10 +92,10 @@ public class Coralizer extends SubsystemBase {
 
     public Command runCoralizer(DoubleSupplier speed) {
         return run(
-                () -> {
+            () -> {
                     coralizer.set(speed.getAsDouble());
                     intake.set(0);
-                });
+            });
     }
 
     @Override
