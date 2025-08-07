@@ -15,6 +15,7 @@ public class RobotContainer {
   private final Coralizer coralizer = new Coralizer();
 
   // Replace with CommandPS4Controller or CommandJoystick if needed
+
   private final CommandXboxController m_driverController =
         new CommandXboxController(OperatorConstants.kDriverControllerPort);
 
@@ -26,10 +27,10 @@ public class RobotContainer {
 
  
   private void configureBindings() {
-    m_driverController.a().whileTrue(
-      coralizer.runIntakeAndCoralizer(() -> m_driverController.getLeftY())
+    m_driverController.b().whileTrue(
+      coralizer.detectEncoderChange()
     );
-    coralizer.setDefaultCommand(coralizer.runIntakeAndCoralizer(() -> 0));
+    coralizer.setDefaultCommand(coralizer.stopIntakeAndCoralizer());
   }
 
   
