@@ -115,7 +115,12 @@ public class RobotContainer {
     );
 
     driver.a().whileTrue(
-      Swerve.driveToTargetPoseStraight(new Pose2d(2,1.25, new Rotation2d(0)), 0.01)
+      Swerve.driveToTargetPoseStraightTrapezoidal(new Pose2d(1.75,1.5, new Rotation2d(0)), 0.5)
+      .andThen(new PrintCommand("I'm Done!"))
+    );
+
+    driver.y().whileTrue(
+      Swerve.driveToTargetPoseStraight(new Pose2d(1.75,1.5, new Rotation2d(0)), 0.5)
       .andThen(new PrintCommand("I'm Done!"))
     );
 
