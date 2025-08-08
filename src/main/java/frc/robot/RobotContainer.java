@@ -28,8 +28,10 @@ public class RobotContainer {
  
   private void configureBindings() {
     m_driverController.b().whileTrue(
-      coralizer.detectEncoderChange()
+      coralizer.detectEncoderChange()//andThen(coralizer.moveCoralizerToElevator())
     );
+    m_driverController.a().whileTrue(coralizer.moveCoralizerToElevator());
+    //m_driverController.x().whileTrue(coralizer.recordEncoder());
     coralizer.setDefaultCommand(coralizer.stopIntakeAndCoralizer());
   }
 
