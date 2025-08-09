@@ -17,6 +17,7 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -55,9 +56,9 @@ public class Swerve extends SwerveBase{
     public Trigger isApplyingRepulsion;
     public Trigger isWithin10cm;
     public Trigger isFullyAutonomous;
-    public TrapezoidProfile distanceProfile;
     public TrapezoidProfile xProfile;
     public TrapezoidProfile yProfile;
+    public TrapezoidProfile distanceProfile;
 
     public Swerve(String[] camNames, TalonFXModule[] modules, int[] reefTags) {
         super(camNames, modules, reefTags);
@@ -183,13 +184,9 @@ public class Swerve extends SwerveBase{
 
                 SmartDashboard.putNumber("alignment dx", dx);
                 SmartDashboard.putNumber("alignment dy", dy);
-
-                if (getDistanceToTranslation(targetPose.getTranslation()) == distanceEnd) { // not sure if == equal is the best way to go, maybe need some sort of range?
-                    speed = MathUtil.clamp(desiredSpeed, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
-                } else {
-                    speed = MathUtil.clamp(kP * distance, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
-                }
-
+                
+                speed = MathUtil.clamp(kP * distance, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
+    
                 attractY = unitY * speed;
                 attractX = unitX * speed;
             
@@ -255,6 +252,85 @@ public class Swerve extends SwerveBase{
             }
             ).until(() -> getDistanceToTranslation(targetPose.getTranslation()) < distanceEnd))
             .andThen(runOnce(()-> {
+                this.stopModules();
+            })).finallyDo(()->{
+                currentlyFullyAutonomous = false;
+            });
+    }
+
+    public Command driveToTargetPoseStraightTrapezoidal(Pose2d targetPose, double distanceEnd){
+                   
+        class MotionState {
+            double dx, dy, unitX, unitY, distance;
+            TrapezoidProfile.State currentState, goalState;
+        }
+    
+        MotionState state = new MotionState();
+        
+        Timer timer = new Timer();
+
+        return 
+            runOnce(
+            ()->{
+                // the current field relative robot pose
+
+                SmartDashboard.putBoolean("reached destination", false);
+
+                Pose2d robotPose = getSavedPose();
+
+                state.dx = targetPose.getX() - robotPose.getX();
+                state.dy = targetPose.getY() - robotPose.getY();
+
+                state.distance = Math.hypot(state.dx, state.dy);
+
+                // convert to unit vector and get direction towards target
+                state.unitX = state.dx / state.distance;
+                state.unitY = state.dy / state.distance;
+
+                state.currentState = new TrapezoidProfile.State(0, 0); 
+                state.goalState = new TrapezoidProfile.State(state.distance - distanceEnd,0);
+
+                timer.reset();
+                timer.start();
+
+
+            }).andThen(run(() -> 
+            {
+               
+                double elapsedTime = timer.get();
+
+                TrapezoidProfile.State desiredState = distanceProfile.calculate(elapsedTime, state.currentState, state.goalState);
+
+                // double speed = MathUtil.clamp(kp_attract * distance, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
+
+                //ChassisSpeeds currentRobotChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
+                // double attractX = xProfile.calculate(0.02, new TrapezoidProfile.State(dx, currentRobotChassisSpeeds.vxMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+                // double attractY = yProfile.calculate(0.02, new TrapezoidProfile.State(dy, currentRobotChassisSpeeds.vyMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+                double attractX;
+                double attractY;
+
+                
+                attractY = state.unitY * desiredState.velocity;
+                attractX = state.unitX * desiredState.velocity;
+            
+                SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
+
+                SmartDashboard.putNumber("desiredStateVelocity", desiredState.velocity);
+                SmartDashboard.putNumber("fsuefjidjieijfidodijehujkg Distance to target trapezoid", Math.hypot(targetPose.getX() - getSavedPose().getX(), targetPose.getY() - getSavedPose().getY()) - distanceEnd);
+
+                ChassisSpeeds speeds =
+                    new ChassisSpeeds(
+                        MathUtil.clamp(attractX, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
+                        MathUtil.clamp(attractY, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND),
+                    getAngularComponentFromRotationOverride(targetPose.getRotation().getDegrees())
+                );
+                SmartDashboard.putString("align to reef speeds", speeds.toString());
+
+                drive(speeds, true, false);
+            })
+            .until(() -> (Math.abs(getDistanceToTranslation(targetPose.getTranslation()) - distanceEnd)) < 0.05))
+            .andThen(runOnce(()-> {
+                SmartDashboard.putBoolean("reached destination", true);
                 this.stopModules();
             })).finallyDo(()->{
                 currentlyFullyAutonomous = false;

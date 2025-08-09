@@ -294,8 +294,9 @@ public class TalonFXModule{
           desiredState = new SwerveModuleState(
               -desiredState.speedMetersPerSecond, desiredState.angle.rotateBy(Rotation2d.kPi));
         }
-
-        double velocity = Math.cos(Math.abs(desiredState.angle.getRadians() -  latestAngle.getRadians())) * desiredState.speedMetersPerSecond;
+        
+        double sigmoidCompensation = -1/(1+Math.pow(Math.E, -90 * ((Math.abs(desiredState.angle.getRadians() -  latestAngle.getRadians()))-0.1))) + 1;
+        double velocity = sigmoidCompensation * desiredState.speedMetersPerSecond;
         //driveMotor.set(velocity/Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS);
         driveMotor.setControl(
             velocitySetter.withVelocity(velocity * Constants.Swerve.DRIVING_GEAR_RATIO/Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS)
