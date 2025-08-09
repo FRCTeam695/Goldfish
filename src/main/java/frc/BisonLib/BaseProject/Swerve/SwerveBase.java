@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Volts;
 import static edu.wpi.first.wpilibj2.command.Commands.deadline;
 import static edu.wpi.first.wpilibj2.command.Commands.waitSeconds;
 
+import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -23,6 +24,7 @@ import com.pathplanner.lib.util.swerve.SwerveSetpoint;
 import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
 import com.studica.frc.AHRS;
 
+import edu.wpi.first.math.MathSharedStore;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
@@ -70,6 +72,7 @@ public class SwerveBase extends SubsystemBase {
 
     protected double max_accel = 0;
     protected double robotRotationError = 0;
+    public double lastTimeDrive = 0;
 
     // used for wheel characterization
     protected double initialGyroAngle = 0;
@@ -374,18 +377,18 @@ public class SwerveBase extends SubsystemBase {
 
 
     /*
-     * Returns the current chassis speeds of the robot, 
+     * Returns the current robot relative chassis speeds of the robot, 
      * used with pathplanner
      */
     public ChassisSpeeds getLatestChassisSpeed(){
-        ChassisSpeeds speeds;
+        ChassisSpeeds robotRelativeSpeeds;
         odometryLock.readLock().lock();
         try{
-            speeds = Constants.Swerve.kDriveKinematics.toChassisSpeeds(currentModuleStates);
+            robotRelativeSpeeds = Constants.Swerve.kDriveKinematics.toChassisSpeeds(currentModuleStates);
         }finally{
             odometryLock.readLock().unlock();
         }
-        return speeds;
+        return robotRelativeSpeeds;
     }
 
 
@@ -648,7 +651,14 @@ public class SwerveBase extends SubsystemBase {
             else SwerveDriveKinematics.desaturateWheelSpeeds(tmpStates, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
             var speeds = Constants.Swerve.kDriveKinematics.toChassisSpeeds(tmpStates);
             // discretizes the chassis speeds (acccounts for robot skew)
-            chassisSpeeds = ChassisSpeeds.discretize(speeds, Constants.Swerve.DISCRETIZE_TIMESTAMP);
+            //chassisSpeeds = ChassisSpeeds.discretize(speeds, Constants.Swerve.DISCRETIZE_TIMESTAMP);
+
+            Rotation2d skewCompensationFactor = Rotation2d.fromRadians(speeds.omegaRadiansPerSecond * Constants.Swerve.SKEW_COMPENSATION_RATE);
+
+            chassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(
+                ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getSavedPose().getRotation()),
+                getSavedPose().getRotation().plus(skewCompensationFactor));
+
 
             //SmartDashboard.putString("Swerve/Commanded Chassis Speeds", chassisSpeeds.toString());
             // convert chassis speeds to module states
@@ -681,24 +691,49 @@ public class SwerveBase extends SubsystemBase {
      * Drives swerve given chassis speeds
      * Should be called every loop
      * 
-     * @param speeds the commanded chassis speeds from the joysticks
+     * @param commandedSpeeds the commanded chassis speeds from the joysticks
      * @param fieldOriented A boolean that specifies if the robot should be driven in fieldOriented mode or not
      */
-    public void drive(ChassisSpeeds speeds, boolean fieldOriented, boolean useMaxSpeed){
-        speeds.vxMetersPerSecond = xFilter.calculate(speeds.vxMetersPerSecond);
-        speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
-        speeds.omegaRadiansPerSecond = omegaFilter.calculate(speeds.omegaRadiansPerSecond);
-        //speeds = applyAccelerationLimit(speeds);
-
-        SmartDashboard.putNumber("Zj", speeds.omegaRadiansPerSecond);
-        SmartDashboard.putNumber("Xj", speeds.vxMetersPerSecond);
-        SmartDashboard.putNumber("Yj", speeds.vyMetersPerSecond);
+    public void drive(ChassisSpeeds commandedSpeeds, boolean fieldOriented, boolean useMaxSpeed) {
+        ChassisSpeeds currentRobotRelSpeeds = getLatestChassisSpeed();
 
         if (fieldOriented) {
-            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getSavedPose().getRotation());
+            commandedSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(commandedSpeeds, getSavedPose().getRotation());
         }
 
-        this.driveRobotRelative(speeds, false, useMaxSpeed);
+        /*if (commandedSpeeds.vxMetersPerSecond == 0 && commandedSpeeds.vyMetersPerSecond == 0) {
+            commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
+            commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
+            commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
+        }*/
+
+        
+            double dvx = commandedSpeeds.vxMetersPerSecond - currentRobotRelSpeeds.vxMetersPerSecond;
+            double dvy = commandedSpeeds.vyMetersPerSecond - currentRobotRelSpeeds.vyMetersPerSecond;
+            
+            double currentTimeDrive = MathSharedStore.getTimestamp();
+            double dt = currentTimeDrive - lastTimeDrive;
+            SmartDashboard.putNumber("Drive Loop Time", currentTimeDrive - lastTimeDrive);
+            lastTimeDrive = currentTimeDrive;
+
+            double accelMagitude = Math.hypot(dvx, dvy) / dt;
+            
+            if (accelMagitude > Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ) {
+                double scale = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ / accelMagitude;
+                dvx *= scale;
+                dvy *= scale;
+            }
+
+            commandedSpeeds.vxMetersPerSecond = currentRobotRelSpeeds.vxMetersPerSecond + dvx;
+            commandedSpeeds.vyMetersPerSecond = currentRobotRelSpeeds.vyMetersPerSecond + dvy;
+            commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
+        
+
+        SmartDashboard.putNumber("Zj", commandedSpeeds.omegaRadiansPerSecond);
+        SmartDashboard.putNumber("Xj", commandedSpeeds.vxMetersPerSecond);
+        SmartDashboard.putNumber("Yj", commandedSpeeds.vyMetersPerSecond);
+
+        this.driveRobotRelative(commandedSpeeds, false, useMaxSpeed);
     }
 
 
@@ -845,6 +880,16 @@ public class SwerveBase extends SubsystemBase {
         SmartDashboard.putNumber("Module 4 Angle deg", modStates[3].angle.getDegrees());        
         
         SmartDashboard.putBoolean("Robot Rotation at Setpoint", atRotationSetpoint.getAsBoolean());
+
+        System.out.print(currentModulePositions[0]);
+
+        if (currentModuleStates[0] != null) {
+            ChassisSpeeds currentFieldRelativeSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), getSavedPose().getRotation());
+            double currentvx = currentFieldRelativeSpeeds.vxMetersPerSecond;
+            double currentvy = currentFieldRelativeSpeeds.vyMetersPerSecond;
+            SmartDashboard.putNumber("Currentvx", currentvx);
+            SmartDashboard.putNumber("Currentvy", currentvy);
+        }
     }
 }
 
