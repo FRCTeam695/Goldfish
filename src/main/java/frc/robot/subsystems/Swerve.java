@@ -258,7 +258,7 @@ public class Swerve extends SwerveBase{
             });
     }
 
-    public Command driveToTargetPoseStraightTrapezoidal(Pose2d targetPose, double distanceEnd){
+    /* public Command driveToTargetPoseStraightTrapezoidal(Pose2d targetPose, double distanceEnd){
                    
         class MotionState {
             double dx, dy, unitX, unitY, distance;
@@ -316,7 +316,7 @@ public class Swerve extends SwerveBase{
                 SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
 
                 SmartDashboard.putNumber("desiredStateVelocity", desiredState.velocity);
-                SmartDashboard.putNumber("fsuefjidjieijfidodijehujkg Distance to target trapezoid", Math.hypot(targetPose.getX() - getSavedPose().getX(), targetPose.getY() - getSavedPose().getY()) - distanceEnd);
+                SmartDashboard.putNumber("Distance to target trapezoid", Math.hypot(targetPose.getX() - getSavedPose().getX(), targetPose.getY() - getSavedPose().getY()) - distanceEnd);
 
                 ChassisSpeeds speeds =
                     new ChassisSpeeds(
@@ -335,7 +335,65 @@ public class Swerve extends SwerveBase{
             })).finallyDo(()->{
                 currentlyFullyAutonomous = false;
             });
+    } */
+
+    public Command driveToTargetPoseStraightTrapezoidal(Pose2d targetPose, double distanceEnd){
+            
+        return 
+            (run(
+            ()->{
+
+                SmartDashboard.putBoolean("reached destination", false);
+
+                // the current field relative robot pose
+                Pose2d robotPose = getSavedPose();
+
+                double dx = targetPose.getX() - robotPose.getX();
+                double dy = targetPose.getY() - robotPose.getY();
+
+                // convert to unit vector and get direction towards target
+                double distance = Math.hypot(dx, dy);
+                double unitX = dx / distance;
+                double unitY = dy / distance;
+
+                SmartDashboard.putNumber("alignment dx", dx);
+                SmartDashboard.putNumber("alignment dy", dy);
+
+                TrapezoidProfile.State goalState = new TrapezoidProfile.State(0, 0); 
+                TrapezoidProfile.State currentState = new TrapezoidProfile.State(distance, 0);
+    
+                TrapezoidProfile.State desiredState = distanceProfile.calculate(0.02, currentState, goalState);
+                
+                double attractX;
+                double attractY;
+
+                attractY = unitY * -desiredState.velocity;
+                attractX = unitX * -desiredState.velocity;
+            
+                SmartDashboard.putNumber("desiredStateVelocity", desiredState.velocity);
+                SmartDashboard.putNumber("Distance to target trapezoid", distance);
+
+                SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
+                
+                ChassisSpeeds speeds =
+                    new ChassisSpeeds(
+                        MathUtil.clamp(attractX, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
+                        MathUtil.clamp(attractY, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND),
+                    getAngularComponentFromRotationOverride(targetPose.getRotation().getDegrees())
+                );
+                SmartDashboard.putString("align to reef speeds", speeds.toString());
+
+                drive(speeds, true, false);
+            }
+            ).until(() -> getDistanceToTranslation(targetPose.getTranslation()) < distanceEnd))
+            .andThen(runOnce(()-> {
+                SmartDashboard.putBoolean("reached destination", true);
+                this.stopModules();
+            })).finallyDo(()->{
+                currentlyFullyAutonomous = false;
+            });
     }
+
 
     public Command leftGyroReset(){
         return resetGyro(90);
