@@ -25,11 +25,15 @@ public class Coralizer extends SubsystemBase {
 
     private double SupplyCurrent;
 
+    double encoder;
+
     public Coralizer() {
+
         beamBreak = new DigitalInput(9);
         coralizer = new TalonFXS(52);
-        coralizer.getSupplyCurrent().setUpdateFrequency(50);
+        
         intake = new TalonFXS(53);
+        
 
         TalonFXSConfiguration config = new TalonFXSConfiguration();
         config.CurrentLimits.SupplyCurrentLimit = 20.0;
@@ -39,7 +43,7 @@ public class Coralizer extends SubsystemBase {
         config.Commutation.MotorArrangement = MotorArrangementValue.NEO550_JST;
 
         MotorOutputConfigs motorOutputConfigs = new MotorOutputConfigs();
-        motorOutputConfigs.NeutralMode = NeutralModeValue.Coast;
+        motorOutputConfigs.NeutralMode = NeutralModeValue.Brake;
         motorOutputConfigs.Inverted = InvertedValue.Clockwise_Positive;
 
         config.MotorOutput = motorOutputConfigs;
@@ -47,107 +51,67 @@ public class Coralizer extends SubsystemBase {
         coralizer.getConfigurator().apply(config);
         intake.getConfigurator().apply(config);
 
-        intake.getSupplyCurrent().setUpdateFrequency(20);
+        // coralizer.getPosition().setUpdateFrequency(50);
+        intake.getSupplyCurrent().setUpdateFrequency(50);
         SupplyCurrent = intake.getSupplyCurrent().getValueAsDouble();
+
+        coralizer.setPosition(0.0);
+        coralizer.getSupplyCurrent().setUpdateFrequency(50);
 
     }
 
     public Command detectEncoderChange() {
         return new FunctionalCommand(
-            () -> {
-                coralizer.setPosition(0.0);
-            },
-            () -> {
-                moveIntake(0.5);
+                () -> {
+                    //coralizer.setPosition(0.0);
+                    encoder = coralizer.getPosition().getValueAsDouble();
+                    intake.set(0.5);
+                },
+                () -> {
+                    
+                    System.out.println("1 E " + coralizer.getPosition().getValueAsDouble());
 
-                double encoder = coralizer.getPosition().getValueAsDouble();
-                SmartDashboard.putNumber("Coralizer encoder", encoder);
-                System.out.println(encoder);
-                SmartDashboard.putBoolean("beambreak", beamBreak.get());
-                
-                // double current = coralizer.getSupplyCurrent().getValueAsDouble();
-                // SmartDashboard.putNumber("Coralizer velocity", coralizer.getVelocity().getValueAsDouble());
-                // SmartDashboard.putNumber("Coralizer current", current);
-                
-                
-            },
-            (interrupted) -> {
-                moveIntake(0.0);
-                coralizer.setPosition(0.0);
-                // MotorOutputConfigs motorOutputConfigs = new MotorOutputConfigs();
-                // motorOutputConfigs.NeutralMode = NeutralModeValue.Brake;
-
-                // TalonFXSConfiguration config = new TalonFXSConfiguration();
-                // config.MotorOutput = motorOutputConfigs;
-
-                // coralizer.getConfigurator().apply(config);
-                // intake.getConfigurator().apply(config);
-            },
-            () -> {
-                double encoder = coralizer.getPosition().getValueAsDouble();
-                System.out.println(encoder);
-                if (encoder >= 1.0) 
-                    return true;
-                return false;
-            },
-            this
-        );
+                },
+                (interrupted) -> {
+                    intake.set(0.0);
+                    coralizer.set(0.0);
+                    coralizer.setPosition(0.0);
+                },
+                () -> {
+                    if (coralizer.getPosition().getValueAsDouble() - encoder >= 1.0)
+                        return true;
+                    return false;
+                },
+                this);
     }
 
     public Command moveCoralizerToElevator() {
         return new FunctionalCommand(
-            () -> {
-                
-
-                coralizer.setPosition(0.0);
-            },
-            () -> {
-
-                double encoder = coralizer.getPosition().getValueAsDouble();
-                SmartDashboard.putNumber("Coralizer encoder", encoder);
-                System.out.println(encoder);
-                SmartDashboard.putBoolean("beambreak", beamBreak.get());
-        
-                moveCoralizer(1.0);
-                moveIntake(1.0);
-                
-                
-            },
-            (interrupted) -> {
-                moveCoralizer(0.0);
-                moveIntake(0.0);
-                coralizer.setPosition(0.0);
-            },
-            () -> {
-                double encoder = coralizer.getPosition().getValueAsDouble();
-                if (encoder >= 7.2) 
-                    return true;
-                return false;
-            },
-            this
-        );
+                () -> {
+                    coralizer.setPosition(0.0);
+                    intake.set(0.5);
+                    coralizer.set(0.5);
+                },
+                () -> {
+                    System.out.println("2 E " + coralizer.getPosition().getValueAsDouble());
+                },
+                (interrupted) -> {
+                    coralizer.set(0.0);
+                    intake.set(0.0);
+                    coralizer.setPosition(0.0);
+                },
+                () -> {
+                    if (coralizer.getPosition().getValueAsDouble() >= 21.25 )
+                        return true;
+                    return false;
+                },
+                this);
     }
 
     public Command recordEncoder() {
         return run(() -> {
-            double encoder = coralizer.getPosition().getValueAsDouble();
-            SmartDashboard.putNumber("Coralizer encoder", encoder);
-            System.out.println(encoder);
+            SmartDashboard.putNumber("Coralizer encoder", coralizer.getPosition().getValueAsDouble());
             SmartDashboard.putBoolean("beambreak", beamBreak.get());
-        });
-    }
-
-    public Command runIntakeAndCoralizer(){
-        return run(()->{
-            moveCoralizer(1.0);
-            moveIntake(1.0);
-        });
-    }
-
-    public Command stopIntakeAndCoralizer(){
-        return run(()->{
-            moveCoralizer(0.0);
-            moveIntake(0.0);
         });
     }
 
@@ -161,17 +125,9 @@ public class Coralizer extends SubsystemBase {
 
     public Command runCoralizer(DoubleSupplier speed) {
         return run(
-            () -> {
+                () -> {
                     coralizer.set(speed.getAsDouble());
-            });
-    }
-
-    public void moveIntake(double speed) {
-        intake.set(speed);
-    }
-
-    public void moveCoralizer(double speed) {
-        coralizer.set(speed);
+                });
     }
 
     @Override

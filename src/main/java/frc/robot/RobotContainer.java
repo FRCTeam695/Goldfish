@@ -5,6 +5,7 @@ package frc.robot;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.subsystems.Coralizer;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
@@ -28,11 +29,10 @@ public class RobotContainer {
  
   private void configureBindings() {
     m_driverController.b().whileTrue(
-      coralizer.detectEncoderChange()//andThen(coralizer.moveCoralizerToElevator())
+      coralizer.detectEncoderChange()./*andThen(new WaitCommand(1.0)).*/andThen(coralizer.moveCoralizerToElevator())
     );
-    m_driverController.a().whileTrue(coralizer.moveCoralizerToElevator());
+    //m_driverController.a().whileTrue(coralizer.moveCoralizerToElevator());
     //m_driverController.x().whileTrue(coralizer.recordEncoder());
-    coralizer.setDefaultCommand(coralizer.stopIntakeAndCoralizer());
   }
 
   
