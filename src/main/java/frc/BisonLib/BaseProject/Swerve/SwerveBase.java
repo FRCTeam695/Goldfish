@@ -701,34 +701,12 @@ public class SwerveBase extends SubsystemBase {
             commandedSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(commandedSpeeds, getSavedPose().getRotation());
         }
 
-        /*if (commandedSpeeds.vxMetersPerSecond == 0 && commandedSpeeds.vyMetersPerSecond == 0) {
+        if (commandedSpeeds.vxMetersPerSecond == 0 && commandedSpeeds.vyMetersPerSecond == 0) {
             commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
             commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
             commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
-        }*/
-
+        }
         
-            double dvx = commandedSpeeds.vxMetersPerSecond - currentRobotRelSpeeds.vxMetersPerSecond;
-            double dvy = commandedSpeeds.vyMetersPerSecond - currentRobotRelSpeeds.vyMetersPerSecond;
-            
-            double currentTimeDrive = MathSharedStore.getTimestamp();
-            double dt = currentTimeDrive - lastTimeDrive;
-            SmartDashboard.putNumber("Drive Loop Time", currentTimeDrive - lastTimeDrive);
-            lastTimeDrive = currentTimeDrive;
-
-            double accelMagitude = Math.hypot(dvx, dvy) / dt;
-            
-            if (accelMagitude > Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ) {
-                double scale = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ / accelMagitude;
-                dvx *= scale;
-                dvy *= scale;
-            }
-
-            commandedSpeeds.vxMetersPerSecond = currentRobotRelSpeeds.vxMetersPerSecond + dvx;
-            commandedSpeeds.vyMetersPerSecond = currentRobotRelSpeeds.vyMetersPerSecond + dvy;
-            commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
-        
-
         SmartDashboard.putNumber("Zj", commandedSpeeds.omegaRadiansPerSecond);
         SmartDashboard.putNumber("Xj", commandedSpeeds.vxMetersPerSecond);
         SmartDashboard.putNumber("Yj", commandedSpeeds.vyMetersPerSecond);

@@ -358,9 +358,16 @@ public class Swerve extends SwerveBase{
 
                 SmartDashboard.putNumber("alignment dx", dx);
                 SmartDashboard.putNumber("alignment dy", dy);
+                
+                double xvel = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation()).vxMetersPerSecond;
+                double yvel = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation()).vyMetersPerSecond;
+
+                double currentVelocity = Math.hypot(xvel, yvel);
+
+                SmartDashboard.putNumber("current field relative velocity", currentVelocity);
 
                 TrapezoidProfile.State goalState = new TrapezoidProfile.State(0, 0); 
-                TrapezoidProfile.State currentState = new TrapezoidProfile.State(distance, 0);
+                TrapezoidProfile.State currentState = new TrapezoidProfile.State(distance, currentVelocity);
     
                 TrapezoidProfile.State desiredState = distanceProfile.calculate(0.02, currentState, goalState);
                 
@@ -370,10 +377,10 @@ public class Swerve extends SwerveBase{
                 attractY = unitY * -desiredState.velocity;
                 attractX = unitX * -desiredState.velocity;
             
-                SmartDashboard.putNumber("desiredStateVelocity", desiredState.velocity);
-                SmartDashboard.putNumber("Distance to target trapezoid", distance);
+                SmartDashboard.putNumber("desired trapezoidal velocity", desiredState.velocity);
+                SmartDashboard.putNumber("distance to target trapezoid", distance);
 
-                SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
+                SmartDashboard.putNumber("attract speed", Math.hypot(attractX, attractY));
                 
                 ChassisSpeeds speeds =
                     new ChassisSpeeds(
@@ -381,7 +388,7 @@ public class Swerve extends SwerveBase{
                         MathUtil.clamp(attractY, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND),
                     getAngularComponentFromRotationOverride(targetPose.getRotation().getDegrees())
                 );
-                SmartDashboard.putString("align to reef speeds", speeds.toString());
+                SmartDashboard.putString("align speeds", speeds.toString());
 
                 drive(speeds, true, false);
             }
