@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.subsystems.SideCar;
 
 
 public class DuoTalonLift extends SubsystemBase{
@@ -65,13 +66,15 @@ public class DuoTalonLift extends SubsystemBase{
     public Trigger isDeployed;
     public double inchesSetpoint = 0;
     public boolean isRunning = false;
+    public SideCar sideCar;
 
     public TrapezoidProfile heightProfile;
 
     // Constructor
     public DuoTalonLift () {
-        sideCarTable = inst.getTable("sidecarTable");
-        scoringHeight = sideCarTable.getIntegerTopic("scoringLevel").subscribe(1);
+        sideCar = new SideCar();
+        //sideCarTable = inst.getTable("sidecarTable");
+        //scoringHeight = sideCarTable.getIntegerTopic("scoringLevel").subscribe(1);
         atSetpoint = new Trigger(()-> (Math.abs(r_leaderTalon.getPosition().getValueAsDouble() / rotationsPerInch - inchesSetpoint) < 0.25) && isRunning);
         isDeployed = new Trigger(()-> (Math.abs(r_leaderTalon.getPosition().getValueAsDouble() / rotationsPerInch - Heights.Ground.heightInches) > 0.25));
 
@@ -103,7 +106,7 @@ public class DuoTalonLift extends SubsystemBase{
         l_followerConfigs.CurrentLimits.SupplyCurrentLimit = 40; // Amps
         // Soft limits (Just leader because follower's encoder is useless)
         r_leaderConfigs.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        r_leaderConfigs.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 60; // Rotations
+        r_leaderConfigs.SoftwareLimitSwitch.ForwardSoftLimitThreshold = Heights.L4.heightInches * rotationsPerInch; // Rotations
         r_leaderConfigs.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
         r_leaderConfigs.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 0;
 
@@ -118,24 +121,27 @@ public class DuoTalonLift extends SubsystemBase{
         // kP and kD accounts for errors created by in-match hits
         r_leaderConfigs.Slot0.kP = 3; 
         r_leaderConfigs.Slot0.kD = 0.2; 
-
+        
         // Motion Magic (Right leader)
-        r_leaderConfigs.MotionMagic.MotionMagicCruiseVelocity = 250; // rot/sec
-        r_leaderConfigs.MotionMagic.MotionMagicAcceleration = 400; // rot/sec^2
-        r_leaderConfigs.MotionMagic.MotionMagicJerk = 2000; // rot/sec^3
+        int cruiseVel = 90;
+        r_leaderConfigs.MotionMagic.MotionMagicCruiseVelocity = cruiseVel; // rot/sec
+        int maxAccel = 500;
+        r_leaderConfigs.MotionMagic.MotionMagicAcceleration = maxAccel; // rot/sec^2
+        r_leaderConfigs.MotionMagic.MotionMagicJerk = 5500; // rot/sec^3
 
         // Applying both kraken's configs
         r_leaderTalon.getConfigurator().apply(r_leaderConfigs);
         l_followerTalon.getConfigurator().apply(l_followerConfigs);
         r_leaderTalon.setPosition(0); // Reset leader's position
-        heightProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(250., 400.));
+        heightProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(cruiseVel, maxAccel));
         SmartDashboard.putNumber("Elevator Set Inches", 0);
     }
 
     public Command goToScoringHeight(){
         return run(()->{
-            double newInchesSetpoint;
-            isRunning = true;
+            double newInchesSetpoint = sideCar.getScoringLevel().heightInches;
+
+            /*
             int networkTablesHeight = (int)Math.round(scoringHeight.get(2));
             if(networkTablesHeight == 1) newInchesSetpoint = Heights.L1.heightInches;
             else if(networkTablesHeight == 2) newInchesSetpoint = Heights.L2.heightInches;
@@ -145,22 +151,24 @@ public class DuoTalonLift extends SubsystemBase{
             }
             else if(networkTablesHeight == 4)  newInchesSetpoint = Heights.L4.heightInches;
             else newInchesSetpoint = Heights.L1.heightInches;
-
+            */
             elevatorSetInches(newInchesSetpoint);
+            isRunning = true;
         }).finallyDo(()-> {isRunning = false;});
     }
 
 
     public Command configureSetpoint(){
         return runOnce(()->{
-            double newInchesSetpoint;
+            double newInchesSetpoint = sideCar.getScoringLevel().heightInches;
+            /*
             int networkTablesHeight = (int)Math.round(scoringHeight.get(2));
             if(networkTablesHeight == 1) newInchesSetpoint = Heights.L1.heightInches;
             else if(networkTablesHeight == 2) newInchesSetpoint = Heights.L2.heightInches;
             else if(networkTablesHeight == 3)  newInchesSetpoint = Heights.L3.heightInches;
             else if(networkTablesHeight == 4)  newInchesSetpoint = Heights.L4.heightInches;
             else newInchesSetpoint = Heights.L1.heightInches;
-
+            */
             inchesSetpoint = newInchesSetpoint;
         });
     }
@@ -181,10 +189,12 @@ public class DuoTalonLift extends SubsystemBase{
     // Setting elevator leader talon to spin to a certain height
     // a, b, x, y, and right bumper control different set heights (for now)
     public Command setHeightLevel(Heights setpoint) {
-        return run(() -> 
+        return 
+        run(() -> 
         {
+            isRunning = true;
             elevatorSetInches(setpoint.heightInches);
-        });
+        }).finallyDo(()-> {isRunning = false;});
     }
 
     public Command setHeightLevel (Supplier<Heights> setpoint) {
@@ -194,13 +204,25 @@ public class DuoTalonLift extends SubsystemBase{
         });
     }
 
+    public Command holdHeight(){
+        return run(()->{
+            elevatorSetInches(r_leaderTalon.getPosition().getValueAsDouble()/rotationsPerInch);
+        });
+    }
+
+    public Command slowRaise(double speed){
+        return run(()->{
+            r_leaderTalon.set(speed);
+        });
+    }
+
     // Enum of certain heights
     public enum Heights { // An enum is a class of defined objects
         Ground ("Ground", 0),
-        L1 ("L1", 9.2), // *rotationsPerInch
-        L2 ("L2", 13.412),
+        L1 ("L1", 8.5), // *rotationsPerInch
+        L2 ("L2", 13.412+0.85),
         L3 ("L3", 29.734),
-        L4 ("L4", 55.234);
+        L4 ("L4", 56.4214672108);
 
         String level;
         double heightInches;
@@ -221,6 +243,7 @@ public class DuoTalonLift extends SubsystemBase{
         SmartDashboard.putNumber("Elevator Closed Loop Reference", r_leaderTalon.getClosedLoopReference().getValueAsDouble());
         SmartDashboard.putNumber("Elevator Commaded Position", inchesSetpoint);
         SmartDashboard.putBoolean("Elevator is deployed", isDeployed.getAsBoolean());
+        SmartDashboard.putBoolean("Elevator is running", isRunning);
 
         // Field variable outputs
         // Position

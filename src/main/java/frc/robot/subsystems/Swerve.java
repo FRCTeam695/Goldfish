@@ -2,7 +2,6 @@ package frc.robot.subsystems;
 
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -17,6 +16,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringSubscriber;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -39,23 +39,28 @@ public class Swerve extends SwerveBase{
     
 
 
-    public final double kp_attract = 2.7;
+    public final double kp_attract = 3.5;
 
     // we will tune this on the practice field
-    public final double kp_repulse = 1;
+    public final double kp_repulse = 2;
 
     public boolean hasDetectedCollision = false;
     public boolean currentlyApplyingRepulsion = false;
+    public boolean currentlyFullyAutonomous = false;
 
     public Trigger isCloseToDestination;
     public Trigger isAtDestination;
     public Trigger collisionDetected;
     public Trigger almostRotatedToSetpoint;
     public Trigger isApplyingRepulsion;
+    public Trigger isWithin10cm;
+    public Trigger isFullyAutonomous;
     public TrapezoidProfile distanceProfile;
+    public TrapezoidProfile xProfile;
+    public TrapezoidProfile yProfile;
 
-    public Swerve(String[] camNames, TalonFXModule[] modules) {
-        super(camNames, modules);
+    public Swerve(String[] camNames, TalonFXModule[] modules, int[] reefTags) {
+        super(camNames, modules, reefTags);
 
         targetLocationPose = new Pose2d();
 
@@ -67,9 +72,13 @@ public class Swerve extends SwerveBase{
         isCloseToDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 2.5);
         isAtDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.02);
         collisionDetected = new Trigger(()-> hasDetectedCollision);
-        almostRotatedToSetpoint = new Trigger(()-> robotRotationError < 45);
+        almostRotatedToSetpoint = new Trigger(()-> robotRotationError < 20);
         isApplyingRepulsion = new Trigger(()-> currentlyApplyingRepulsion);
-        distanceProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
+        isWithin10cm = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.1);
+        isFullyAutonomous = new Trigger(()-> currentlyFullyAutonomous);
+        distanceProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
+        xProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
+        yProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
     }
     
 
@@ -84,8 +93,8 @@ public class Swerve extends SwerveBase{
      */
     public Command alignToReef(Optional<String> location, DoubleSupplier elevatorTimeToArrival, boolean willRaiseElevator){
         return 
-        // runOnce(()-> hasDetectedCollision = true)
-        // .andThen(
+            runOnce(()-> currentlyFullyAutonomous = true)
+            .andThen(
             run(()->{
                 SmartDashboard.putBoolean("Collision Detected",  collisionDetected.getAsBoolean());
                 SmartDashboard.putBoolean("Close to Destination",  isCloseToDestination.getAsBoolean());
@@ -104,6 +113,9 @@ public class Swerve extends SwerveBase{
                 double dx = targetLocationPose.getX()-robotPose.getX();
                 double dy = targetLocationPose.getY() - robotPose.getY();
 
+                SmartDashboard.putNumber("alignment dx", dx);
+                SmartDashboard.putNumber("alignment dy", dy);
+
                 // calculate attraction forces
                 double attractX = kp_attract * dx;
                 double attractY = kp_attract * dy;
@@ -113,37 +125,93 @@ public class Swerve extends SwerveBase{
 
                 boolean elevatorNotInTime = false;
 
-                // calculate the forward distance we need to go in order to get to the target;
+                // calculate the robot relative forward distance we need to go in order to get to the target;
                 // if its negative we have to move backwards
                 double distanceForward = dx * targetLocationPose.getRotation().getCos() + dy * targetLocationPose.getRotation().getSin();
                 double distanceToTarget = getDistanceToTranslation(targetLocationPose.getTranslation());
 
+                // if we are within 20 cm of target its impossible 4 us 2 collide
                 boolean willCollideWithReef = distanceForward < 0 && distanceToTarget > 0.2;
-                // if we aren't going to collide with the reef then we check if we need to apply repulsion vectors by seeing if the elevator will be in time to avoid a collision with any coral/algae on the reef
+
+                ChassisSpeeds currentRobotChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
+                // if we aren't going to collide with the reef then check if we need to apply repulsion vectors by seeing if the elevator will hit any coral/algae already on the reef if we raise rn
                 if(!willCollideWithReef){
-                    ChassisSpeeds currentRobotChassisSpeeds = getLatestChassisSpeed();
                     double currentSpeedMagnitude = Math.hypot(currentRobotChassisSpeeds.vxMetersPerSecond, currentRobotChassisSpeeds.vyMetersPerSecond);
                     distanceProfile.calculate(0.02, new TrapezoidProfile.State(Math.hypot(dx, dy), currentSpeedMagnitude), new TrapezoidProfile.State(0, 0));
                     double swerveTimeToArrival = distanceProfile.timeLeftUntil(0);
 
                     SmartDashboard.putNumber("Swerve ETA", swerveTimeToArrival);
+
+                    // if the elevator gets to height BEFORE we arrive at the target position, we aren't going to hit anything
                     elevatorNotInTime = elevatorTimeToArrival.getAsDouble() > swerveTimeToArrival;
                 }
 
+                // if we are just testing the auto align and don't plan on actually raising the elevator, 
+                // we don't care about elevator hitting anything on the way up
                 if(!willRaiseElevator) elevatorNotInTime = false;
 
-                // if we will collide
+                // if we will collide with something
                 if( willCollideWithReef || elevatorNotInTime){
                     if(willCollideWithReef) hasDetectedCollision = true;
                     currentlyApplyingRepulsion = true;
                     Transform2d repulsionVector;
-                    if(elevatorNotInTime && !willCollideWithReef) repulsionVector = getRepulsionVector(robotPose, 0.6);
-                    else repulsionVector = getRepulsionVector(robotPose, kp_repulse);
+                    if(elevatorNotInTime && !willCollideWithReef) {
+                        SmartDashboard.putBoolean("strong repulsion", false);
+                        repulsionVector = getRepulsionVector(robotPose, 0.6);
+                    }
+                    // no collision with the reef but the elevator is getting to height late, so we need to back up/slow down
+                    else {
+                        SmartDashboard.putBoolean("strong repulsion", true);
+                        repulsionVector = getRepulsionVector(robotPose, kp_repulse);
+                    }
                     repulsionX += repulsionVector.getX();
                     repulsionY += repulsionVector.getY();
                 }else{
                     currentlyApplyingRepulsion = false;
                     hasDetectedCollision = false;
+
+                    // attractX = xProfile.calculate(0.02, new TrapezoidProfile.State(dx, currentRobotChassisSpeeds.vxMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+                    // attractY = yProfile.calculate(0.02, new TrapezoidProfile.State(dy, currentRobotChassisSpeeds.vyMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+
+                    // UNCOMMENT FOR SCALING APPROACH
+                    // double maxDist = Math.max(Math.abs(dx), Math.abs(dy));
+                    // double scaleX = Math.abs(dx) / maxDist;
+                    // double scaleY = Math.abs(dy) / maxDist;
+
+                    // double targetVelocity = Math.hypot(attractX, attractY);
+                    // attractX = scaleX * targetVelocity;
+                    // attractY = scaleY * targetVelocity;
+
+                    // UNCOMMENT FOR RADIAL/TANGENTIAL APPROACH
+                    // double totalDistance = Math.hypot(dx, dy);
+
+                    // // Unit vector toward target
+                    // double dirX = dx / totalDistance;
+                    // double dirY = dy / totalDistance;
+                    // double vx_initial = currentRobotChassisSpeeds.vxMetersPerSecond;
+                    // double vy_initial = currentRobotChassisSpeeds.vyMetersPerSecond;
+
+                    // // radial velocity (toward target)
+                    // double v_parallel = vx_initial * dirX + vy_initial * dirY;
+
+                    // // tangential velocity (sideways)
+                    // double v_perp_x = vx_initial - (v_parallel * dirX);
+                    // double v_perp_y = vy_initial - (v_parallel * dirY);
+
+                    // double v_parallel_new = distanceProfile.calculate(0.02, new TrapezoidProfile.State(totalDistance, v_parallel), new TrapezoidProfile.State(0, 0)).velocity;
+
+                    // double v_perp_x_new = 0;
+                    // double v_perp_y_new = 0;
+                    // // if this doesn't work then try uncommenting this and see if it's better or worse
+                    // // double kP_perp = 1;
+                    // // v_perp_x_new = v_perp_x * (1 - kP_perp * 0.02);
+                    // // v_perp_y_new = v_perp_y * (1 - kP_perp * 0.02);
+
+                    // attractX = (v_parallel_new * dirX) + v_perp_x_new;
+                    // attractY = (v_parallel_new * dirY) + v_perp_y_new;
+
+
+                    SmartDashboard.putBoolean("strong repulsion", false);
                 }
 
                 SmartDashboard.putNumber("Repulse Speed", Math.hypot(repulsionX, repulsionY));
@@ -156,22 +224,58 @@ public class Swerve extends SwerveBase{
 
                 //clamp speeds to avoid desaturation killing our rotational movement
                 ChassisSpeeds speeds = new ChassisSpeeds(
-                    MathUtil.clamp(xSpeed, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS), 
-                    MathUtil.clamp(ySpeed, -Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS), 
+                    MathUtil.clamp(xSpeed, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
+                    MathUtil.clamp(ySpeed, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
                     getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()));
                 SmartDashboard.putString("Chassis Speeds Commanded", speeds.toString());
                 drive(speeds, true, false);
-            }).until(isAtDestination.and(isApplyingRepulsion.negate()));
+            }).until(isAtDestination.and(isApplyingRepulsion.negate()).and(atRotationSetpoint))
+            .andThen(
+                runOnce(()-> {
+                    this.stopModules();
+                })
+            )
+            ).finallyDo(()->{
+                currentlyFullyAutonomous = false;
+            });
         // );
     }
 
 
-    public Command driveBackwards(){
+    public Command rotateToReefCenter(Supplier<ChassisSpeeds> wantedSpeeds){
+        return run(()->{
+            Pose2d reefCenter;
+            Pose2d robotPose = getSavedPose();
+            if(isRedAlliance()){
+                reefCenter = Constants.Vision.Red.REEF_CENTER;
+            }
+            else{
+                reefCenter = Constants.Vision.Blue.REEF_CENTER;
+            }
+            targetLocationPose = reefCenter;
+            double dx = reefCenter.getX() - robotPose.getX();
+            double dy = reefCenter.getY() - robotPose.getY();
+            double theta = Math.toDegrees(Math.atan2(dy, dx));
+            SmartDashboard.putNumber("Desired Robot Rotation", theta);
+            ChassisSpeeds speeds = wantedSpeeds.get();
+            speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(theta);
+            drive(speeds, true, true);
+        });
+    }
+
+
+    public Command driveForwards(){
         return run(
             ()->{
-                drive(new ChassisSpeeds(-0.5, 0, 0), true, false);
+                driveRobotRelative(new ChassisSpeeds(1, 0, 0), false, false);
             }
         );
+    }
+
+    public Command driveBackwards(){
+        return run(()->{
+            driveRobotRelative(new ChassisSpeeds(-1, 0, 0), false, false);
+        });
     }
 
 
@@ -200,57 +304,25 @@ public class Swerve extends SwerveBase{
         });     
     }
 
-    public Command driveToSafeAlgaePosition(BooleanSupplier armIsAtSetpoint){
-        return run(()-> {
-            Pose2d robotPose = getSavedPose();
-            Transform2d repulsionVector = getRepulsionVector(robotPose, 2);
-            double repulsionX = repulsionVector.getX();
-            double repulsionY = repulsionVector.getY();
-
-            Pose2d[] dislodgePositions = getAlgaeDislodgeLocations();
-            Translation2d transformToNearestAlgaeDislodgeLocation = robotPose.getTranslation().minus(dislodgePositions[0].getTranslation());
-            for(int i = 1; i < dislodgePositions.length; ++i){
-                Translation2d translationToLocation = robotPose.getTranslation().minus(dislodgePositions[i].getTranslation());
-                if (transformToNearestAlgaeDislodgeLocation.getNorm() > translationToLocation.getNorm()) {
-                    transformToNearestAlgaeDislodgeLocation = translationToLocation;
-                    targetLocationPose = dislodgePositions[i];
-                }
-                else{
-                    targetLocationPose = new Pose2d(robotPose.getTranslation().minus(transformToNearestAlgaeDislodgeLocation), targetLocationPose.getRotation());
-                }
-            }
-
-            double attractX = kp_attract * -transformToNearestAlgaeDislodgeLocation.getX();
-            double attractY = kp_attract * -transformToNearestAlgaeDislodgeLocation.getY();
-
-            ChassisSpeeds speeds = new ChassisSpeeds(attractX-repulsionX,  attractY-repulsionY, getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees() + 180));
-            drive(speeds, true, false);
-        }).until(
-                armIsAtSetpoint
-            );
-    }
 
     public Command rotateToDislodgeLocation(Supplier<ChassisSpeeds> commandedSpeeds){
-           return  run(()->{
-                Pose2d robotPose = getSavedPose();
+           return  
+           runOnce(()->{
+            Pose2d robotPose = getSavedPose();
                 
-                Pose2d[] dislodgePositions = getAlgaeDislodgeLocations();
-                Translation2d transformToNearestAlgaeDislodgeLocation = robotPose.getTranslation().minus(dislodgePositions[0].getTranslation());
-                for(int i = 1; i < dislodgePositions.length; ++i){
-                    Translation2d translationToLocation = robotPose.getTranslation().minus(dislodgePositions[i].getTranslation());
-                    if (transformToNearestAlgaeDislodgeLocation.getNorm() > translationToLocation.getNorm()) {
-                        transformToNearestAlgaeDislodgeLocation = translationToLocation;
-                        targetLocationPose = dislodgePositions[i];
-                    }
-                    else{
-                        targetLocationPose = new Pose2d(robotPose.getTranslation().minus(transformToNearestAlgaeDislodgeLocation), targetLocationPose.getRotation());
-                    }
+            Pose2d[] dislodgePositions = getAlgaeDislodgeLocations();
+            double closestDislodge = robotPose.getTranslation().minus(dislodgePositions[0].getTranslation()).getNorm();
+            targetLocationPose = new Pose2d(dislodgePositions[0].getX(), dislodgePositions[0].getY(), Rotation2d.fromDegrees(dislodgePositions[0].getRotation().getDegrees() + 180));
+            for(int i = 1; i < dislodgePositions.length; ++i){
+                double distance = robotPose.getTranslation().minus(dislodgePositions[i].getTranslation()).getNorm();
+                if (closestDislodge > distance) {
+                    closestDislodge = distance;
+                    targetLocationPose = new Pose2d(dislodgePositions[i].getX(), dislodgePositions[i].getY(), Rotation2d.fromDegrees(dislodgePositions[i].getRotation().getDegrees() + 180));
                 }
-    
-                ChassisSpeeds cs = commandedSpeeds.get();
-                ChassisSpeeds speeds = new ChassisSpeeds(cs.vxMetersPerSecond, cs.vyMetersPerSecond, getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()+180));
-                drive(speeds, true, false);
-            });
+            }
+           }).andThen(
+            rotateToAngle(()-> targetLocationPose.getRotation().getDegrees(), commandedSpeeds)
+            );
     }
 
 
@@ -288,25 +360,38 @@ public class Swerve extends SwerveBase{
                 SmartDashboard.putNumber("alignment dx", dx);
                 SmartDashboard.putNumber("alignment dy", dy);
 
-                double attractX = kp_attract * dx;
-                double attractY = kp_attract * dy;
-
-                double repulsionX = 0;
-                double repulsionY = 0;
-
-                Transform2d repulsionVector = getRepulsionVector(robotPose, 0.5);
-                repulsionX += repulsionVector.getX() < 0.6 ? 0 : repulsionVector.getX();
-                repulsionY += repulsionVector.getY() < 0.6 ? 0 : repulsionVector.getY();
+                //ChassisSpeeds currentRobotChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
+                // double attractX = xProfile.calculate(0.02, new TrapezoidProfile.State(dx, currentRobotChassisSpeeds.vxMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+                // double attractY = yProfile.calculate(0.02, new TrapezoidProfile.State(dy, currentRobotChassisSpeeds.vyMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+                double attractX;
+                double attractY;
+                if(DriverStation.isAutonomous()){
+                    attractY = kp_attract * dy;
+                    attractX = kp_attract * dx;
+                }
+                else{
+                    attractX = kp_attract * dx;
+                    attractY = kp_attract * dy;
+                }
 
                 SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
-
-                ChassisSpeeds speeds = new ChassisSpeeds(attractX - repulsionX, attractY - repulsionY, getAngularComponentFromRotationOverride(angle));
+                
+                ChassisSpeeds speeds =
+                    new ChassisSpeeds(
+                        MathUtil.clamp(attractX, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
+                        MathUtil.clamp(attractY, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND),
+                    getAngularComponentFromRotationOverride(angle)
+                );
                 SmartDashboard.putString("align to reef speeds", speeds.toString());
 
                 drive(speeds, true, false);
             }
             ).until(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.05))
-            .andThen(runOnce(()-> driveRobotRelative(new ChassisSpeeds(), false, false)));
+            .andThen(runOnce(()-> {
+                this.stopModules();
+            })).finallyDo(()->{
+                currentlyFullyAutonomous = false;
+            });
     }
 
 
@@ -331,12 +416,11 @@ public class Swerve extends SwerveBase{
 
 
     public Transform2d getRepulsionVector(Pose2d robotPose, double repulsionGain){
+        currentlyFullyAutonomous = true;
         double repulsionX = 0;
         double repulsionY = 0;
-        int inc = 0;
         for(var vertex : reefVerticies){
             ++inc;
-            m_field.getObject(""+inc).setPose(vertex);
             // get distance to vertex
             Transform2d transformToVertex = vertex.minus(robotPose);
             double vdx = vertex.getX() - robotPose.getX();
@@ -353,10 +437,6 @@ public class Swerve extends SwerveBase{
             // multiply by unit vector to get direction and magnitude
             double f_x = f_mag * unit_vector_x;
             double f_y = f_mag * unit_vector_y;
-
-            // we don't want the repulsion to interfere with our PID align when far away from reef
-            f_x = Math.abs(f_x) < 0.5 ? 0 : f_x;
-            f_y = Math.abs(f_y) < 0.5 ? 0 : f_y;
 
             repulsionX += f_x;
             repulsionY += f_y;
@@ -395,9 +475,9 @@ public class Swerve extends SwerveBase{
     public Pose2d getReefVertexCalibrationLocation(){
         Pose2d calibrationLocation;
         if(isRedAlliance()){
-            calibrationLocation = Constants.Vision.Red.ALGAE_A_DISLODGE_LOCATION;
+            calibrationLocation = Constants.Vision.Red.ALGAE_G_DISLODGE_LOCATION;
         }else{
-            calibrationLocation = Constants.Vision.Blue.ALGAE_G_DISLODGE_LOCATION;
+            calibrationLocation = Constants.Vision.Blue.ALGAE_A_DISLODGE_LOCATION;
         }
         
         return calibrationLocation;
@@ -435,7 +515,7 @@ public class Swerve extends SwerveBase{
     public Command displayVisionConstants(){
         return runOnce(
             ()->{
-                
+                calibrateReefVerticies();
                 //coral scoring locations
                 Set<String> blueCoralKeys = Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.keySet();
                 for(String coralKey: blueCoralKeys){
@@ -445,24 +525,28 @@ public class Swerve extends SwerveBase{
                 Set<String> redCoralKeys = Constants.Vision.Red.CORAL_SCORING_LOCATIONS.keySet();
                 for(String coralKey: redCoralKeys){
                     String displayString = "Red Coral " + coralKey;
-                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.get(coralKey));
+                    m_field.getObject(displayString).setPose(Constants.Vision.Red.CORAL_SCORING_LOCATIONS.get(coralKey));
                 }
 
                 //algae scoring locations
-                Set<String> blueAlgaeKeys = Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.keySet();
-                for(String algaeKey: blueAlgaeKeys){
-                    String displayString = "Blue Algae " + algaeKey;
-                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.get(algaeKey));
+                String [] charactersforalgae = {"A" , "C", "E", "G", "I", "K"};
+                for(int algaeNum = 0; algaeNum < Constants.Vision.Blue.ALGAE_DISLODGE_POSITIONS.length; algaeNum++){
+                    String displayString = "Blue Algae " + charactersforalgae[algaeNum];
+                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.ALGAE_DISLODGE_POSITIONS[algaeNum]);
                 }
-                Set<String> redAlgaeKeys = Constants.Vision.Red.CORAL_SCORING_LOCATIONS.keySet();
-                for(String algaeKey: redAlgaeKeys){
-                    String displayString = "Red Algae " + algaeKey;
-                    m_field.getObject(displayString).setPose(Constants.Vision.Blue.CORAL_SCORING_LOCATIONS.get(algaeKey));
+                for(int algaeNum = 0; algaeNum < Constants.Vision.Red.ALGAE_DISLODGE_POSITIONS.length; algaeNum++){
+                    String displayString = "Red Algae " + charactersforalgae[algaeNum];
+                    m_field.getObject(displayString).setPose(Constants.Vision.Red.ALGAE_DISLODGE_POSITIONS[algaeNum]);
                 }
 
+                //feederstaton
+                m_field.getObject("Blue Feederstation Left").setPose(Constants.Vision.Blue.FEED_LOCATION_LEFT);
+                m_field.getObject("Blue Feederstation Right").setPose(Constants.Vision.Blue.FEED_LOCATION_RIGHT);
+                m_field.getObject("Red Feederstation Left").setPose(Constants.Vision.Red.FEED_LOCATION_LEFT);
+                m_field.getObject("Red Feederstation Right").setPose(Constants.Vision.Red.FEED_LOCATION_RIGHT);
                 //reef Verticies
                 for(int vertexNumber = 0; vertexNumber < reefVerticies.length; vertexNumber++){
-                    String displayString = "Blue Vertex " + vertexNumber;
+                    String displayString = "Vertex " + vertexNumber;
                     m_field.getObject(displayString).setPose(reefVerticies[vertexNumber]);
                 }
             }
@@ -476,7 +560,9 @@ public class Swerve extends SwerveBase{
         super.periodic();
         m_field.getObject("target location").setPose(targetLocationPose);
         SmartDashboard.putBoolean("Close to Destination", isCloseToDestination.getAsBoolean());
+        SmartDashboard.putBoolean("Is Applying Repulsion", isApplyingRepulsion.getAsBoolean());
         SmartDashboard.putBoolean("At Destination", isAtDestination.getAsBoolean());
+        SmartDashboard.putBoolean("Fully Autonomous", isFullyAutonomous.getAsBoolean());
         SmartDashboard.putNumber("Distance to target", getDistanceToTranslation(targetLocationPose.getTranslation()));
     }
 }

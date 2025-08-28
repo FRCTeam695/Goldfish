@@ -55,14 +55,14 @@ public class AlgaeDislodger extends SubsystemBase{
         configFXS.MotorOutput.NeutralMode = NeutralModeValue.Brake;
 
         configFXS.CurrentLimits.SupplyCurrentLimitEnable = true;
-        configFXS.CurrentLimits.SupplyCurrentLimit = 30;
+        configFXS.CurrentLimits.SupplyCurrentLimit = 35;
         configFXS.CurrentLimits.StatorCurrentLimitEnable = true;
-        configFXS.CurrentLimits.StatorCurrentLimit = 20;
+        configFXS.CurrentLimits.StatorCurrentLimit = 25;
 
         configFXS.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
         configFXS.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 40; //rot
         configFXS.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        configFXS.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -36.64; //rot
+        configFXS.SoftwareLimitSwitch.ReverseSoftLimitThreshold = -48; //rot
 
         configFXS.Commutation.MotorArrangement = MotorArrangementValue.NEO550_JST;
 

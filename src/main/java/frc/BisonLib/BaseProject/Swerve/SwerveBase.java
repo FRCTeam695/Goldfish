@@ -69,7 +69,6 @@ public class SwerveBase extends SubsystemBase {
     private final BaseStatusSignal[] allOdomSignals;
 
     protected double max_accel = 0;
-    protected double speed = 0;
     protected double robotRotationError = 0;
 
     // used for wheel characterization
@@ -113,21 +112,21 @@ public class SwerveBase extends SubsystemBase {
     public SlewRateLimiter omegaFilter = new SlewRateLimiter(Math.toRadians(1074.5588535));
     public SlewRateLimiter xFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
     public SlewRateLimiter yFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
-    public SlewRateLimiter accelFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
     //private Pigeon2 pigeon = new Pigeon2(8);
 
     private VoltageOut m_voltReq;
     //6-11
     // 17 -22
-    public int[] validIDs = {6,7,8,9,10,11,17,18,19,20,21,22};
+    public int[] validTagIDs;
 
     /**
      * Does all da constructing
      * 
      * @param cameras An array of cameras used for pose estinmation
      * @param moduleTypes The type of swerve module on the swerve drive
+     * @param validTagIDs April Tag IDs which are safe to use for pose estimation (stable tags that don't move around too much)
      */
-    public SwerveBase(String[] camNames, TalonFXModule[] modules) {
+    public SwerveBase(String[] camNames, TalonFXModule[] modules, int[] validTagIDs) {
         //pigeon.setYaw(0);
         // 4 modules * 3 signals per module
         allOdomSignals = new BaseStatusSignal[(4 * 3)];
@@ -142,6 +141,8 @@ public class SwerveBase extends SubsystemBase {
 
         // Holds all the modules
         this.modules = modules;
+
+        this.validTagIDs = validTagIDs;
 
         RobotConfig config;
         try{
@@ -306,7 +307,7 @@ public class SwerveBase extends SubsystemBase {
      */
     public void setModules(SwerveModuleState[] desiredStates, boolean useMaxSpeed) {
         if(useMaxSpeed) SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP);
-        else SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS);
+        else SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
 
         for(var module : modules){
             //SmartDashboard.putString("Swerve/Module State " + module.index, desiredStates[module.index].toString());
@@ -359,10 +360,6 @@ public class SwerveBase extends SubsystemBase {
         }
     }
 
-    // protected double getGyroRate() {
-    //     return pigeon.getAngularVelocityZWorld().getValueAsDouble();
-    // }
-
 
     /**
      * calculates the distance from the current robot pose to the supplied translation,
@@ -401,12 +398,6 @@ public class SwerveBase extends SubsystemBase {
             odometryLock.readLock().unlock();
         }
         return states;
-    }
-    
-    
-
-    public double getLatestSpeed(){
-        return speed;
     }
 
 
@@ -497,6 +488,11 @@ public class SwerveBase extends SubsystemBase {
     public Command resetGyro() {
         return resetGyro(180);
     }
+
+    
+    public Command backwardsResetGyro(){
+        return resetGyro(0);
+    }
     
 
     public Command resetGyro(double angle){
@@ -519,23 +515,23 @@ public class SwerveBase extends SubsystemBase {
                             odometryLock.writeLock().unlock();
                         }
                     }
-                    seedCameraHeading();
                 }
-        ).ignoringDisable(true);
+        ).ignoringDisable(true).andThen(cameraSeedCommand());
+    }
+
+    public Command cameraSeedCommand(){
+        return runOnce(()-> {
+            seedCameraHeading();
+        }).ignoringDisable(true);
     }
 
     public void seedCameraHeading(){
         //LL RESET
-        new Thread(() -> {
-            try {
-                for(String cam: camNames){
-                    LimelightHelpers.SetIMUMode(cam, 1);
-                    LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-                    LimelightHelpers.SetIMUMode(cam, 1);
-                }
-            } catch (Exception e) {
-            }
-        }).start();
+        for(String cam: camNames){
+            LimelightHelpers.SetIMUMode(cam, 1);
+            LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
+            LimelightHelpers.SetIMUMode(cam, 1);
+        }
     }
 
     /*
@@ -649,7 +645,7 @@ public class SwerveBase extends SubsystemBase {
         if(!useSetpointGenerator){
             var tmpStates = Constants.Swerve.kDriveKinematics.toSwerveModuleStates(chassisSpeeds);
             if(useMaxSpeed) SwerveDriveKinematics.desaturateWheelSpeeds(tmpStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP);
-            else SwerveDriveKinematics.desaturateWheelSpeeds(tmpStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_AUTONOMOUS);
+            else SwerveDriveKinematics.desaturateWheelSpeeds(tmpStates, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
             var speeds = Constants.Swerve.kDriveKinematics.toChassisSpeeds(tmpStates);
             // discretizes the chassis speeds (acccounts for robot skew)
             chassisSpeeds = ChassisSpeeds.discretize(speeds, Constants.Swerve.DISCRETIZE_TIMESTAMP);
@@ -689,10 +685,6 @@ public class SwerveBase extends SubsystemBase {
      * @param fieldOriented A boolean that specifies if the robot should be driven in fieldOriented mode or not
      */
     public void drive(ChassisSpeeds speeds, boolean fieldOriented, boolean useMaxSpeed){
-        if(DriverStation.isAutonomous()){
-            return;
-        }
-
         speeds.vxMetersPerSecond = xFilter.calculate(speeds.vxMetersPerSecond);
         speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
         speeds.omegaRadiansPerSecond = omegaFilter.calculate(speeds.omegaRadiansPerSecond);
@@ -707,38 +699,6 @@ public class SwerveBase extends SubsystemBase {
         }
 
         this.driveRobotRelative(speeds, false, useMaxSpeed);
-    }
-
-    public ChassisSpeeds applyAccelerationLimit(ChassisSpeeds desiredSpeeds){
-        // the current measured robot speeds
-        ChassisSpeeds current = getLatestChassisSpeed();
-
-        // acceleration in the x and y direction
-        double ax = (desiredSpeeds.vxMetersPerSecond - current.vxMetersPerSecond)/0.02;
-        double ay = (desiredSpeeds.vyMetersPerSecond - current.vyMetersPerSecond)/0.02;
-
-        // magnitude of the acceleration
-        double magnitude = Math.hypot(ax, ay);
-
-        // rate limited magnitude
-        double newMagnitude = accelFilter.calculate(magnitude);
-
-        if(magnitude != 0){
-            // scale down acceleration in the x and y direction
-            double scale = newMagnitude/magnitude;
-
-            ax *= scale;
-            ay *= scale;
-        }
-
-        // 0.02 is the loop time
-        current.vxMetersPerSecond += (ax * 0.02);
-        current.vyMetersPerSecond += (ay * 0.02);
-
-        //current.vxMetersPerSecond = current.vxMetersPerSecond < 0.05 ? 0 : current.vxMetersPerSecond;
-        //current.vyMetersPerSecond = current.vyMetersPerSecond < 0.05 ? 0 : current.vyMetersPerSecond;
-        current.omegaRadiansPerSecond = desiredSpeeds.omegaRadiansPerSecond;
-        return current;
     }
 
 
@@ -785,7 +745,7 @@ public class SwerveBase extends SubsystemBase {
         double avgLLomega = 0;
         for(String cam : camNames){  
             LimelightHelpers.SetRobotOrientation(cam, getSavedPose().getRotation().getDegrees(), 0, 0, 0, 0, 0);
-            LimelightHelpers.SetFiducialIDFiltersOverride(cam, validIDs);
+            LimelightHelpers.SetFiducialIDFiltersOverride(cam, validTagIDs);
             LimelightHelpers.PoseEstimate mt2_estimate = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(cam);
         
             // Only update pose if it is valid and if we arent spinning too fast
@@ -805,8 +765,7 @@ public class SwerveBase extends SubsystemBase {
                         
                         // This way it doesn't trust the rotation reading from the vision
                         // these are all the state stdevs
-                        //VecBuilder.fill(mt2_estimate.avgTagDist * 0.1/4.3, mt2_estimate.avgTagDist * 0.1/Units.inchesToMeters(166), 999999999)
-                        VecBuilder.fill(mt2_estimate.avgTagDist * 0, mt2_estimate.avgTagDist * 0/Units.inchesToMeters(166), 999999999)
+                        VecBuilder.fill(mt2_estimate.avgTagDist * 0.1/4.3, mt2_estimate.avgTagDist * 0.1/4.3, 999999999)
                     );
                 }finally{
                     odometryLock.writeLock().unlock();
@@ -873,6 +832,7 @@ public class SwerveBase extends SubsystemBase {
         //}
 
        SmartDashboard.putNumber("NavX Position", gyro.getAngle());
+       SmartDashboard.putNumber("NavX temperature", gyro.getTempC());
        SmartDashboard.putNumber("NavX Modified Position", getGyroHeading().getDegrees());
 
         m_field.setRobotPose(getSavedPose());
@@ -882,8 +842,7 @@ public class SwerveBase extends SubsystemBase {
         SmartDashboard.putNumber("Module 1 Angle deg", modStates[0].angle.getDegrees());
         SmartDashboard.putNumber("Module 2 Angle deg", modStates[1].angle.getDegrees());
         SmartDashboard.putNumber("Module 3 Angle deg", modStates[2].angle.getDegrees());
-        SmartDashboard.putNumber("Module 4 Angle deg", modStates[3].angle.getDegrees());
-        
+        SmartDashboard.putNumber("Module 4 Angle deg", modStates[3].angle.getDegrees());        
         
         SmartDashboard.putBoolean("Robot Rotation at Setpoint", atRotationSetpoint.getAsBoolean());
     }

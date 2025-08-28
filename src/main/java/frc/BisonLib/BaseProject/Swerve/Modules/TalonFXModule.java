@@ -140,7 +140,7 @@ public class TalonFXModule{
         // Motion Magic (Trapezoid speed control)
         var motionMagicConfigs = config.MotionMagic;
         motionMagicConfigs.MotionMagicCruiseVelocity = 100; 
-        motionMagicConfigs.MotionMagicAcceleration = 200; 
+        motionMagicConfigs.MotionMagicAcceleration = 6.5 * Constants.Swerve.DRIVING_GEAR_RATIO / Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS; 
         //motionMagicConfigs.MotionMagicJerk = 2000;
 
         driveMotor.getConfigurator().apply(config);
