@@ -47,6 +47,8 @@ public class Coralizer extends SubsystemBase {
     public NetworkTable sideCarTable;
     private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
 
+    private double maxVelocity = 0;
+
     double encoder;
 
     public Coralizer() {
@@ -93,6 +95,7 @@ public class Coralizer extends SubsystemBase {
         coralizer.getSupplyCurrent().setUpdateFrequency(50);
 
         scoringHeight = sideCarTable.getIntegerTopic("scoringLevel").subscribe(1);
+
     }
 
     public Command setDangerousToRaiseElevator() {
@@ -175,7 +178,7 @@ public class Coralizer extends SubsystemBase {
         return new FunctionalCommand(() -> {
         }, 
         () -> {
-            
+            maxVelocity = Math.max(maxVelocity, intake.getVelocity().getValueAsDouble());
         }, 
         interrupted -> {
             coralizer.set(0);
@@ -183,7 +186,7 @@ public class Coralizer extends SubsystemBase {
             coralizer.setPosition(0);
         }, 
         () -> {
-            if (intake.getVelocity().getValueAsDouble() < 20)
+            if (intake.getVelocity().getValueAsDouble() < maxVelocity - 15.0)
                 return true;
             return false;
         }, this);
