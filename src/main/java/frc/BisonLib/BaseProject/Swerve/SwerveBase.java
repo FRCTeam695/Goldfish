@@ -706,7 +706,7 @@ public class SwerveBase extends SubsystemBase {
             commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
             commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
         }
-        
+
         SmartDashboard.putNumber("Zj", commandedSpeeds.omegaRadiansPerSecond);
         SmartDashboard.putNumber("Xj", commandedSpeeds.vxMetersPerSecond);
         SmartDashboard.putNumber("Yj", commandedSpeeds.vyMetersPerSecond);
@@ -859,7 +859,7 @@ public class SwerveBase extends SubsystemBase {
         
         SmartDashboard.putBoolean("Robot Rotation at Setpoint", atRotationSetpoint.getAsBoolean());
 
-        System.out.print(currentModulePositions[0]);
+        // System.out.print(currentModulePositions[0]);
 
         if (currentModuleStates[0] != null) {
             ChassisSpeeds currentFieldRelativeSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), getSavedPose().getRotation());

@@ -6,6 +6,7 @@ import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
@@ -77,7 +78,6 @@ public class Swerve extends SwerveBase{
         isApplyingRepulsion = new Trigger(()-> currentlyApplyingRepulsion);
         isWithin10cm = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.1);
         isFullyAutonomous = new Trigger(()-> currentlyFullyAutonomous);
-        distanceProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
         xProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
         yProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
     }
@@ -258,93 +258,19 @@ public class Swerve extends SwerveBase{
             });
     }
 
-    /* public Command driveToTargetPoseStraightTrapezoidal(Pose2d targetPose, double distanceEnd){
-                   
-        class MotionState {
-            double dx, dy, unitX, unitY, distance;
-            TrapezoidProfile.State currentState, goalState;
-        }
-    
-        MotionState state = new MotionState();
-        
-        Timer timer = new Timer();
-
-        return 
-            runOnce(
-            ()->{
-                // the current field relative robot pose
-
-                SmartDashboard.putBoolean("reached destination", false);
-
-                Pose2d robotPose = getSavedPose();
-
-                state.dx = targetPose.getX() - robotPose.getX();
-                state.dy = targetPose.getY() - robotPose.getY();
-
-                state.distance = Math.hypot(state.dx, state.dy);
-
-                // convert to unit vector and get direction towards target
-                state.unitX = state.dx / state.distance;
-                state.unitY = state.dy / state.distance;
-
-                state.currentState = new TrapezoidProfile.State(0, 0); 
-                state.goalState = new TrapezoidProfile.State(state.distance - distanceEnd,0);
-
-                timer.reset();
-                timer.start();
-
-
-            }).andThen(run(() -> 
-            {
-               
-                double elapsedTime = timer.get();
-
-                TrapezoidProfile.State desiredState = distanceProfile.calculate(elapsedTime, state.currentState, state.goalState);
-
-                // double speed = MathUtil.clamp(kp_attract * distance, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
-
-                //ChassisSpeeds currentRobotChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
-                // double attractX = xProfile.calculate(0.02, new TrapezoidProfile.State(dx, currentRobotChassisSpeeds.vxMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
-                // double attractY = yProfile.calculate(0.02, new TrapezoidProfile.State(dy, currentRobotChassisSpeeds.vyMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
-                double attractX;
-                double attractY;
-
-                
-                attractY = state.unitY * desiredState.velocity;
-                attractX = state.unitX * desiredState.velocity;
-            
-                SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
-
-                SmartDashboard.putNumber("desiredStateVelocity", desiredState.velocity);
-                SmartDashboard.putNumber("Distance to target trapezoid", Math.hypot(targetPose.getX() - getSavedPose().getX(), targetPose.getY() - getSavedPose().getY()) - distanceEnd);
-
-                ChassisSpeeds speeds =
-                    new ChassisSpeeds(
-                        MathUtil.clamp(attractX, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
-                        MathUtil.clamp(attractY, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND),
-                    getAngularComponentFromRotationOverride(targetPose.getRotation().getDegrees())
-                );
-                SmartDashboard.putString("align to reef speeds", speeds.toString());
-
-                drive(speeds, true, false);
-            })
-            .until(() -> (Math.abs(getDistanceToTranslation(targetPose.getTranslation()) - distanceEnd)) < 0.05))
-            .andThen(runOnce(()-> {
-                SmartDashboard.putBoolean("reached destination", true);
-                this.stopModules();
-            })).finallyDo(()->{
-                currentlyFullyAutonomous = false;
-            });
-    } */
 
     public Command driveToTargetPoseStraightTrapezoidal(Pose2d targetPose, double distanceEnd){
-            
+
         return 
             (run(
             ()->{
 
-                SmartDashboard.putBoolean("reached destination", false);
+                distanceProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
 
+                SmartDashboard.putBoolean("reached destination", false);
+ 
+                m_field.getObject("targetPose").setPose(targetPose);
+                
                 // the current field relative robot pose
                 Pose2d robotPose = getSavedPose();
 
@@ -359,23 +285,29 @@ public class Swerve extends SwerveBase{
                 SmartDashboard.putNumber("alignment dx", dx);
                 SmartDashboard.putNumber("alignment dy", dy);
                 
-                double xvel = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation()).vxMetersPerSecond;
-                double yvel = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation()).vyMetersPerSecond;
+                ChassisSpeeds robotSpeed = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
+                
+                double xvel = robotSpeed.vxMetersPerSecond;
+                double yvel = robotSpeed.vyMetersPerSecond;
+
+                double currentVelocityTowardsTarget = (xvel*dx + yvel*dy)/distance;
 
                 double currentVelocity = Math.hypot(xvel, yvel);
 
                 SmartDashboard.putNumber("current field relative velocity", currentVelocity);
+                
+                SmartDashboard.putNumber("current field relative velocity to target", currentVelocity);
 
                 TrapezoidProfile.State goalState = new TrapezoidProfile.State(0, 0); 
                 TrapezoidProfile.State currentState = new TrapezoidProfile.State(distance, currentVelocity);
-    
+                    
                 TrapezoidProfile.State desiredState = distanceProfile.calculate(0.02, currentState, goalState);
                 
                 double attractX;
                 double attractY;
 
-                attractY = unitY * -desiredState.velocity;
-                attractX = unitX * -desiredState.velocity;
+                attractY = unitY * desiredState.velocity;
+                attractX = unitX * desiredState.velocity;
             
                 SmartDashboard.putNumber("desired trapezoidal velocity", desiredState.velocity);
                 SmartDashboard.putNumber("distance to target trapezoid", distance);
@@ -399,6 +331,110 @@ public class Swerve extends SwerveBase{
             })).finallyDo(()->{
                 currentlyFullyAutonomous = false;
             });
+    }
+
+    public Command driveToTargetPoseStraightTrapezoidalProfiledPIDController(Pose2d targetPose, double distanceEnd){
+
+        ProfiledPIDController controller = new ProfiledPIDController( 
+                    1, 0.0, 0.0, 
+                    new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
+        
+        TrapezoidProfile.State goalState = new TrapezoidProfile.State(0, 0); 
+
+        controller.setGoal(goalState);
+
+        return 
+            runOnce(()->{
+                Pose2d robotPose = getSavedPose();
+
+                double dx = targetPose.getX() - robotPose.getX();
+                double dy = targetPose.getY() - robotPose.getY();
+
+                // convert to unit vector and get direction towards target
+                double distance = Math.hypot(dx, dy);
+                double unitX = dx / distance;
+                double unitY = dy / distance;
+
+                SmartDashboard.putNumber("alignment dx", dx);
+                SmartDashboard.putNumber("alignment dy", dy);
+                
+                ChassisSpeeds robotSpeed = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
+                
+                double xvel = robotSpeed.vxMetersPerSecond;
+                double yvel = robotSpeed.vyMetersPerSecond;
+
+                double currentVelocityTowardsTarget = (xvel*dx + yvel*dy)/distance;
+                controller.reset(distance, currentVelocityTowardsTarget);
+                controller.calculate(distance, 0);
+            }).andThen(
+            (run(
+            ()->{
+
+                SmartDashboard.putBoolean("reached destination", false);
+ 
+                m_field.getObject("targetPose").setPose(targetPose);
+                SmartDashboard.putString("targetPose", targetPose.toString());
+
+                // the current field relative robot pose
+                Pose2d robotPose = getSavedPose();
+
+                double dx = targetPose.getX() - robotPose.getX();
+                double dy = targetPose.getY() - robotPose.getY();
+
+                // convert to unit vector and get direction towards target
+                double distance = Math.hypot(dx, dy);
+                double unitX = dx / distance;
+                double unitY = dy / distance;
+
+                SmartDashboard.putNumber("alignment dx", dx);
+                SmartDashboard.putNumber("alignment dy", dy);
+                
+                ChassisSpeeds robotSpeed = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
+                
+                double xvel = robotSpeed.vxMetersPerSecond;
+                double yvel = robotSpeed.vyMetersPerSecond;
+
+                double currentVelocityTowardsTarget = (xvel*dx + yvel*dy)/distance;
+
+                double currentVelocity = Math.hypot(xvel, yvel);
+
+                SmartDashboard.putNumber("current field relative velocity", currentVelocity);
+                
+                SmartDashboard.putNumber("current field relative velocity to target", currentVelocityTowardsTarget);
+    
+                
+                double desiredVelocity = controller.getSetpoint().velocity;
+                controller.calculate(distance, 0);
+                
+
+                double attractX;
+                double attractY;
+
+                attractY = -unitY * desiredVelocity;
+                attractX = -unitX * desiredVelocity;
+            
+                SmartDashboard.putNumber("desired velocity", desiredVelocity);
+                SmartDashboard.putNumber("distance to target trapezoid", distance);
+
+                SmartDashboard.putNumber("attract speed", Math.hypot(attractX, attractY));
+                
+                ChassisSpeeds speeds =
+                    new ChassisSpeeds(
+                        MathUtil.clamp(attractX, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
+                        MathUtil.clamp(attractY, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND),
+                    getAngularComponentFromRotationOverride(targetPose.getRotation().getDegrees())
+                );
+                SmartDashboard.putString("align speeds", speeds.toString());
+
+                drive(speeds, true, false);
+            }
+            ).until(() -> getDistanceToTranslation(targetPose.getTranslation()) < distanceEnd))
+            .andThen(runOnce(()-> {
+                SmartDashboard.putBoolean("reached destination", true);
+                this.stopModules();
+            })).finallyDo(()->{
+                currentlyFullyAutonomous = false;
+            }));
     }
 
 
@@ -443,7 +479,7 @@ public class Swerve extends SwerveBase{
     @Override
     public void periodic(){
         super.periodic();
-        m_field.getObject("target location").setPose(targetLocationPose);
+        // m_field.getObject("target location").setPose(targetLocationPose);
         SmartDashboard.putBoolean("Close to Destination", isCloseToDestination.getAsBoolean());
         SmartDashboard.putBoolean("Is Applying Repulsion", isApplyingRepulsion.getAsBoolean());
         SmartDashboard.putBoolean("At Destination", isAtDestination.getAsBoolean());
