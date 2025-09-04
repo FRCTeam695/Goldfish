@@ -120,7 +120,7 @@ public class RobotContainer {
     );
 
     driver.x().whileTrue(
-      Swerve.driveToTargetPoseStraightTrapezoidalProfiledPIDController(new Pose2d(1.75,1, new Rotation2d(0)), 0.1)
+      Swerve.driveToTargetPoseStraightTrapezoidalProfiledPIDController(new Pose2d(1.75,1, new Rotation2d(0)), 0.01)
       .andThen(new PrintCommand("I'm Done!"))
     );
     
