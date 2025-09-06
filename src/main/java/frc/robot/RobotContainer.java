@@ -10,6 +10,8 @@ import frc.BisonLib.BaseProject.Controller.EnhancedCommandController;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.AlgaeDislodger;
 import frc.robot.subsystems.Coralizer;
+import frc.robot.subsystems.Climber;
+
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 
 import frc.robot.subsystems.DuoTalonLift;
