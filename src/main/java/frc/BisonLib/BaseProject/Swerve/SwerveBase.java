@@ -123,6 +123,9 @@ public class SwerveBase extends SubsystemBase {
     // 17 -22
     public int[] validTagIDs;
 
+    public double prevAccelX = 0;
+    public double prevAccelY = 0; 
+
     /**
      * Does all da constructing
      * 
@@ -799,7 +802,7 @@ public class SwerveBase extends SubsystemBase {
 
         this.driveRobotRelative(speeds, false, useMaxSpeed);
 
-        SmartDashboard.putBoolean("collision", detectCollision(getLatestChassisSpeed()));
+        SmartDashboard.putBoolean("collision", detectCollision());
 
     }
 
@@ -814,31 +817,27 @@ public class SwerveBase extends SubsystemBase {
     //     }
     // }
 
-    public boolean detectCollision(ChassisSpeeds commandedSpeeds){
-
-        rioAccelerometer.setRange(Range.k2G);
+    public boolean detectCollision(){
 
         lastTime = currentTime;
         currentTime = Timer.getFPGATimestamp();
-        totalLoopTime += (currentTime-lastTime);
+        double loopTime = (currentTime-lastTime);
 
-        double ax = rioAccelerometer.getX();
-        double ay = rioAccelerometer.getY();
-        double accelMagnitude = Math.hypot(ax, ay);
+        double accelX = rioAccelerometer.getX();
+        double accelY = rioAccelerometer.getY();
 
-        ChassisSpeeds robotSpeed = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), getSavedPose().getRotation());
+        // jerk is the change in acceleration
+        double jerkX =  accelX - prevAccelX;
+        double jerkY =  accelY - prevAccelY;
+        double jerkMagnitude = Math.hypot(jerkX, jerkY);
 
-        double xvel = robotSpeed.vxMetersPerSecond;
-        double yvel = robotSpeed.vyMetersPerSecond;
+        prevAccelX = accelX;
+        prevAccelY = accelY;
 
-        double desiredAx = (commandedSpeeds.vxMetersPerSecond - xvel)/totalLoopTime;
-        double desiredAy = (commandedSpeeds.vyMetersPerSecond - yvel)/totalLoopTime;
-        double desiredAccelMagnitude = Math.hypot(desiredAx, desiredAy);
+        SmartDashboard.putNumber("jerk magnitude", jerkMagnitude);
 
-        double accelerationDifference = Math.abs(accelMagnitude - desiredAccelMagnitude);
-        SmartDashboard.putNumber("accel difference", accelerationDifference);
-
-        boolean collision = Math.abs(accelMagnitude - desiredAccelMagnitude) > 2;
+        // 4.9 m/s^2 as suggested by nav x example (0.5G)
+        boolean collision = Math.abs(jerkMagnitude) > 4.9;
 
         return collision;
     }
