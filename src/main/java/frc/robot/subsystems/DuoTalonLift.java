@@ -21,6 +21,7 @@ import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.Constants;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
@@ -137,7 +138,7 @@ public class DuoTalonLift extends SubsystemBase{
     public Command goToScoringHeight(){
         return run(()->{
             double newInchesSetpoint;
-            int networkTablesHeight = (int)Math.round(scoringHeight.get(2));
+            int networkTablesHeight = (int)Math.round(scoringHeight.get(Constants.DuoTalonLift.scoringHeight));
             if(networkTablesHeight == 1) newInchesSetpoint = Heights.L1.heightInches;
             else if(networkTablesHeight == 2) newInchesSetpoint = Heights.L2.heightInches;
             else if(networkTablesHeight == 3)  {

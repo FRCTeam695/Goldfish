@@ -47,11 +47,13 @@ public class Coralizer extends SubsystemBase {
     public NetworkTable sideCarTable;
     private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
 
-    private double maxVelocity = 0;
+    double maxVelocity;
 
     double encoder;
 
     public Coralizer() {
+
+        maxVelocity = 0.0;
 
         sideCarTable = inst.getTable("sidecarTable");
 
@@ -150,6 +152,9 @@ public class Coralizer extends SubsystemBase {
                 this);
     }
 
+
+
+
     public Command moveCoralizerToElevator() {
         return new FunctionalCommand(
                 () -> {
@@ -167,15 +172,24 @@ public class Coralizer extends SubsystemBase {
                     coralizer.setPosition(0.0);
                 },
                 () -> {
-                    if (coralizer.getPosition().getValueAsDouble() >= 20.0)
-                        return true;
+                    if (coralizer.getPosition().getValueAsDouble() >= 21.0){
+                        if(!beamBreak.get()){
+                            return true;
+                        }
+                    }
                     return false;
+                    
+                    
                 },
                 this);
     }
 
     public Command L1Scoring() {
-        return new FunctionalCommand(() -> {
+        return new FunctionalCommand(
+        () -> {
+            maxVelocity = 0.0;
+            intake.set(0.4);
+            coralizer.set(0.4);
         }, 
         () -> {
             maxVelocity = Math.max(maxVelocity, intake.getVelocity().getValueAsDouble());
@@ -186,7 +200,7 @@ public class Coralizer extends SubsystemBase {
             coralizer.setPosition(0);
         }, 
         () -> {
-            if (intake.getVelocity().getValueAsDouble() < maxVelocity - 15.0)
+            if (intake.getVelocity().getValueAsDouble() < (maxVelocity - 3.0))
                 return true;
             return false;
         }, this);
@@ -219,6 +233,20 @@ public class Coralizer extends SubsystemBase {
         });
     }
 
+    public Command runIntakeAndCoralizerNoStop(DoubleSupplier speed) {
+        return new FunctionalCommand(
+            () -> {
+                coralizer.set(speed.getAsDouble());
+                intake.set(speed.getAsDouble());
+            },
+            () -> {}, 
+            interrupted -> {coralizer.set(0);intake.set(0);}, 
+            () -> {
+                return false;
+            }, 
+            this);
+    }
+
     public Command setFirstBreakStateTrue() {
         return runOnce(() -> {
             hasSeenFirstBreak = true;
@@ -231,9 +259,9 @@ public class Coralizer extends SubsystemBase {
 
     public Command intake() {
         return either(
-            runIntakeMotor(() -> 0.6),
+            L1Scoring(),
             detectEncoderChange().andThen(moveCoralizerToElevator()), 
-            () -> (int) Math.round(scoringHeight.get(1)) == 1
+            () -> (int) Math.round(scoringHeight.get(Constants.Coralizer.scoringHeightDefault)) == 1
         ).withName("intake");
 
     }
@@ -244,7 +272,7 @@ public class Coralizer extends SubsystemBase {
 
     @Override
     public void periodic() {
-
+        SmartDashboard.putNumber("max intake velocity", maxVelocity);
         SmartDashboard.putNumber("intake velocity", intake.getVelocity().getValueAsDouble());
         SmartDashboard.putNumber("Coralizer speed", coralizer.getVelocity().getValueAsDouble());
         SmartDashboard.putNumber("Intake current", intake.getSupplyCurrent().getValueAsDouble());
