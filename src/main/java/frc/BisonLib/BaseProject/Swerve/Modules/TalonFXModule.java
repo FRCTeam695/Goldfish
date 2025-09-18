@@ -295,7 +295,10 @@ public class TalonFXModule{
               -desiredState.speedMetersPerSecond, desiredState.angle.rotateBy(Rotation2d.kPi));
         }
         
-        double sigmoidCompensation = -1/(1+Math.pow(Math.E, -90 * ((Math.abs(desiredState.angle.getRadians() -  latestAngle.getRadians()))-0.1))) + 1;
+        //double sigmoidCompensation = -1/(1+Math.pow(Math.E, -90 * ((Math.abs(desiredState.angle.getRadians() -  latestAngle.getRadians()))-0.1))) + 1;
+        
+        double sigmoidCompensation = Math.cos(Math.abs(desiredState.angle.getRadians() -  latestAngle.getRadians()));
+
         double velocity = sigmoidCompensation * desiredState.speedMetersPerSecond;
         //driveMotor.set(velocity/Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS);
         driveMotor.setControl(

@@ -12,8 +12,9 @@ import edu.wpi.first.math.util.Units;
 import frc.BisonLib.BaseProject.Swerve.SwerveConfig;
 
 public class Constants {
+    public static final double g = 9.81;
     public static final class Swerve {
-
+        
         public static final SwerveConfig QBConfig = 
                 new SwerveConfig(-0.4625, 
                 -0.1408, 

@@ -14,6 +14,7 @@ import com.ctre.phoenix6.Orchestra;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.controls.VoltageOut;
+import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.PIDConstants;
@@ -695,45 +696,70 @@ public class SwerveBase extends SubsystemBase {
      * @param fieldOriented A boolean that specifies if the robot should be driven in fieldOriented mode or not
      */
     public void drive(ChassisSpeeds commandedSpeeds, boolean fieldOriented, boolean useMaxSpeed) {
-        ChassisSpeeds currentRobotRelSpeeds = getLatestChassisSpeed();
+        ChassisSpeeds currentRobotRelSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(getLatestChassisSpeed(), getSavedPose().getRotation());
+        ChassisSpeeds commandedRobotRelSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(commandedSpeeds, getSavedPose().getRotation());
 
-        if (fieldOriented) {
-            commandedSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(commandedSpeeds, getSavedPose().getRotation());
+        double curvx = currentRobotRelSpeeds.vxMetersPerSecond;
+        double curvy = currentRobotRelSpeeds.vyMetersPerSecond;
+        double cmdvx = commandedRobotRelSpeeds.vxMetersPerSecond;
+        double cmdvy = commandedRobotRelSpeeds.vyMetersPerSecond;
+
+        double dvx = curvx - cmdvx;
+        double dvy = curvy - cmdvy;
+        
+        double currentTimeDrive = MathSharedStore.getTimestamp();
+        double dt = currentTimeDrive - lastTimeDrive;
+        SmartDashboard.putNumber("Drive Loop Time", currentTimeDrive - lastTimeDrive);
+        lastTimeDrive = currentTimeDrive;
+
+        double currentAccelMag = Math.hypot(dvx, dvy) / dt; // Desired accel
+        double currentVelMag = Math.hypot(curvx, curvy);
+         
+        // fwd accel limit (Magnitude)
+        //double fwdAccelLimit = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ * 
+                                //(1 - currentVelMag / Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP);
+        double fwdvxLimit = curvx * cmdvx * cmdvx / (cmdvx * cmdvx + cmdvy * cmdvy);
+        double fwdvyLimit = curvy * cmdvy * cmdvy / (cmdvx * cmdvx + cmdvy * cmdvy);
+        double fwdAccelLimit = Math.hypot(fwdvxLimit, fwdvyLimit) / dt;
+        
+        // skid accel limit (Circular motion)
+        /*double radius = 5; 
+        double skiddvx = radius * dvx * (1 / Math.hypot(dvx, dvy));
+        double skiddvy = radius * dvy * (1 / Math.hypot(dvx, dvy));
+        double skidAccelLimit = Math.hypot(skiddvx, skiddvy) / dt;*/
+
+        double accelLimit = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ;
+        if (currentAccelMag > accelLimit) {
+            double scale = accelLimit / currentAccelMag;
+            dvx *= scale;
+            dvy *= scale;
         }
 
-        /*if (commandedSpeeds.vxMetersPerSecond == 0 && commandedSpeeds.vyMetersPerSecond == 0) {
-            commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
-            commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
-            commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
-        }*/
+        //commandedRobotRelSpeeds.vxMetersPerSecond = currentRobotRelSpeeds.vxMetersPerSecond + dvx;
+        //commandedRobotRelSpeeds.vyMetersPerSecond = currentRobotRelSpeeds.vyMetersPerSecond + dvy;
 
-        
-            double dvx = commandedSpeeds.vxMetersPerSecond - currentRobotRelSpeeds.vxMetersPerSecond;
-            double dvy = commandedSpeeds.vyMetersPerSecond - currentRobotRelSpeeds.vyMetersPerSecond;
-            
-            double currentTimeDrive = MathSharedStore.getTimestamp();
-            double dt = currentTimeDrive - lastTimeDrive;
-            SmartDashboard.putNumber("Drive Loop Time", currentTimeDrive - lastTimeDrive);
-            lastTimeDrive = currentTimeDrive;
+        commandedRobotRelSpeeds.vxMetersPerSecond = xFilter.calculate(commandedRobotRelSpeeds.vxMetersPerSecond);
+        commandedRobotRelSpeeds.vyMetersPerSecond = yFilter.calculate(commandedRobotRelSpeeds.vyMetersPerSecond);
 
-            double accelMagitude = Math.hypot(dvx, dvy) / dt;
-            
-            if (accelMagitude > Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ) {
-                double scale = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ / accelMagitude;
-                dvx *= scale;
-                dvy *= scale;
-            }
+        commandedRobotRelSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedRobotRelSpeeds.omegaRadiansPerSecond);
+    
 
-            commandedSpeeds.vxMetersPerSecond = currentRobotRelSpeeds.vxMetersPerSecond + dvx;
-            commandedSpeeds.vyMetersPerSecond = currentRobotRelSpeeds.vyMetersPerSecond + dvy;
-            commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
-        
+        SmartDashboard.putNumber("Zj", commandedRobotRelSpeeds.omegaRadiansPerSecond);
+        SmartDashboard.putNumber("Xj", commandedRobotRelSpeeds.vxMetersPerSecond);
+        SmartDashboard.putNumber("Yj", commandedRobotRelSpeeds.vyMetersPerSecond);
 
-        SmartDashboard.putNumber("Zj", commandedSpeeds.omegaRadiansPerSecond);
-        SmartDashboard.putNumber("Xj", commandedSpeeds.vxMetersPerSecond);
-        SmartDashboard.putNumber("Yj", commandedSpeeds.vyMetersPerSecond);
+        SmartDashboard.putNumber("Currentvx", currentRobotRelSpeeds.vxMetersPerSecond);
+        SmartDashboard.putNumber("Currentvy", currentRobotRelSpeeds.vyMetersPerSecond);
 
-        this.driveRobotRelative(commandedSpeeds, false, useMaxSpeed);
+        SmartDashboard.putNumber("AccelLimit", accelLimit);
+        SmartDashboard.putNumber("CurrentAccelMag", currentAccelMag);
+        // One of the module accel is also plotted
+        // Current change?
+
+        SmartDashboard.putBoolean("fwdLimit?", accelLimit == fwdAccelLimit);
+        //SmartDashboard.putBoolean("skidLimit?", accelLimit == skidAccelLimit);
+
+        this.driveRobotRelative(commandedRobotRelSpeeds, false, useMaxSpeed);
     }
 
 
@@ -887,8 +913,6 @@ public class SwerveBase extends SubsystemBase {
             ChassisSpeeds currentFieldRelativeSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), getSavedPose().getRotation());
             double currentvx = currentFieldRelativeSpeeds.vxMetersPerSecond;
             double currentvy = currentFieldRelativeSpeeds.vyMetersPerSecond;
-            SmartDashboard.putNumber("Currentvx", currentvx);
-            SmartDashboard.putNumber("Currentvy", currentvy);
         }
     }
 }
