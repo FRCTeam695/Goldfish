@@ -1,55 +1,51 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.wpilibj2.command.Commands.either;
-
 import java.util.function.DoubleSupplier;
-
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXSConfiguration;
-import com.ctre.phoenix6.controls.ControlRequest;
-import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFXS;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorArrangementValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
-
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-//import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants;
 
 public class Coralizer extends SubsystemBase {
+    // Hardware
     private DigitalInput beamBreak;
     private TalonFXS coralizer;
     private TalonFXS intake;
 
-    final PositionVoltage m_request;
+    // configurations
+    private final PositionVoltage m_request;
     private Slot0Configs coralizerConfig;
     private double SupplyCurrent;
 
+    // triggers
     public boolean isSafeToRaiseElevator;
     public static Trigger safeToRaiseElevator;
+    private boolean hasSeenFirstBreak;
+    public static Trigger seenFirstBreak;
 
-    private boolean hasSeenFirstBreak = true;
-    public Trigger seenFirstBreak = new Trigger(() -> hasSeenFirstBreak);
-
+    // sidecar & network tables
     public IntegerSubscriber scoringHeight;
     public NetworkTable sideCarTable;
     private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
 
-    double maxVelocity;
-
-    double encoder;
+    // position and velocity
+    private double maxVelocity;
+    private double encoder;
 
     public Coralizer() {
 
@@ -59,6 +55,8 @@ public class Coralizer extends SubsystemBase {
 
         isSafeToRaiseElevator = true;
         safeToRaiseElevator = new Trigger(() -> isSafeToRaiseElevator);
+        hasSeenFirstBreak = true;
+        seenFirstBreak = new Trigger(() -> hasSeenFirstBreak);
 
         coralizerConfig = new Slot0Configs();
         coralizerConfig.kP = .1; // An error of 1 rotation results in 2.4 V output
@@ -108,27 +106,7 @@ public class Coralizer extends SubsystemBase {
         return runOnce(() -> isSafeToRaiseElevator = true);
     }
 
-    public Command pidControlCoralizer() {
-        return new FunctionalCommand(
-                () -> {
-
-                },
-                () -> {
-                    SmartDashboard.putNumber("coralizer position", coralizer.getPosition().getValueAsDouble());
-                    coralizer.set(0.25);
-                },
-                (interrupted) -> {
-                    // Stop both motors when the command ends or is interrupted
-                    intake.set(0.0);
-                    coralizer.set(0.0);
-                },
-                () -> {
-                    return false;
-                },
-                this);
-    }
-
-    public Command detectEncoderChange() {
+    public Command runIndexerInwardUntilCoralizerEncoderDetectsCoral() {
         return new FunctionalCommand(
                 () -> {
                     encoder = coralizer.getPosition().getValueAsDouble();
@@ -152,10 +130,7 @@ public class Coralizer extends SubsystemBase {
                 this);
     }
 
-
-
-
-    public Command moveCoralizerToElevator() {
+    public Command advanceCoralOntoElevatorUntilCoralizerDetectsPositionChange() {
         return new FunctionalCommand(
                 () -> {
                     coralizer.setPosition(0.0);
@@ -172,38 +147,37 @@ public class Coralizer extends SubsystemBase {
                     coralizer.setPosition(0.0);
                 },
                 () -> {
-                    if (coralizer.getPosition().getValueAsDouble() >= 21.0){
-                        if(!beamBreak.get()){
+                    if (coralizer.getPosition().getValueAsDouble() >= 21.0) {
+                        if (!beamBreak.get()) {
                             return true;
                         }
                     }
                     return false;
-                    
-                    
+
                 },
                 this);
     }
 
     public Command L1Scoring() {
         return new FunctionalCommand(
-        () -> {
-            maxVelocity = 0.0;
-            intake.set(0.4);
-            coralizer.set(0.4);
-        }, 
-        () -> {
-            maxVelocity = Math.max(maxVelocity, intake.getVelocity().getValueAsDouble());
-        }, 
-        interrupted -> {
-            coralizer.set(0);
-            intake.set(0);
-            coralizer.setPosition(0);
-        }, 
-        () -> {
-            if (intake.getVelocity().getValueAsDouble() < (maxVelocity - 3.0))
-                return true;
-            return false;
-        }, this);
+                () -> {
+                    maxVelocity = 0.0;
+                    intake.set(0.4);
+                    coralizer.set(0.4);
+                },
+                () -> {
+                    maxVelocity = Math.max(maxVelocity, intake.getVelocity().getValueAsDouble());
+                },
+                interrupted -> {
+                    coralizer.set(0);
+                    intake.set(0);
+                    coralizer.setPosition(0);
+                },
+                () -> {
+                    if (intake.getVelocity().getValueAsDouble() < (maxVelocity - 3.0))
+                        return true;
+                    return false;
+                }, this);
     }
 
     public Command recordEncoder() {
@@ -235,16 +209,20 @@ public class Coralizer extends SubsystemBase {
 
     public Command runIntakeAndCoralizerNoStop(DoubleSupplier speed) {
         return new FunctionalCommand(
-            () -> {
-                coralizer.set(speed.getAsDouble());
-                intake.set(speed.getAsDouble());
-            },
-            () -> {}, 
-            interrupted -> {coralizer.set(0);intake.set(0);}, 
-            () -> {
-                return false;
-            }, 
-            this);
+                () -> {
+                    coralizer.set(speed.getAsDouble());
+                    intake.set(speed.getAsDouble());
+                },
+                () -> {
+                },
+                interrupted -> {
+                    coralizer.set(0);
+                    intake.set(0);
+                },
+                () -> {
+                    return false;
+                },
+                this);
     }
 
     public Command setFirstBreakStateTrue() {
@@ -259,15 +237,17 @@ public class Coralizer extends SubsystemBase {
 
     public Command intake() {
         return either(
-            L1Scoring(),
-            detectEncoderChange().andThen(moveCoralizerToElevator()), 
-            () -> (int) Math.round(scoringHeight.get(Constants.Coralizer.scoringHeightDefault)) == 1
-        ).withName("intake");
+                L1Scoring(),
+                runIndexerInwardUntilCoralizerEncoderDetectsCoral()
+                        .andThen(advanceCoralOntoElevatorUntilCoralizerDetectsPositionChange()),
+                () -> (int) Math.round(scoringHeight.get(Constants.Coralizer.scoringHeightDefault)) == 1)
+                .withName("intake");
 
     }
 
-    public Command ejectCoral(){
-        return runCoralizer(()-> 0.6).withTimeout(0.2).andThen(setDangerousToRaiseElevator()).andThen(setFirstBreakStateFalse());
+    public Command ejectCoral() {
+        return runCoralizer(() -> 0.6).withTimeout(0.2).andThen(setDangerousToRaiseElevator())
+                .andThen(setFirstBreakStateFalse());
     }
 
     @Override

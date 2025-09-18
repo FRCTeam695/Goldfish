@@ -198,28 +198,6 @@ public class RobotContainer {
         ))
     );
 
-    // driver.rightBumper().onFalse(
-    //   either(
-    //     logTrickshotTrue().andThen(
-    //       Coralizer.ejectCoral()
-    //             .andThen(
-    //               Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
-    //             .andThen(
-    //               Elevator.setHeightLevel(Heights.Ground)
-    //             )
-    //             ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false)),
-    //     new WaitCommand(0), 
-    //     Coralizer.safeToRaiseElevator
-    //     )
-    // );
-
-    // _______________________
-    // driver.b().onTrue(Elevator.goToScoringHeight().until(Elevator.atSetpoint)
-    //                   .andThen(Coralizer.ejectCoral()));
-
-
-    //driver.b().whileTrue(Climber.climbOut(-0.1));
-
     // enter "climb mode"
     driver.y().whileTrue(
       parallel(
