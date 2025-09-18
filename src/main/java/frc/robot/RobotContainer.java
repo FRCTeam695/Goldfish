@@ -119,6 +119,11 @@ public class RobotContainer {
       .andThen(new PrintCommand("I'm Done!"))
     );
 
+    driver.x().whileTrue(
+      Swerve.driveToTargetPoseStraightTrapezoidalProfiledPIDController(new Pose2d(1.75,1, new Rotation2d(0)), 0.01)
+      .andThen(new PrintCommand("I'm Done!"))
+    );
+    
     driver.y().whileTrue(
       Swerve.driveToTargetPoseStraight(new Pose2d(1.75,1.5, new Rotation2d(0)), 0.5)
       .andThen(new PrintCommand("I'm Done!"))
@@ -127,21 +132,7 @@ public class RobotContainer {
     driver.b().whileTrue(
       Swerve.driveToTargetPoseCurved(new Pose2d(2,2.5, new Rotation2d(0)), 0.5)
     );
-
-    //Test 1
-    // driver.x().whileTrue(
-    //   Swerve.driveToIntermediatePose(new Pose2d(1.25,0.75, new Rotation2d(0)), 0.5, new Pose2d(2,2.5, new Rotation2d(0)), 0.1)
-    // );
-
-     //Test 2
-    // driver.x().whileTrue(
-    //   Swerve.driveToIntermediatePose(new Pose2d(0.75,1.25, new Rotation2d(0)), 0.5, new Pose2d(2,2.5, new Rotation2d(0)), 0.1)
-    // );
-
-    //Test 4
-    driver.x().whileTrue( // here is just an arbitrary value for speed that hasn't been tested
-      Swerve.driveToTargetPoseWithPath(new Pose2d(1.4,1, Rotation2d.fromDegrees(45)), 0.1, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND,  new Pose2d(2,2.5, Rotation2d.fromDegrees(90)), 0.1)
-    );
+    
   }
 
   public void configureDefaultCommands(){
