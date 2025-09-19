@@ -119,6 +119,8 @@ public class SwerveBase extends SubsystemBase {
     // 17 -22
     public int[] validTagIDs;
 
+    public enum Oriented {FieldOriented, RobotOriented}
+
     /**
      * Does all da constructing
      * 
@@ -630,7 +632,7 @@ public class SwerveBase extends SubsystemBase {
             ()-> {
                     ChassisSpeeds speeds = speedSupplier.get();
                     speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(angleDegrees.getAsDouble());
-                    drive(speeds, true, true);
+                    drive(speeds, Oriented.FieldOriented, true);
                  }
         );
     }
@@ -673,8 +675,8 @@ public class SwerveBase extends SubsystemBase {
     /*
      * Drives the robot in teleop, we don't want it fighting the auton swerve commands
      */
-    public void teleopDefaultCommand(Supplier<ChassisSpeeds> speedsSupplier, boolean fieldOriented){
-        drive(speedsSupplier.get(), true, true);
+    public void teleopDefaultCommand(Supplier<ChassisSpeeds> speedsSupplier, Oriented or){
+        drive(speedsSupplier.get(), or, true);
     }
     
     /**
@@ -684,7 +686,7 @@ public class SwerveBase extends SubsystemBase {
      * @param speeds the commanded chassis speeds from the joysticks
      * @param fieldOriented A boolean that specifies if the robot should be driven in fieldOriented mode or not
      */
-    public void drive(ChassisSpeeds speeds, boolean fieldOriented, boolean useMaxSpeed){
+    public void drive(ChassisSpeeds speeds, Oriented or, boolean useMaxSpeed){
         speeds.vxMetersPerSecond = xFilter.calculate(speeds.vxMetersPerSecond);
         speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
         speeds.omegaRadiansPerSecond = omegaFilter.calculate(speeds.omegaRadiansPerSecond);
@@ -694,7 +696,7 @@ public class SwerveBase extends SubsystemBase {
         SmartDashboard.putNumber("Xj", speeds.vxMetersPerSecond);
         SmartDashboard.putNumber("Yj", speeds.vyMetersPerSecond);
 
-        if (fieldOriented) {
+        if (or == Oriented.FieldOriented) {
             speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getSavedPose().getRotation());
         }
 

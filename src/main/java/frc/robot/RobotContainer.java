@@ -13,7 +13,7 @@ import frc.robot.subsystems.Coralizer;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.SideCar;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
-
+import frc.BisonLib.BaseProject.Swerve.SwerveBase.Oriented;
 import frc.robot.subsystems.DuoTalonLift;
 import frc.robot.subsystems.DuoTalonLift.Heights;
 import frc.robot.subsystems.LED;
@@ -163,7 +163,7 @@ public class RobotContainer {
 
     // rotate towards the nearest feeder station
     driver.leftBumper().whileTrue(
-        swerve.rotateToNearestFeed(driver::getRequestedChassisSpeeds)
+        swerve.aimAtNearestFeedAndStrafe(driver::getRequestedChassisSpeeds)
     );
 
     // starts the intake
@@ -262,7 +262,7 @@ public class RobotContainer {
     driver.rightTrigger().whileTrue(
       parallel(
         alagizer.goToPosition(()-> Constants.Alagizer.safePos),
-        swerve.rotateToDislodgeLocation(driver::getRequestedChassisSpeeds)
+        swerve.aimAtDislodgeLocationAndStrafe(driver::getRequestedChassisSpeeds)
       )
     );
 
@@ -347,7 +347,7 @@ public class RobotContainer {
             ()-> 
               swerve.teleopDefaultCommand(
                 driver::getRequestedChassisSpeeds,
-                true
+                Oriented.FieldOriented
               )
               ,
               swerve

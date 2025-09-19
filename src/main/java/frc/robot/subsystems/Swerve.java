@@ -206,7 +206,7 @@ public class Swerve extends SwerveBase{
                     MathUtil.clamp(ySpeed, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
                     getAngularComponentFromRotationOverride(targetLocationPose.getRotation().getDegrees()));
                 SmartDashboard.putString("Chassis Speeds Commanded", speeds.toString());
-                drive(speeds, true, false);
+                drive(speeds, Oriented.FieldOriented, false);
             }).until(isAtDestination.and(isApplyingRepulsion.negate()).and(atRotationSetpoint))
             .andThen(
                 runOnce(()-> {
@@ -237,7 +237,7 @@ public class Swerve extends SwerveBase{
             SmartDashboard.putNumber("Desired Robot Rotation", theta);
             ChassisSpeeds speeds = wantedSpeeds.get();
             speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(theta);
-            drive(speeds, true, true);
+            drive(speeds, Oriented.FieldOriented, true);
         });
     }
 
@@ -257,7 +257,7 @@ public class Swerve extends SwerveBase{
     }
 
 
-    public Command rotateToNearestFeed(Supplier<ChassisSpeeds> wantedVels){
+    public Command aimAtNearestFeedAndStrafe(Supplier<ChassisSpeeds> wantedVels){
         return
         run(()->{
             // the current field relative robot pose
@@ -278,12 +278,12 @@ public class Swerve extends SwerveBase{
 
             ChassisSpeeds speeds = wantedVels.get();
             speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(angle);
-            drive(speeds, true, false);
+            drive(speeds, Oriented.FieldOriented, false);
         });     
     }
 
 
-    public Command rotateToDislodgeLocation(Supplier<ChassisSpeeds> commandedSpeeds){
+    public Command aimAtDislodgeLocationAndStrafe(Supplier<ChassisSpeeds> commandedSpeeds){
            return  
            runOnce(()->{
             Pose2d robotPose = getSavedPose();
@@ -362,7 +362,7 @@ public class Swerve extends SwerveBase{
                 );
                 SmartDashboard.putString("align to reef speeds", speeds.toString());
 
-                drive(speeds, true, false);
+                drive(speeds, Oriented.FieldOriented, false);
             }
             ).until(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.05))
             .andThen(runOnce(()-> {
