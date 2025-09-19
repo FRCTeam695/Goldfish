@@ -94,6 +94,9 @@ public class RobotContainer {
                                   pickUpAlignAndScore(Optional.of("L"))
                                 )
                                 .andThen(
+                                  pickUpAlignAndScore(Optional.of("M"))
+                                )
+                                .andThen(
                                   parallel(
                                     Swerve.driveToNearestFeed(),
                                     Elevator.setHeightLevel(Heights.Ground).until(Elevator.atSetpoint)
@@ -110,6 +113,9 @@ public class RobotContainer {
                               )
                               .andThen(
                                 pickUpAlignAndScore(Optional.of("C"))
+                              )
+                              .andThen(
+                                pickUpAlignAndScore(Optional.of("B"))
                               )
                               .andThen(
                                 parallel(
