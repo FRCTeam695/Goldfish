@@ -18,30 +18,29 @@ import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import static frc.BisonLib.BaseProject.Utilities.*;
 import frc.robot.Constants;
 
 public class AlgaeDislodger extends SubsystemBase{
     private TalonFXS m_talon;
     private TalonFXSConfiguration configFXS;
     private MotionMagicVoltage controlMM;
-    public Trigger atSetpoint;
+    public final Trigger atSetpoint;
 
     // 50Hz NetworkTable variables
-    // Creates a new field that contains all output variables
-    private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
-    private final NetworkTable algaeTable = inst.getTable("Algae");
     // Position
-    private final DoublePublisher r_masterRotPub = algaeTable.getDoubleTopic("Right master motor rotations").publish(PubSubOption.periodic(0.02));
-    private final DoublePublisher rotationsTargetPub = algaeTable.getDoubleTopic("Position Target").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher r_masterRotPub;
+    private final DoublePublisher rotationsTargetPub;
     // Velocity
-    private final DoublePublisher velocityPub = algaeTable.getDoubleTopic("Velocity").publish(PubSubOption.periodic(0.02));
-    private final DoublePublisher velocityTargetPub = algaeTable.getDoubleTopic("Velocity Target").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher velocityPub;
+    private final DoublePublisher velocityTargetPub;
     // kS & kG (Feed forward)
-    private final DoublePublisher closedLoopPub = algaeTable.getDoubleTopic("Closed Loop Output").publish(PubSubOption.periodic(0.02));
-    private final DoublePublisher FFPub = algaeTable.getDoubleTopic("Feed Forward").publish(PubSubOption.periodic(0.02));
-    private final DoublePublisher motorVoltagePub = algaeTable.getDoubleTopic("Motor Voltage").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher closedLoopPub;
+    private final DoublePublisher FFPub;
+    private final DoublePublisher motorVoltagePub;
 
-    public AlgaeDislodger() {
+
+    public AlgaeDislodger(NetworkTableInstance inst) {
         m_talon = new TalonFXS(54); //change ID accordingly
         configFXS = new TalonFXSConfiguration();
         controlMM = new MotionMagicVoltage(0);
@@ -50,6 +49,18 @@ public class AlgaeDislodger extends SubsystemBase{
         atSetpoint = new Trigger(
             ()-> Math.abs(controlMM.Position - m_talon.getPosition().getValueAsDouble()) < 1
         );
+
+        NetworkTable algaeTable = inst.getTable("Algae");
+
+        r_masterRotPub = getPubForTopic50Hz(algaeTable, "Right master motor rotations");
+        rotationsTargetPub = getPubForTopic50Hz(algaeTable, "Position Target");
+        // Velocity
+        velocityPub = getPubForTopic50Hz(algaeTable, "Velocity");
+        velocityTargetPub = getPubForTopic50Hz(algaeTable, "Velocity Target");
+        // kS & kG (Feed forward)
+        closedLoopPub = getPubForTopic50Hz(algaeTable, "Closed Loop Output");
+        FFPub = getPubForTopic50Hz(algaeTable, "Feed Forward");
+        motorVoltagePub = getPubForTopic50Hz(algaeTable, "Motor Voltage");
     
         // Configurations
         configFXS.MotorOutput.NeutralMode = NeutralModeValue.Brake;
@@ -93,12 +104,8 @@ public class AlgaeDislodger extends SubsystemBase{
                     .andThen(goToPosition(()-> 0).until(atSetpoint));
     }
 
-    public Command voltageControl(DoubleSupplier setpoint) {
-        DutyCycleOut output = new DutyCycleOut(0);
-        return run(() -> {
-            output.Output = setpoint.getAsDouble();
-            m_talon.setControl(output);
-        });
+    public Command voltageControl(DoubleSupplier dutyCycle) {
+        return run(runTalonFXSDutyCycle(m_talon, dutyCycle));
     }
 
     //may need to put this in a command rather than periodic method

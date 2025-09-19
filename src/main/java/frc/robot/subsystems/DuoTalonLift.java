@@ -46,18 +46,15 @@ public class DuoTalonLift extends SubsystemBase{
      */
 
     // 50Hz NetworkTable variables
-    // Creates a new field that contains all output variables
-    private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
-    private final NetworkTable elevatorTable = inst.getTable("Elevator");
     // Position
-    private final DoublePublisher r_masterRotPub = elevatorTable.getDoubleTopic("Right master motor rotations").publish(PubSubOption.periodic(0.02));
-    private final DoublePublisher rotationsTargetPub = elevatorTable.getDoubleTopic("Position Target").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher r_masterRotPub;
+    private final DoublePublisher rotationsTargetPub;
     // Velocity
-    private final DoublePublisher velocityPub = elevatorTable.getDoubleTopic("Velocity").publish(PubSubOption.periodic(0.02));
-    private final DoublePublisher velocityTargetPub = elevatorTable.getDoubleTopic("Velocity Target").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher velocityPub;
+    private final DoublePublisher velocityTargetPub;
     // kS & kG (Feed forward)
-    private final DoublePublisher closedLoopPub = elevatorTable.getDoubleTopic("Closed Loop Output").publish(PubSubOption.periodic(0.02));
-    private final DoublePublisher FFPub = elevatorTable.getDoubleTopic("Feed Forward").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher closedLoopPub;
+    private final DoublePublisher FFPub;
 
     //public NetworkTable sideCarTable;
    // public IntegerSubscriber scoringHeight;
@@ -70,10 +67,24 @@ public class DuoTalonLift extends SubsystemBase{
     public TrapezoidProfile heightProfile;
 
     // Constructor
-    public DuoTalonLift () {
+    public DuoTalonLift (NetworkTableInstance inst) {
         sideCar = new SideCar();
         //sideCarTable = inst.getTable("sidecarTable");
         //scoringHeight = sideCarTable.getIntegerTopic("scoringLevel").subscribe(1);
+
+        // Creates a new field that contains all output variables
+        NetworkTable elevatorTable = inst.getTable("Elevator");
+
+        r_masterRotPub = elevatorTable.getDoubleTopic("Right master motor rotations").publish(PubSubOption.periodic(0.02));
+        rotationsTargetPub = elevatorTable.getDoubleTopic("Position Target").publish(PubSubOption.periodic(0.02));
+        // Velocity
+        velocityPub = elevatorTable.getDoubleTopic("Velocity").publish(PubSubOption.periodic(0.02));
+        velocityTargetPub = elevatorTable.getDoubleTopic("Velocity Target").publish(PubSubOption.periodic(0.02));
+        // kS & kG (Feed forward)
+        closedLoopPub = elevatorTable.getDoubleTopic("Closed Loop Output").publish(PubSubOption.periodic(0.02));
+        FFPub = elevatorTable.getDoubleTopic("Feed Forward").publish(PubSubOption.periodic(0.02));
+
+
         atSetpoint = new Trigger(()-> (Math.abs(r_leaderTalon.getPosition().getValueAsDouble() / rotationsPerInch - inchesSetpoint) < 0.25) && isRunning);
         isDeployed = new Trigger(()-> (Math.abs(r_leaderTalon.getPosition().getValueAsDouble() / rotationsPerInch - Heights.Ground.heightInches) > 0.25));
 

@@ -32,7 +32,6 @@ public class Swerve extends SwerveBase{
     public Pose2d[] reefVerticies = new Pose2d[6];
 
     //NT
-    public NetworkTableInstance inst;
     public NetworkTable sideCarTable;
     public StringSubscriber scoringLocationSub; 
     public StringSubscriber scoringModeSub;
@@ -60,13 +59,12 @@ public class Swerve extends SwerveBase{
     public TrapezoidProfile yProfile;
     public SideCar sideCar;
 
-    public Swerve(String[] camNames, TalonFXModule[] modules, int[] reefTags) {
+    public Swerve(String[] camNames, TalonFXModule[] modules, int[] reefTags, NetworkTableInstance inst) {
         super(camNames, modules, reefTags);
 
         targetLocationPose = new Pose2d();
         sideCar = new SideCar();
 
-        inst = NetworkTableInstance.getDefault();
         sideCarTable = inst.getTable("sidecarTable");  
         scoringLocationSub = sideCarTable.getStringTopic("scoringLocation").subscribe("");
         scoringModeSub = sideCarTable.getStringTopic("currentIntakeMode").subscribe("");

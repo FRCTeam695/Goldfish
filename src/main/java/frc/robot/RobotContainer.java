@@ -47,14 +47,17 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class RobotContainer {
 
-  public final Swerve Swerve;
-  public final DuoTalonLift Elevator;
-  public final Coralizer Coralizer;
-  public final AlgaeDislodger Alagizer;
-  public final Climber Climber;
-  public IntegerSubscriber scoringHeight;
-  public final LED led = new LED();
-  SendableChooser<Command> autoChooser = new SendableChooser<>();
+  private final NetworkTableInstance baseTable;
+
+  public final Swerve swerve;
+  private final DuoTalonLift elevator;
+  private final Coralizer coralizer;
+  private final AlgaeDislodger alagizer;
+  private final Climber climber;
+  private final LED led;
+  
+  private IntegerSubscriber scoringHeight;
+  private final SendableChooser<Command> autoChooser = new SendableChooser<>();
 
   public int[] reefTags = {6,7,8,9,10,11,17,18,19,20,21,22};
 
@@ -73,15 +76,19 @@ public class RobotContainer {
 
   // The container for the robot. Contains subsystems, OI devices, and commands.
   public RobotContainer() {
-    Swerve = new Swerve(camNames, modules, reefTags);
-    Elevator = new DuoTalonLift();
-    Coralizer = new Coralizer();
-    Alagizer = new AlgaeDislodger();
-    Climber = new Climber();
-    scoringHeight = NetworkTableInstance.getDefault().getTable("sidecarTable").getIntegerTopic("scoringLevel").subscribe(1);
+    baseTable = NetworkTableInstance.getDefault();
+    
+    swerve = new Swerve(camNames, modules, reefTags, baseTable);
+    elevator = new DuoTalonLift(baseTable);
+    coralizer = new Coralizer();
+    alagizer = new AlgaeDislodger(baseTable);
+    climber = new Climber();
+    led = new LED();
+
+    scoringHeight = baseTable.getTable("sidecarTable").getIntegerTopic("scoringLevel").subscribe(1);
 
     // SmartDashboarding subsystems allow you to see what commands they are running
-    SmartDashboard.putData("Swerve Subsystem", Swerve);
+    SmartDashboard.putData("Swerve Subsystem", swerve);
 
     // Configure the trigger bindings
     configureBindings();
@@ -98,13 +105,13 @@ public class RobotContainer {
                                 )
                                 .andThen(
                                   parallel(
-                                    Swerve.driveToNearestFeed(),
-                                    Elevator.setHeightLevel(Heights.Ground).until(Elevator.atSetpoint)
+                                    swerve.driveToNearestFeed(),
+                                    elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)
                                   )
                                 )
                                 .andThen(
-                                  Elevator.setHeightLevel(Heights.Ground)
-                                ).until(Elevator.atSetpoint)
+                                  elevator.setHeightLevel(Heights.Ground)
+                                ).until(elevator.atSetpoint)
                           );
     autoChooser.addOption("Right", 
                               alignAndScore(Optional.of("E"))
@@ -116,16 +123,16 @@ public class RobotContainer {
                               )
                               .andThen(
                                 parallel(
-                                  Swerve.driveToNearestFeed(),
-                                  Elevator.setHeightLevel(Heights.Ground).until(Elevator.atSetpoint)
+                                  swerve.driveToNearestFeed(),
+                                  elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)
                                 )
                               )
                               .andThen(
-                                Elevator.setHeightLevel(Heights.Ground)
-                              ).until(Elevator.atSetpoint)
+                                elevator.setHeightLevel(Heights.Ground)
+                              ).until(elevator.atSetpoint)
     );
-    autoChooser.addOption("Mid Right", alignAndScore(Optional.of("G")).andThen(Elevator.setHeightLevel(Heights.Ground).until(Elevator.atSetpoint)));
-    autoChooser.addOption("Mid Left", alignAndScore(Optional.of("H")).andThen(Elevator.setHeightLevel(Heights.Ground).until(Elevator.atSetpoint)));
+    autoChooser.addOption("Mid Right", alignAndScore(Optional.of("G")).andThen(elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)));
+    autoChooser.addOption("Mid Left", alignAndScore(Optional.of("H")).andThen(elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)));
     SmartDashboard.putData(autoChooser);
 
     DataLogManager.start();
@@ -145,65 +152,65 @@ public class RobotContainer {
   private void configureBindings() {
 
     // indication for human player to drop coral
-    Swerve.isWithin10cm.and(Coralizer.seenFirstBreak.negate()).and(()-> DriverStation.isAutonomous()).whileTrue(
+    swerve.isWithin10cm.and(coralizer.seenFirstBreak.negate()).and(()-> DriverStation.isAutonomous()).whileTrue(
       led.solidColor(3)
     );
 
     // when we are ready to shoot the coral
-    Coralizer.safeToRaiseElevator.and(Swerve.isAtDestination).whileTrue(
+    coralizer.safeToRaiseElevator.and(swerve.isAtDestination).whileTrue(
       led.breatheEffect(3, 0.1)
     );
 
     // while auto aligning
-    Swerve.isFullyAutonomous.and(Swerve.isAtDestination.negate()).whileTrue(led.breatheEffect(0, 0.2));
+    swerve.isFullyAutonomous.and(swerve.isAtDestination.negate()).whileTrue(led.breatheEffect(0, 0.2));
 
     // rotate towards the nearest feeder station
     driver.leftBumper().whileTrue(
-        Swerve.rotateToNearestFeed(driver::getRequestedChassisSpeeds)
+        swerve.rotateToNearestFeed(driver::getRequestedChassisSpeeds)
     );
 
     // starts the intake
     driver.leftBumper().onTrue(
-        Coralizer.intake()
+        coralizer.intake()
     );
 
     // starts the intake
     driver.leftTrigger().onTrue(
-        Coralizer.intake()
+        coralizer.intake()
     );
 
     // drives to the nearest feeder station
     driver.leftTrigger().whileTrue(
         parallel(
-          Swerve.driveToNearestFeed(),
-          Elevator.setHeightLevel(Heights.Ground).until(Elevator.atSetpoint)
+          swerve.driveToNearestFeed(),
+          elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)
       )
     );
     
 
     // make sure you gyro reset by aligning with the reef, not eyeballing it
-    driver.back().onTrue(Swerve.resetGyro());
+    driver.back().onTrue(swerve.resetGyro());
 
 
 
     //driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
     driver.rightBumper().onTrue(
       either(
-        Elevator.goToScoringHeight(), new WaitCommand(0), Coralizer.safeToRaiseElevator
+        elevator.goToScoringHeight(), new WaitCommand(0), coralizer.safeToRaiseElevator
       )
     );
     driver.rightBumper().onFalse(
       either(
         logTrickshotTrue().andThen(
-          Coralizer.ejectCoral()
+          coralizer.ejectCoral()
                 .andThen(
-                  Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
+                  coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
                 .andThen(
-                  Elevator.setHeightLevel(Heights.Ground)
+                  elevator.setHeightLevel(Heights.Ground)
                 )
                 ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false)),
         new WaitCommand(0), 
-        Coralizer.safeToRaiseElevator
+        coralizer.safeToRaiseElevator
         )
     );
 
@@ -216,25 +223,25 @@ public class RobotContainer {
     // enter "climb mode"
     driver.y().whileTrue(
       parallel(
-        Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp),
-        Climber.runClimb(1),
-        Swerve.rotateToAngle(()-> (Swerve.isRedAlliance() ? -90 : 90), driver::getRequestedChassisSpeeds)
+        alagizer.goToPosition(()-> Constants.Alagizer.holdRamp),
+        climber.runClimb(1),
+        swerve.rotateToAngle(()-> (swerve.isRedAlliance() ? -90 : 90), driver::getRequestedChassisSpeeds)
       )
     );
 
-    driver.y().onFalse(Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp));
+    driver.y().onFalse(alagizer.goToPosition(()-> Constants.Alagizer.holdRamp));
 
     // climbs
     driver.a().whileTrue(
       //Climber.climbInNoSoftlimits()
       parallel(
-        Climber.runClimb(-0.6).until(Climber.closeToReverseLimit).andThen(Climber.climbInNoSoftlimits()),
-        Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp)
+        climber.runClimb(-0.6).until(climber.closeToReverseLimit).andThen(climber.climbInNoSoftlimits()),
+        alagizer.goToPosition(()-> Constants.Alagizer.holdRamp)
       )
     );
     
 
-    driver.a().onFalse(Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp));
+    driver.a().onFalse(alagizer.goToPosition(()-> Constants.Alagizer.holdRamp));
 
 
     // auto score
@@ -246,11 +253,11 @@ public class RobotContainer {
     driver.x().onFalse(
       new ConditionalCommand(
         deadline(
-          Swerve.driveBackwards().withTimeout(0.5),
-          Elevator.holdHeight()
+          swerve.driveBackwards().withTimeout(0.5),
+          elevator.holdHeight()
         ), 
         new WaitCommand(0),
-        Coralizer.safeToRaiseElevator // have not ejected the coral yet, we want to avoid a collision when we lower the elevator
+        coralizer.safeToRaiseElevator // have not ejected the coral yet, we want to avoid a collision when we lower the elevator
       )
     );
 
@@ -258,23 +265,23 @@ public class RobotContainer {
     // enter "algae dislodge mode"
     driver.rightTrigger().whileTrue(
       parallel(
-        Alagizer.goToPosition(()-> Constants.Alagizer.safePos),
-        Swerve.rotateToDislodgeLocation(driver::getRequestedChassisSpeeds)
+        alagizer.goToPosition(()-> Constants.Alagizer.safePos),
+        swerve.rotateToDislodgeLocation(driver::getRequestedChassisSpeeds)
       )
     );
 
     driver.rightTrigger().onFalse(
-      Alagizer.goToPosition(()-> Constants.Alagizer.dislodgeAngle).until(Alagizer.atSetpoint)
-      .andThen(Swerve.driveForwards().withTimeout(0.5))
+      alagizer.goToPosition(()-> Constants.Alagizer.dislodgeAngle).until(alagizer.atSetpoint)
+      .andThen(swerve.driveForwards().withTimeout(0.5))
     );
 
     // dumps algae/coral out of ramp
-    driver.povUp().onTrue(Alagizer.dump());
+    driver.povUp().onTrue(alagizer.dump());
 
     // left gyro reset before auton
     driver.povLeft().onTrue(
       new ConditionalCommand(
-        Swerve.leftGyroReset(), 
+        swerve.leftGyroReset(), 
         new WaitCommand(0), 
         ()-> DriverStation.isDisabled()
       )
@@ -283,7 +290,7 @@ public class RobotContainer {
     // right gyro reset before auton
     driver.povRight().onTrue(
       new ConditionalCommand(
-        Swerve.rightGyroReset(), 
+        swerve.rightGyroReset(), 
         //Elevator.goToScoringHeight().until(Elevator.atSetpoint).andThen(Coralizer.ejectCoral()).andThen(Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01)).andThen(new WaitCommand(5)),
         new WaitCommand(0), 
         ()-> DriverStation.isDisabled()
@@ -293,36 +300,36 @@ public class RobotContainer {
     // L1 play
     driver.b().whileTrue(  
       deadline(
-        Coralizer.runIntakeAndCoralizer(()-> -1).withTimeout(0.2),
-        Alagizer.goToPosition(()-> -20.1)
+        coralizer.runIntakeAndCoralizer(()-> -1).withTimeout(0.2),
+        alagizer.goToPosition(()-> -20.1)
       )
       .andThen(
         parallel(
-          Alagizer.goToPosition(()-> Constants.Alagizer.dump),
-          Coralizer.runIntakeAndCoralizer(()-> -1)
+          alagizer.goToPosition(()-> Constants.Alagizer.dump),
+          coralizer.runIntakeAndCoralizer(()-> -1)
         )
       )
     );
 
     driver.b().onFalse(
-      Alagizer.goToPosition(()-> Constants.Alagizer.dump).until(Alagizer.atSetpoint)
+      alagizer.goToPosition(()-> Constants.Alagizer.dump).until(alagizer.atSetpoint)
       .andThen(
         new WaitCommand(0.25)
       )
-      .andThen(Alagizer.dump())
+      .andThen(alagizer.dump())
     );
 
     driver.povDown().whileTrue(
       either(
-        Swerve.backwardsResetGyro(),
-        Coralizer.runIntakeAndCoralizer(()-> -0.3),
+        swerve.backwardsResetGyro(),
+        coralizer.runIntakeAndCoralizer(()-> -0.3),
         ()-> DriverStation.isDisabled()
       )
     );
 
 
     // display all calibrated field constants on glass
-    driver.leftStick().onTrue(Swerve.displayVisionConstants().ignoringDisable(true));
+    driver.leftStick().onTrue(swerve.displayVisionConstants().ignoringDisable(true));
 
     // driver.rightStick().whileTrue(
     //   Elevator.setHeightLevel(Heights.L2).until(Elevator.atSetpoint).andThen(
@@ -337,31 +344,31 @@ public class RobotContainer {
 
   public void configureDefaultCommands(){
     // This is the Swerve subsystem default command, this allows the driver to drive the robot
-    Swerve.setDefaultCommand
+    swerve.setDefaultCommand
       (
         run
           (
             ()-> 
-              Swerve.teleopDefaultCommand(
+              swerve.teleopDefaultCommand(
                 driver::getRequestedChassisSpeeds,
                 true
               )
               ,
-              Swerve
+              swerve
           ).withName("Swerve Drive Command")
       );
 
-      Elevator.setDefaultCommand(
-        Elevator.setHeightLevel(Heights.Ground)
+      elevator.setDefaultCommand(
+        elevator.setHeightLevel(Heights.Ground)
       );
 
-      Coralizer.setDefaultCommand(
-        Coralizer.runIntakeAndCoralizer(()->0)
+      coralizer.setDefaultCommand(
+        coralizer.runIntakeAndCoralizer(()->0)
       );
 
       led.setDefaultCommand(led.breatheEffect(2, 2).ignoringDisable(true));
 
-      Alagizer.setDefaultCommand(Alagizer.goToPosition(()-> 0));
+      alagizer.setDefaultCommand(alagizer.goToPosition(()-> 0));
 
       //Gripper.setDefaultCommand(Gripper.stop());
   }
@@ -381,12 +388,12 @@ public class RobotContainer {
     return 
       parallel(
         parallel(
-          Swerve.driveToNearestFeed(),
-          Elevator.setHeightLevel(Heights.Ground).until(Elevator.atSetpoint)
+          swerve.driveToNearestFeed(),
+          elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)
         )
-        .andThen(new WaitUntilCommand(Coralizer.seenFirstBreak))
+        .andThen(new WaitUntilCommand(coralizer.seenFirstBreak))
         .andThen(alignAndScore(location)),
-        Coralizer.intake().asProxy()
+        coralizer.intake().asProxy()
       );
   }
 
@@ -395,30 +402,30 @@ public class RobotContainer {
     return
     updateTelemetryState(1).andThen(
         // tells the elevator where is will be going later, so it can give semi-accurate time estimates for how long it will take to get there
-        Elevator.configureSetpoint().andThen(
+        elevator.configureSetpoint().andThen(
         parallel(
           
-          Swerve.alignToReef(location, ()-> Elevator.getElevatorTimeToArrival(), true),
+          swerve.alignToReef(location, ()-> elevator.getElevatorTimeToArrival(), true),
           
           // all these things need 2 be true b4 it's safe to raise the elevator
           new WaitUntilCommand(
-            Swerve.almostAtRotationSetpoint
-            .and(Swerve.collisionDetected.negate())
-            .and(Swerve.isCloseToDestination)
+            swerve.almostAtRotationSetpoint
+            .and(swerve.collisionDetected.negate())
+            .and(swerve.isCloseToDestination)
             
-            .and(Coralizer.safeToRaiseElevator)
+            .and(coralizer.safeToRaiseElevator)
           ).andThen(
             updateTelemetryState(2)
           ).andThen
             (
-              Elevator.goToScoringHeight()
-            ).until(Elevator.atSetpoint)
+              elevator.goToScoringHeight()
+            ).until(elevator.atSetpoint)
         ))
         .andThen(
           updateTelemetryState(3)
         )
       .andThen(
-            Coralizer.ejectCoral().asProxy() // asProxy because we want to be able to continue intaking while we are aligning
+            coralizer.ejectCoral().asProxy() // asProxy because we want to be able to continue intaking while we are aligning
         )
       .andThen(
         updateTelemetryState(4)
