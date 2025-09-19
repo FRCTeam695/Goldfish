@@ -1,6 +1,5 @@
 package frc.robot.subsystems;
 
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -299,7 +298,7 @@ public class Swerve extends SwerveBase{
                 }
             }
            }).andThen(
-            rotateToAngle(()-> targetLocationPose.getRotation().getDegrees(), commandedSpeeds)
+            controlToAngleAndStrafe(()-> targetLocationPose.getRotation().getDegrees(), commandedSpeeds)
             );
     }
 

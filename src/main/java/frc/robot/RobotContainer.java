@@ -13,7 +13,6 @@ import frc.robot.subsystems.Coralizer;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.SideCar;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
-import frc.BisonLib.BaseProject.Swerve.SwerveBase.Oriented;
 import frc.robot.subsystems.DuoTalonLift;
 import frc.robot.subsystems.DuoTalonLift.Heights;
 import frc.robot.subsystems.LED;
@@ -26,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -222,7 +222,7 @@ public class RobotContainer {
       parallel(
         alagizer.goToPosition(()-> Constants.Alagizer.holdRamp),
         climber.runClimb(1),
-        swerve.rotateToAngle(()-> (swerve.isRedAlliance() ? -90 : 90), driver::getRequestedChassisSpeeds)
+        swerve.controlToAngleAndStrafe(directionOfCages(), driver::getRequestedChassisSpeeds)
       )
     );
 
@@ -338,20 +338,17 @@ public class RobotContainer {
     // );
   }
 
+
+
+  private DoubleSupplier directionOfCages() {
+    return ()-> (swerve.isRedAlliance() ? -90 : 90);
+  }
+
   public void configureDefaultCommands(){
     // This is the Swerve subsystem default command, this allows the driver to drive the robot
     swerve.setDefaultCommand
       (
-        run
-          (
-            ()-> 
-              swerve.teleopDefaultCommand(
-                driver::getRequestedChassisSpeeds,
-                Oriented.FieldOriented
-              )
-              ,
-              swerve
-          ).withName("Swerve Drive Command")
+        swerve.driveWithMaxSpeeds(driver::getRequestedChassisSpeeds).withName("Swerve Drive Command")
       );
 
       elevator.setDefaultCommand(
@@ -368,6 +365,8 @@ public class RobotContainer {
 
       //Gripper.setDefaultCommand(Gripper.stop());
   }
+
+
 
   public Command logTrickshotTrue(){
     return runOnce(()-> {SmartDashboard.putBoolean("Trickshot", true);});

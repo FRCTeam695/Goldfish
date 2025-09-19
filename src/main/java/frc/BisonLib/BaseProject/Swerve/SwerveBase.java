@@ -625,16 +625,14 @@ public class SwerveBase extends SubsystemBase {
      * @return Returns a functional command that will rotate the robot to a specified angle, 
      *         when interrupted, will return driver control to robot rotation
      */
-    public Command rotateToAngle(DoubleSupplier angleDegrees, Supplier<ChassisSpeeds> speedSupplier){
-        return run
-        (
-            /* EXCECUTE */
-            ()-> {
-                    ChassisSpeeds speeds = speedSupplier.get();
-                    speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(angleDegrees.getAsDouble());
-                    drive(speeds, Oriented.FieldOriented, true);
-                 }
-        );
+    public Command controlToAngleAndStrafe(DoubleSupplier angleDegrees, Supplier<ChassisSpeeds> speedSupplier){
+        return driveWithMaxSpeeds(
+            () -> {
+                ChassisSpeeds speeds = speedSupplier.get();
+                speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(angleDegrees.getAsDouble());
+                return speeds;
+            }
+         );
     }
 
     /**
@@ -675,18 +673,18 @@ public class SwerveBase extends SubsystemBase {
     /*
      * Drives the robot in teleop, we don't want it fighting the auton swerve commands
      */
-    public void teleopDefaultCommand(Supplier<ChassisSpeeds> speedsSupplier, Oriented or){
-        drive(speedsSupplier.get(), or, true);
-    }
+    public Command driveWithMaxSpeeds(Supplier<ChassisSpeeds> speeds) {
+        return run(()-> drive(speeds.get(), Oriented.FieldOriented, true));
+      }
     
     /**
      * Drives swerve given chassis speeds
      * Should be called every loop
      * 
      * @param speeds the commanded chassis speeds from the joysticks
-     * @param fieldOriented A boolean that specifies if the robot should be driven in fieldOriented mode or not
+     * @param or A boolean that specifies if the robot should be driven in fieldOriented mode or not
      */
-    public void drive(ChassisSpeeds speeds, Oriented or, boolean useMaxSpeed){
+    protected void drive(ChassisSpeeds speeds, Oriented or, boolean useMaxSpeed){
         speeds.vxMetersPerSecond = xFilter.calculate(speeds.vxMetersPerSecond);
         speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
         speeds.omegaRadiansPerSecond = omegaFilter.calculate(speeds.omegaRadiansPerSecond);
