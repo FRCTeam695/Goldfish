@@ -96,14 +96,15 @@ public class RobotContainer {
     configureBindings();
     configureDefaultCommands();
 
+    Supplier<Heights> scoringHeight = () -> sideCar.getScoringLevel();
 
     autoChooser.addOption("Left", 
-                                alignAndScore(Optional.of("J"))
+                                alignAndScore(Optional.of("J"), scoringHeight)
                                 .andThen(
-                                  pickUpAlignAndScore(Optional.of("K"))
+                                  pickUpAlignAndScore(Optional.of("K"), scoringHeight)
                                 )
                                 .andThen(
-                                  pickUpAlignAndScore(Optional.of("L"))
+                                  pickUpAlignAndScore(Optional.of("L"), scoringHeight)
                                 )
                                 .andThen(
                                   parallel(
@@ -116,12 +117,12 @@ public class RobotContainer {
                                 ).until(elevator.atSetpoint)
                           );
     autoChooser.addOption("Right", 
-                              alignAndScore(Optional.of("E"))
+                              alignAndScore(Optional.of("E"), scoringHeight)
                               .andThen(
-                                pickUpAlignAndScore(Optional.of("D"))
+                                pickUpAlignAndScore(Optional.of("D"), scoringHeight)
                               )
                               .andThen(
-                                pickUpAlignAndScore(Optional.of("C"))
+                                pickUpAlignAndScore(Optional.of("C"), scoringHeight)
                               )
                               .andThen(
                                 parallel(
@@ -133,8 +134,8 @@ public class RobotContainer {
                                 elevator.setHeightLevel(Heights.Ground)
                               ).until(elevator.atSetpoint)
     );
-    autoChooser.addOption("Mid Right", alignAndScore(Optional.of("G")).andThen(elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)));
-    autoChooser.addOption("Mid Left", alignAndScore(Optional.of("H")).andThen(elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)));
+    autoChooser.addOption("Mid Right", alignAndScore(Optional.of("G"), scoringHeight).andThen(elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)));
+    autoChooser.addOption("Mid Left", alignAndScore(Optional.of("H"), scoringHeight).andThen(elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)));
     SmartDashboard.putData(autoChooser);
 
     DataLogManager.start();
@@ -248,7 +249,7 @@ public class RobotContainer {
 
     // auto score
     driver.x().whileTrue(
-      alignAndScore(Optional.empty())
+      alignAndScore(Optional.empty(), () -> sideCar.getScoringLevel())
     );
 
 
@@ -386,7 +387,7 @@ public class RobotContainer {
   }
 
 
-  public Command pickUpAlignAndScore(Optional<String> location){
+  public Command pickUpAlignAndScore(Optional<String> location, Supplier<Heights> scoringLevel){
     return 
       parallel(
         parallel(
@@ -394,13 +395,13 @@ public class RobotContainer {
           elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)
         )
         .andThen(new WaitUntilCommand(coralizer.seenFirstBreak))
-        .andThen(alignAndScore(location)),
+        .andThen(alignAndScore(location, scoringLevel)),
         coralizer.intake().asProxy()
       );
   }
 
 
-  public Command alignAndScore(Optional<String> location){
+  public Command alignAndScore(Optional<String> location, Supplier<Heights> scoringLevel){
     return
     updateTelemetryState(1).andThen(
         // tells the elevator where is will be going later, so it can give semi-accurate time estimates for how long it will take to get there
@@ -420,7 +421,7 @@ public class RobotContainer {
             updateTelemetryState(2)
           ).andThen
             (
-              elevator.goToScoringHeight(() -> sideCar.getScoringLevel())
+              elevator.goToScoringHeight(scoringLevel)
             ).until(elevator.atSetpoint)
         ))
         .andThen(
