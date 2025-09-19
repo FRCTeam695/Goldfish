@@ -59,8 +59,8 @@ public class DuoTalonLift extends SubsystemBase{
     private final DoublePublisher closedLoopPub = elevatorTable.getDoubleTopic("Closed Loop Output").publish(PubSubOption.periodic(0.02));
     private final DoublePublisher FFPub = elevatorTable.getDoubleTopic("Feed Forward").publish(PubSubOption.periodic(0.02));
 
-    public NetworkTable sideCarTable;
-    public IntegerSubscriber scoringHeight;
+    //public NetworkTable sideCarTable;
+   // public IntegerSubscriber scoringHeight;
     public Trigger atSetpoint;
     public Trigger isDeployed;
     public double inchesSetpoint = 0;
@@ -235,7 +235,6 @@ public class DuoTalonLift extends SubsystemBase{
 
     @Override
     public void periodic() {
-        /*
         SmartDashboard.putNumber("Motor Voltage output", r_leaderTalon.getMotorVoltage().getValueAsDouble());
         SmartDashboard.putNumber("Supply Voltage output", l_followerTalon.getSupplyVoltage().getValueAsDouble());
         SmartDashboard.putNumber("Position", r_leaderTalon.getPosition().getValueAsDouble());
@@ -244,10 +243,7 @@ public class DuoTalonLift extends SubsystemBase{
         SmartDashboard.putNumber("Elevator Commaded Position", inchesSetpoint);
         SmartDashboard.putBoolean("Elevator is deployed", isDeployed.getAsBoolean());
         SmartDashboard.putBoolean("Elevator is running", isRunning);
-        */
-        SmartDashboard.putString("Scoring Location from Side Car", sideCar.getScoringLocation().get("A"));
-        SmartDashboard.putString("Scoring Height from Side Car", sideCar.getScoringLevel().toString());
-    
+ 
         // Field variable outputs
         // Position
         r_masterRotPub.set(r_leaderTalon.getPosition(true).getValueAsDouble());

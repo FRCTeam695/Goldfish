@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.robot.subsystems.DuoTalonLift.Heights;
 
 public class Coralizer extends SubsystemBase{
     //DigitalInput beamBreak;
@@ -44,6 +45,7 @@ public class Coralizer extends SubsystemBase{
     private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
     public NetworkTable sideCarTable;
     public IntegerSubscriber scoringHeight;
+    public SideCar sideCar;
 
     public Coralizer(){
         //beamBreak = new DigitalInput(0);
@@ -74,8 +76,10 @@ public class Coralizer extends SubsystemBase{
         beamIsMadeDebounced = new Trigger(()-> !beambreakDebouncer.calculate(beamBrokenUndebounced()));
         intakeCurrentAboveFive = new Trigger(()-> (intake.getSupplyCurrent().getValueAsDouble() > 5));
         fixedBeambreak = new DigitalInput(9);
-        sideCarTable = inst.getTable("sidecarTable");
-        scoringHeight = sideCarTable.getIntegerTopic("scoringLevel").subscribe(1);
+
+        sideCar = new SideCar();
+        //sideCarTable = inst.getTable("sidecarTable");
+        //scoringHeight = sideCarTable.getIntegerTopic("scoringLevel").subscribe(1);
     }
 
     public boolean beamBrokenUndebounced(){
@@ -108,7 +112,7 @@ public class Coralizer extends SubsystemBase{
                   .andThen(runIntakeAndCoralizer(()-> -0.1).until(this::beamBrokenUndebounced))
                   .andThen(runIntakeAndCoralizer(()-> 0))
             )),
-            ()-> (int)Math.round(scoringHeight.get(2)) == 1).withName("intake");
+            ()-> sideCar.getScoringLevel().heightInches == 1); //(int)Math.round(scoringHeight.get(2)) == 1).withName("intake");
     }
     
 
