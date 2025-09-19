@@ -14,10 +14,8 @@ import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.networktables.DoublePublisher;
-import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -82,8 +80,8 @@ public class DuoTalonLift extends SubsystemBase{
         FFPub = getPubForTopic50Hz(elevatorTable, "Feed Forward");
 
 
-        atSetpoint = new Trigger(()-> (Math.abs(r_leaderTalon.getPosition().getValueAsDouble() / rotationsPerInch - inchesSetpoint) < 0.25) && isRunning);
-        isDeployed = new Trigger(()-> (Math.abs(r_leaderTalon.getPosition().getValueAsDouble() / rotationsPerInch - Heights.Ground.heightInches) > 0.25));
+        atSetpoint = new Trigger(()-> (Math.abs(currentHeightInches() - inchesSetpoint) < 0.25) && isRunning);
+        isDeployed = new Trigger(()-> (Math.abs(currentHeightInches() - Heights.Ground.heightInches) > 0.25));
 
         // Right leader control (RIGHT MOTOR IS LEADER)
         r_leaderTalon = new TalonFX(50);
@@ -144,7 +142,11 @@ public class DuoTalonLift extends SubsystemBase{
         SmartDashboard.putNumber("Elevator Set Inches", 0);
     }
 
-    public Command goToScoringHeight(Supplier<Heights> scoringLevel){
+    private double currentHeightInches() {
+        return r_leaderTalon.getPosition().getValueAsDouble() / rotationsPerInch;
+    }
+
+    public Command goToHeight(Supplier<Heights> scoringLevel){
         return run(()->{
             double newInchesSetpoint = scoringLevel.get().heightInches;
 
@@ -193,33 +195,21 @@ public class DuoTalonLift extends SubsystemBase{
         return time;
     }
 
-    // Setting elevator leader talon to spin to a certain height
-    // a, b, x, y, and right bumper control different set heights (for now)
-    public Command setHeightLevel(Heights setpoint) {
-        return 
-        run(() -> 
-        {
-            isRunning = true;
-            elevatorSetInches(setpoint.heightInches);
-        }).finallyDo(()-> {isRunning = false;});
-    }
-
-    public Command setHeightLevel (Supplier<Heights> setpoint) {
-        return run(() -> 
-        {
-            elevatorSetInches(setpoint.get().heightInches);
-        });
-    }
-
     public Command holdHeight(){
+        double capturedHeight = currentHeightInches();
         return run(()->{
-            elevatorSetInches(r_leaderTalon.getPosition().getValueAsDouble()/rotationsPerInch);
+            elevatorSetInches(capturedHeight);
         });
     }
 
-    public Command slowRaise(double speed){
+
+    public Command lowerToGroundThenEnd() {
+        return goToHeight(() -> Heights.Ground).until(atSetpoint);
+    }
+
+    public Command runDutyCycle(double dutyCycle){
         return run(()->{
-            r_leaderTalon.set(speed);
+            r_leaderTalon.set(dutyCycle);
         });
     }
 

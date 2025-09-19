@@ -107,12 +107,10 @@ public class RobotContainer {
                                 .andThen(
                                   parallel(
                                     swerve.driveToNearestFeed(),
-                                    elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)
+                                    elevator.lowerToGroundThenEnd()
                                   )
                                 )
-                                .andThen(
-                                  elevator.setHeightLevel(Heights.Ground)
-                                ).until(elevator.atSetpoint)
+                                .andThen(elevator.lowerToGroundThenEnd())
                           );
     autoChooser.addOption("Right", 
                               alignAndScore("E", scoringHeight)
@@ -125,22 +123,20 @@ public class RobotContainer {
                               .andThen(
                                 parallel(
                                   swerve.driveToNearestFeed(),
-                                  elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)
+                                  elevator.lowerToGroundThenEnd()
                                 )
                               )
-                              .andThen(
-                                elevator.setHeightLevel(Heights.Ground)
-                              ).until(elevator.atSetpoint)
+                              .andThen(elevator.lowerToGroundThenEnd())
     );
-    autoChooser.addOption("Mid Right", alignAndScore("G", scoringHeight).andThen(elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)));
-    autoChooser.addOption("Mid Left", alignAndScore("H", scoringHeight).andThen(elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)));
+    autoChooser.addOption("Mid Right", alignAndScore("G", scoringHeight).andThen(elevator.lowerToGroundThenEnd()));
+    autoChooser.addOption("Mid Left", alignAndScore("H", scoringHeight).andThen(elevator.lowerToGroundThenEnd()));
     SmartDashboard.putData(autoChooser);
 
     DataLogManager.start();
   }
 
 
-  
+
   /**
    * Use this method to define your trigger->command mappings. Triggers can be created via the
    * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with an arbitrary
@@ -184,7 +180,7 @@ public class RobotContainer {
     driver.leftTrigger().whileTrue(
         parallel(
           swerve.driveToNearestFeed(),
-          elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)
+          elevator.lowerToGroundThenEnd()
       )
     );
     
@@ -197,7 +193,7 @@ public class RobotContainer {
     //driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
     driver.rightBumper().onTrue(
       either(
-        elevator.goToScoringHeight(() -> sideCar.getScoringLevel()), new WaitCommand(0), coralizer.safeToRaiseElevator
+        elevator.goToHeight(() -> sideCar.getScoringLevel()), new WaitCommand(0), coralizer.safeToRaiseElevator
       )
     );
     driver.rightBumper().onFalse(
@@ -207,7 +203,7 @@ public class RobotContainer {
                 .andThen(
                   coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01))
                 .andThen(
-                  elevator.setHeightLevel(Heights.Ground)
+                  elevator.goToHeight(() -> Heights.Ground)
                 )
                 ).finallyDo(()-> SmartDashboard.putBoolean("Trickshot", false)),
         new WaitCommand(0), 
@@ -359,7 +355,7 @@ public class RobotContainer {
       );
 
       elevator.setDefaultCommand(
-        elevator.setHeightLevel(Heights.Ground)
+        elevator.goToHeight(() -> Heights.Ground)
       );
 
       coralizer.setDefaultCommand(
@@ -389,7 +385,7 @@ public class RobotContainer {
       parallel(
         parallel(
           swerve.driveToNearestFeed(),
-          elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)
+          elevator.lowerToGroundThenEnd()
         )
         .andThen(new WaitUntilCommand(coralizer.seenFirstBreak))
         .andThen(alignAndScore(location, scoringLevel)),
@@ -418,7 +414,7 @@ public class RobotContainer {
             updateTelemetryState(2)
           ).andThen
             (
-              elevator.goToScoringHeight(scoringLevel)
+              elevator.goToHeight(scoringLevel)
             ).until(elevator.atSetpoint)
         ))
         .andThen(
