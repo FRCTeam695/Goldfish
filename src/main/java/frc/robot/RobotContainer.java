@@ -26,10 +26,8 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 
-import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -99,12 +97,12 @@ public class RobotContainer {
     Supplier<Heights> scoringHeight = () -> sideCar.getScoringLevel();
 
     autoChooser.addOption("Left", 
-                                alignAndScore(Optional.of("J"), scoringHeight)
+                                alignAndScore("J", scoringHeight)
                                 .andThen(
-                                  pickUpAlignAndScore(Optional.of("K"), scoringHeight)
+                                  pickUpAlignAndScore("K", scoringHeight)
                                 )
                                 .andThen(
-                                  pickUpAlignAndScore(Optional.of("L"), scoringHeight)
+                                  pickUpAlignAndScore("L", scoringHeight)
                                 )
                                 .andThen(
                                   parallel(
@@ -117,12 +115,12 @@ public class RobotContainer {
                                 ).until(elevator.atSetpoint)
                           );
     autoChooser.addOption("Right", 
-                              alignAndScore(Optional.of("E"), scoringHeight)
+                              alignAndScore("E", scoringHeight)
                               .andThen(
-                                pickUpAlignAndScore(Optional.of("D"), scoringHeight)
+                                pickUpAlignAndScore("D", scoringHeight)
                               )
                               .andThen(
-                                pickUpAlignAndScore(Optional.of("C"), scoringHeight)
+                                pickUpAlignAndScore("C", scoringHeight)
                               )
                               .andThen(
                                 parallel(
@@ -134,8 +132,8 @@ public class RobotContainer {
                                 elevator.setHeightLevel(Heights.Ground)
                               ).until(elevator.atSetpoint)
     );
-    autoChooser.addOption("Mid Right", alignAndScore(Optional.of("G"), scoringHeight).andThen(elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)));
-    autoChooser.addOption("Mid Left", alignAndScore(Optional.of("H"), scoringHeight).andThen(elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)));
+    autoChooser.addOption("Mid Right", alignAndScore("G", scoringHeight).andThen(elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)));
+    autoChooser.addOption("Mid Left", alignAndScore("H", scoringHeight).andThen(elevator.setHeightLevel(Heights.Ground).until(elevator.atSetpoint)));
     SmartDashboard.putData(autoChooser);
 
     DataLogManager.start();
@@ -246,10 +244,9 @@ public class RobotContainer {
 
     driver.a().onFalse(alagizer.goToPosition(()-> Constants.Alagizer.holdRamp));
 
-
     // auto score
     driver.x().whileTrue(
-      alignAndScore(Optional.empty(), () -> sideCar.getScoringLevel())
+      alignAndScore(sideCar.getScoringLocation().get(), () -> sideCar.getScoringLevel())
     );
 
 
@@ -387,7 +384,7 @@ public class RobotContainer {
   }
 
 
-  public Command pickUpAlignAndScore(Optional<String> location, Supplier<Heights> scoringLevel){
+  public Command pickUpAlignAndScore(String location, Supplier<Heights> scoringLevel){
     return 
       parallel(
         parallel(
@@ -401,7 +398,7 @@ public class RobotContainer {
   }
 
 
-  public Command alignAndScore(Optional<String> location, Supplier<Heights> scoringLevel){
+  public Command alignAndScore(String location, Supplier<Heights> scoringLevel){
     return
     updateTelemetryState(1).andThen(
         // tells the elevator where is will be going later, so it can give semi-accurate time estimates for how long it will take to get there

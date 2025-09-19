@@ -13,9 +13,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StringSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -30,13 +28,6 @@ public class Swerve extends SwerveBase{
     public Pose2d targetLocationPose;
 
     public Pose2d[] reefVerticies = new Pose2d[6];
-
-    //NT
-    public NetworkTable sideCarTable;
-    public StringSubscriber scoringLocationSub; 
-    public StringSubscriber scoringModeSub;
-    
-
 
     public final double kp_attract = 3.5;
 
@@ -57,17 +48,11 @@ public class Swerve extends SwerveBase{
     public TrapezoidProfile distanceProfile;
     public TrapezoidProfile xProfile;
     public TrapezoidProfile yProfile;
-    public SideCar sideCar;
 
     public Swerve(String[] camNames, TalonFXModule[] modules, int[] reefTags, NetworkTableInstance inst) {
         super(camNames, modules, reefTags);
 
         targetLocationPose = new Pose2d();
-        sideCar = new SideCar();
-
-        sideCarTable = inst.getTable("sidecarTable");  
-        scoringLocationSub = sideCarTable.getStringTopic("scoringLocation").subscribe("");
-        scoringModeSub = sideCarTable.getStringTopic("currentIntakeMode").subscribe("");
 
         isCloseToDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 2.5);
         isAtDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.02);
@@ -91,7 +76,7 @@ public class Swerve extends SwerveBase{
      *                 If you supply an empty optional, then it pulls the location to 
      *                 align to off networktables from the operator interface
      */
-    public Command alignToReef(Optional<String> location, DoubleSupplier elevatorTimeToArrival, boolean willRaiseElevator){
+    public Command alignToReef(String location, DoubleSupplier elevatorTimeToArrival, boolean willRaiseElevator){
         return 
             runOnce(()-> currentlyFullyAutonomous = true)
             .andThen(
@@ -100,14 +85,7 @@ public class Swerve extends SwerveBase{
                 SmartDashboard.putBoolean("Close to Destination",  isCloseToDestination.getAsBoolean());
 
                 Pose2d robotPose = getSavedPose();
-                // if no location is provided, we grab it from networktables
-                if(location.isEmpty()){
-                    targetLocationPose = getCoralScoringLocation(sideCar.getScoringLocation().get());
-                }
-                // if a location is provided, we just drive to the provided lcoation
-                else{
-                    targetLocationPose = getCoralScoringLocation(location.get());
-                }
+                targetLocationPose = getCoralScoringLocation(location);
 
 
                 double dx = targetLocationPose.getX()-robotPose.getX();
