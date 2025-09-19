@@ -10,6 +10,8 @@ import frc.BisonLib.BaseProject.Controller.EnhancedCommandController;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.AlgaeDislodger;
 import frc.robot.subsystems.Coralizer;
+import frc.robot.subsystems.Climber;
+import frc.robot.subsystems.SideCar;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 
 import frc.robot.subsystems.DuoTalonLift;
@@ -41,6 +43,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
  * subsystems, commands, and trigger mappings) should be declared here.
  */
+
+
 public class RobotContainer {
 
   public final Swerve Swerve;
@@ -67,7 +71,7 @@ public class RobotContainer {
   private static final EnhancedCommandController driver =
       new EnhancedCommandController(0);
 
-  /** The container for the robot. Contains subsystems, OI devices, and commands. */
+  // The container for the robot. Contains subsystems, OI devices, and commands.
   public RobotContainer() {
     Swerve = new Swerve(camNames, modules, reefTags);
     Elevator = new DuoTalonLift();

@@ -10,27 +10,25 @@ import frc.robot.subsystems.DuoTalonLift.Heights;
 
 public class SideCar extends SubsystemBase{
     
-    public NetworkTableInstance inst;
+    private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
     public NetworkTable sideCarTable;
     public StringSubscriber scoringLocationSub; 
     public IntegerSubscriber scoringHeight;
 
+    public SideCar(){
+        sideCarTable = inst.getTable("sidecarTable"); 
+        scoringLocationSub = sideCarTable.getStringTopic("scoringLocation").subscribe("");
+        scoringHeight = sideCarTable.getIntegerTopic("scoringLevel").subscribe(1);
+    }
 
     public StringSubscriber getScoringLocation(){
-        inst = NetworkTableInstance.getDefault();
-        sideCarTable = inst.getTable("sidecarTable"); 
-        
-        return sideCarTable.getStringTopic("scoringLocation").subscribe("");
+        return scoringLocationSub;
     }
 
     public Heights getScoringLevel(){
-        inst = NetworkTableInstance.getDefault();
-        sideCarTable = inst.getTable("sidecarTable"); 
-
-        scoringHeight = sideCarTable.getIntegerTopic("scoringLevel").subscribe(1);
         int integerHeight = (int)Math.round(scoringHeight.get(2));
         
-        Heights height = Heights.Ground;
+        Heights height = Heights.L1; //defaults to L1
         
         if (integerHeight == 1){
             height = Heights.L1;

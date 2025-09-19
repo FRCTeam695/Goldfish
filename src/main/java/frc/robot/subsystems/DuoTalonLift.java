@@ -22,7 +22,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.subsystems.SideCar;
 
 
 public class DuoTalonLift extends SubsystemBase{
@@ -236,6 +235,7 @@ public class DuoTalonLift extends SubsystemBase{
 
     @Override
     public void periodic() {
+        /*
         SmartDashboard.putNumber("Motor Voltage output", r_leaderTalon.getMotorVoltage().getValueAsDouble());
         SmartDashboard.putNumber("Supply Voltage output", l_followerTalon.getSupplyVoltage().getValueAsDouble());
         SmartDashboard.putNumber("Position", r_leaderTalon.getPosition().getValueAsDouble());
@@ -244,7 +244,10 @@ public class DuoTalonLift extends SubsystemBase{
         SmartDashboard.putNumber("Elevator Commaded Position", inchesSetpoint);
         SmartDashboard.putBoolean("Elevator is deployed", isDeployed.getAsBoolean());
         SmartDashboard.putBoolean("Elevator is running", isRunning);
-
+        */
+        SmartDashboard.putString("Scoring Location from Side Car", sideCar.getScoringLocation().get("A"));
+        SmartDashboard.putString("Scoring Height from Side Car", sideCar.getScoringLevel().toString());
+    
         // Field variable outputs
         // Position
         r_masterRotPub.set(r_leaderTalon.getPosition(true).getValueAsDouble());

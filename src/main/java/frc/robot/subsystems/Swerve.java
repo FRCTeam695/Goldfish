@@ -58,11 +58,13 @@ public class Swerve extends SwerveBase{
     public TrapezoidProfile distanceProfile;
     public TrapezoidProfile xProfile;
     public TrapezoidProfile yProfile;
+    public SideCar sideCar;
 
     public Swerve(String[] camNames, TalonFXModule[] modules, int[] reefTags) {
         super(camNames, modules, reefTags);
 
         targetLocationPose = new Pose2d();
+        sideCar = new SideCar();
 
         inst = NetworkTableInstance.getDefault();
         sideCarTable = inst.getTable("sidecarTable");  
@@ -102,7 +104,7 @@ public class Swerve extends SwerveBase{
                 Pose2d robotPose = getSavedPose();
                 // if no location is provided, we grab it from networktables
                 if(location.isEmpty()){
-                    targetLocationPose = getCoralScoringLocation(scoringLocationSub.get());
+                    targetLocationPose = getCoralScoringLocation(sideCar.getScoringLocation().get());
                 }
                 // if a location is provided, we just drive to the provided lcoation
                 else{
