@@ -169,11 +169,11 @@ public class Constants {
     }
 
     public static final class Coralizer {
-        public static final int scoringHeightDefault = 2;
+        public static final int scoringHeightDefault = 1;
     }
 
     public static final class DuoTalonLift {
-        public static final int scoringHeight = 4;
+        public static final int scoringHeight = 2;
     }
 
     public static final class Vision{     

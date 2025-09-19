@@ -5,7 +5,6 @@ import java.util.function.DoubleSupplier;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.configs.TalonFXSConfiguration;
-import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.hardware.TalonFXS;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorArrangementValue;
@@ -28,9 +27,7 @@ public class Coralizer extends SubsystemBase {
     private TalonFXS intake;
 
     // configurations
-    private final PositionVoltage m_request;
     private Slot0Configs coralizerConfig;
-    private double SupplyCurrent;
 
     // triggers
     public boolean isSafeToRaiseElevator;
@@ -61,9 +58,6 @@ public class Coralizer extends SubsystemBase {
         coralizerConfig = new Slot0Configs();
         coralizerConfig.kP = .1; // An error of 1 rotation results in 2.4 V output
 
-        // create a position closed-loop request, voltage output, slot 0 configs
-        m_request = new PositionVoltage(0).withSlot(0).withPosition(20.0);
-
         beamBreak = new DigitalInput(9);
         coralizer = new TalonFXS(52);
 
@@ -89,7 +83,6 @@ public class Coralizer extends SubsystemBase {
 
         // coralizer.getPosition().setUpdateFrequency(100);
         intake.getSupplyCurrent().setUpdateFrequency(50);
-        SupplyCurrent = intake.getSupplyCurrent().getValueAsDouble();
 
         coralizer.setPosition(0.0);
         coralizer.getSupplyCurrent().setUpdateFrequency(50);
@@ -107,84 +100,62 @@ public class Coralizer extends SubsystemBase {
     }
 
     public Command runIndexerInwardUntilCoralizerEncoderDetectsCoral() {
-        return new FunctionalCommand(
-                () -> {
-                    encoder = coralizer.getPosition().getValueAsDouble();
-                    intake.set(0.5);
-                },
-                () -> {
-                    SmartDashboard.putNumber("1 E", coralizer.getPosition().getValueAsDouble());
-                    // System.out.println("1 E " + coralizer.getPosition().getValueAsDouble());
+        return runOnce(() -> {
+            encoder = coralizer.getPosition().getValueAsDouble();
+            intake.set(0.5);
 
-                },
-                (interrupted) -> {
-                    intake.set(0.0);
-                    coralizer.set(0.0);
-                    coralizer.setPosition(0.0);
-                },
-                () -> {
-                    if (coralizer.getPosition().getValueAsDouble() - encoder >= 1.0)
-                        return true;
-                    return false;
-                },
-                this);
+        }).andThen(run(
+            () -> {})
+        ).until(
+            () -> (coralizer.getPosition().getValueAsDouble() - encoder >= 1.0)
+
+        ).finallyDo( 
+            () -> {
+                intake.set(0.0);
+                coralizer.set(0.0);
+                coralizer.setPosition(0.0);
+            }
+        );
     }
 
     public Command advanceCoralOntoElevatorUntilCoralizerDetectsPositionChange() {
-        return new FunctionalCommand(
-                () -> {
-                    coralizer.setPosition(0.0);
-                    intake.set(0.25);
-                    coralizer.set(0.25);
-                },
-                () -> {
-                    SmartDashboard.putNumber("2 E", coralizer.getPosition().getValueAsDouble());
-                    // System.out.println("2 E " + coralizer.getPosition().getValueAsDouble());
-                },
-                (interrupted) -> {
-                    coralizer.set(0.0);
-                    intake.set(0.0);
-                    coralizer.setPosition(0.0);
-                },
-                () -> {
-                    if (coralizer.getPosition().getValueAsDouble() >= 21.0) {
-                        if (!beamBreak.get()) {
-                            return true;
-                        }
-                    }
-                    return false;
+        return runOnce(() -> {
+            coralizer.setPosition(0.0);
+            intake.set(0.25);
+            coralizer.set(0.25);
 
-                },
-                this);
+        }).andThen(run(() -> {})
+
+        ).until(() -> 
+            (coralizer.getPosition().getValueAsDouble() >= 21.0) && (!beamBreak.get())
+
+        ).finallyDo(() -> {
+            coralizer.set(0.0);
+            intake.set(0.0);
+            coralizer.setPosition(0.0);
+        });
     }
 
     public Command L1Scoring() {
-        return new FunctionalCommand(
-                () -> {
-                    maxVelocity = 0.0;
-                    intake.set(0.4);
-                    coralizer.set(0.4);
-                },
-                () -> {
-                    maxVelocity = Math.max(maxVelocity, intake.getVelocity().getValueAsDouble());
-                },
-                interrupted -> {
-                    coralizer.set(0);
-                    intake.set(0);
-                    coralizer.setPosition(0);
-                },
-                () -> {
-                    if (intake.getVelocity().getValueAsDouble() < (maxVelocity - 3.0))
-                        return true;
-                    return false;
-                }, this);
-    }
-
-    public Command recordEncoder() {
-        return run(() -> {
-            SmartDashboard.putNumber("Coralizer encoder", coralizer.getPosition().getValueAsDouble());
-            SmartDashboard.putBoolean("beambreak", beamBreak.get());
-        });
+        return runOnce(
+            () -> {
+                maxVelocity = 0.0;
+                intake.set(0.4);
+                coralizer.set(0.4);
+            }
+        ).andThen(run(
+            () -> {
+                maxVelocity = Math.max(maxVelocity, intake.getVelocity().getValueAsDouble());
+            }
+        )).until(
+            () -> (intake.getVelocity().getValueAsDouble() < (maxVelocity - 3.0))
+        ).finallyDo(
+            () -> {
+                coralizer.set(0);
+                intake.set(0);
+                coralizer.setPosition(0);
+            }
+        );
     }
 
     public Command runIntakeMotor(DoubleSupplier speed) {
