@@ -27,7 +27,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import java.util.Optional;
-
+import java.util.function.Supplier;
 
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -56,7 +56,6 @@ public class RobotContainer {
   private final Climber climber;
   private final LED led;
   
-  private IntegerSubscriber scoringHeight;
   private final SendableChooser<Command> autoChooser = new SendableChooser<>();
 
   public int[] reefTags = {6,7,8,9,10,11,17,18,19,20,21,22};
@@ -71,8 +70,9 @@ public class RobotContainer {
           };
 
   private final String[] camNames = {"limelight-left", "limelight-right"};
-  private static final EnhancedCommandController driver =
-      new EnhancedCommandController(0);
+  private final EnhancedCommandController driver;
+  
+  private final SideCar sideCar;
 
   // The container for the robot. Contains subsystems, OI devices, and commands.
   public RobotContainer() {
@@ -85,8 +85,10 @@ public class RobotContainer {
     climber = new Climber();
     led = new LED();
 
-    scoringHeight = baseTable.getTable("sidecarTable").getIntegerTopic("scoringLevel").subscribe(1);
 
+    sideCar = new SideCar();
+    driver = new EnhancedCommandController(0);
+    
     // SmartDashboarding subsystems allow you to see what commands they are running
     SmartDashboard.putData("Swerve Subsystem", swerve);
 
@@ -196,7 +198,7 @@ public class RobotContainer {
     //driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
     driver.rightBumper().onTrue(
       either(
-        elevator.goToScoringHeight(), new WaitCommand(0), coralizer.safeToRaiseElevator
+        elevator.goToScoringHeight(() -> sideCar.getScoringLevel()), new WaitCommand(0), coralizer.safeToRaiseElevator
       )
     );
     driver.rightBumper().onFalse(
@@ -418,7 +420,7 @@ public class RobotContainer {
             updateTelemetryState(2)
           ).andThen
             (
-              elevator.goToScoringHeight()
+              elevator.goToScoringHeight(() -> sideCar.getScoringLevel())
             ).until(elevator.atSetpoint)
         ))
         .andThen(

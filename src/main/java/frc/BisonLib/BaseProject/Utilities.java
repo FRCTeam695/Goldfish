@@ -2,6 +2,7 @@ package frc.BisonLib.BaseProject;
 
 import java.util.function.DoubleSupplier;
 
+import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFXS;
 
@@ -21,6 +22,10 @@ public class Utilities {
             setpoint.Output = dutyCycle.getAsDouble();
             motor.setControl(setpoint);
         };
+    }
+
+    public static void publish(DoublePublisher pub, BaseStatusSignal sup) {
+        pub.set(sup.getValueAsDouble());
     }
 
 }

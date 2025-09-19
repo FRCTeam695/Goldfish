@@ -4,7 +4,6 @@ import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.configs.TalonFXSConfiguration;
-import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFXS;
 import com.ctre.phoenix6.signals.MotorArrangementValue;
@@ -14,11 +13,11 @@ import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
 import edu.wpi.first.networktables.DoublePublisher;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import static frc.BisonLib.BaseProject.Utilities.*;
+
 import frc.robot.Constants;
 
 public class AlgaeDislodger extends SubsystemBase{
@@ -113,14 +112,14 @@ public class AlgaeDislodger extends SubsystemBase{
     public void periodic() {
         // Field variable outputs
         // Position
-        r_masterRotPub.set(m_talon.getPosition(true).getValueAsDouble());
-        rotationsTargetPub.set(m_talon.getClosedLoopReference(true).getValueAsDouble());
+        publish(r_masterRotPub, m_talon.getPosition());
+        publish(rotationsTargetPub, m_talon.getClosedLoopReference());
         // Velocity
-        velocityPub.set(m_talon.getVelocity(true).getValueAsDouble());
-        velocityTargetPub.set(m_talon.getClosedLoopReferenceSlope(true).getValueAsDouble());
+        publish(velocityPub, m_talon.getVelocity());
+        publish(velocityTargetPub, m_talon.getClosedLoopReferenceSlope());
         // kS & kG (Feed forward)
-        closedLoopPub.set(m_talon.getClosedLoopProportionalOutput(true).getValueAsDouble());
-        FFPub.set(m_talon.getClosedLoopFeedForward(true).getValueAsDouble());
-        motorVoltagePub.set(m_talon.getMotorVoltage(true).getValueAsDouble());
+        publish(closedLoopPub, m_talon.getClosedLoopProportionalOutput());
+        publish(FFPub, m_talon.getClosedLoopFeedForward());
+        publish(motorVoltagePub, m_talon.getMotorVoltage());
     }
 }

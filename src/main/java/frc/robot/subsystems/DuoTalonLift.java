@@ -23,6 +23,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+import static frc.BisonLib.BaseProject.Utilities.*;
+
 
 public class DuoTalonLift extends SubsystemBase{
     private static final double rotationsPerInch = 52.685/48.5; // ROT/INCH!!!
@@ -75,14 +77,14 @@ public class DuoTalonLift extends SubsystemBase{
         // Creates a new field that contains all output variables
         NetworkTable elevatorTable = inst.getTable("Elevator");
 
-        r_masterRotPub = elevatorTable.getDoubleTopic("Right master motor rotations").publish(PubSubOption.periodic(0.02));
-        rotationsTargetPub = elevatorTable.getDoubleTopic("Position Target").publish(PubSubOption.periodic(0.02));
+        r_masterRotPub = getPubForTopic50Hz(elevatorTable, "Right master motor rotations");
+        rotationsTargetPub = getPubForTopic50Hz(elevatorTable, "Position Target");
         // Velocity
-        velocityPub = elevatorTable.getDoubleTopic("Velocity").publish(PubSubOption.periodic(0.02));
-        velocityTargetPub = elevatorTable.getDoubleTopic("Velocity Target").publish(PubSubOption.periodic(0.02));
+        velocityPub = getPubForTopic50Hz(elevatorTable, "Velocity");
+        velocityTargetPub = getPubForTopic50Hz(elevatorTable, "Velocity Target");
         // kS & kG (Feed forward)
-        closedLoopPub = elevatorTable.getDoubleTopic("Closed Loop Output").publish(PubSubOption.periodic(0.02));
-        FFPub = elevatorTable.getDoubleTopic("Feed Forward").publish(PubSubOption.periodic(0.02));
+        closedLoopPub = getPubForTopic50Hz(elevatorTable, "Closed Loop Output");
+        FFPub = getPubForTopic50Hz(elevatorTable, "Feed Forward");
 
 
         atSetpoint = new Trigger(()-> (Math.abs(r_leaderTalon.getPosition().getValueAsDouble() / rotationsPerInch - inchesSetpoint) < 0.25) && isRunning);
@@ -147,9 +149,9 @@ public class DuoTalonLift extends SubsystemBase{
         SmartDashboard.putNumber("Elevator Set Inches", 0);
     }
 
-    public Command goToScoringHeight(){
+    public Command goToScoringHeight(Supplier<Heights> scoringLevel){
         return run(()->{
-            double newInchesSetpoint = sideCar.getScoringLevel().heightInches;
+            double newInchesSetpoint = scoringLevel.get().heightInches;
 
             /*
             int networkTablesHeight = (int)Math.round(scoringHeight.get(2));
@@ -257,13 +259,13 @@ public class DuoTalonLift extends SubsystemBase{
  
         // Field variable outputs
         // Position
-        r_masterRotPub.set(r_leaderTalon.getPosition(true).getValueAsDouble());
-        rotationsTargetPub.set(r_leaderTalon.getClosedLoopReference(true).getValueAsDouble());
+        publish(r_masterRotPub, r_leaderTalon.getPosition());
+        publish(rotationsTargetPub, r_leaderTalon.getClosedLoopReference());
         // Velocity
-        velocityPub.set(r_leaderTalon.getVelocity(true).getValueAsDouble());
-        velocityTargetPub.set(r_leaderTalon.getClosedLoopReferenceSlope(true).getValueAsDouble());
+        publish(velocityPub, r_leaderTalon.getVelocity());
+        publish(velocityTargetPub, r_leaderTalon.getClosedLoopReferenceSlope());
         // kS & kG (Feed forward)
-        closedLoopPub.set(r_leaderTalon.getClosedLoopProportionalOutput(true).getValueAsDouble());
-        FFPub.set(r_leaderTalon.getClosedLoopFeedForward(true).getValueAsDouble());
+        publish(closedLoopPub, r_leaderTalon.getClosedLoopProportionalOutput());
+        publish(FFPub, r_leaderTalon.getClosedLoopFeedForward());
     }
 }
