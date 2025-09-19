@@ -402,7 +402,7 @@ public class RobotContainer {
     return
     updateTelemetryState(1).andThen(
         // tells the elevator where is will be going later, so it can give semi-accurate time estimates for how long it will take to get there
-        elevator.configureSetpoint().andThen(
+        elevator.configureSetpoint(scoringLevel.get()).andThen(
         parallel(
           
           swerve.alignToReef(location, ()-> elevator.getElevatorTimeToArrival(), true),

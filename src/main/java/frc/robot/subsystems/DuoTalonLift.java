@@ -58,22 +58,17 @@ public class DuoTalonLift extends SubsystemBase{
     private final DoublePublisher closedLoopPub;
     private final DoublePublisher FFPub;
 
-    //public NetworkTable sideCarTable;
-   // public IntegerSubscriber scoringHeight;
+
     public Trigger atSetpoint;
     public Trigger isDeployed;
     public double inchesSetpoint = 0;
     public boolean isRunning = false;
-    public SideCar sideCar;
 
     public TrapezoidProfile heightProfile;
 
     // Constructor
     public DuoTalonLift (NetworkTableInstance inst) {
-        sideCar = new SideCar();
-        //sideCarTable = inst.getTable("sidecarTable");
-        //scoringHeight = sideCarTable.getIntegerTopic("scoringLevel").subscribe(1);
-
+        
         // Creates a new field that contains all output variables
         NetworkTable elevatorTable = inst.getTable("Elevator");
 
@@ -170,9 +165,9 @@ public class DuoTalonLift extends SubsystemBase{
     }
 
 
-    public Command configureSetpoint(){
+    public Command configureSetpoint(Heights setpoint){
         return runOnce(()->{
-            double newInchesSetpoint = sideCar.getScoringLevel().heightInches;
+            double newInchesSetpoint = setpoint.heightInches;
             /*
             int networkTablesHeight = (int)Math.round(scoringHeight.get(2));
             if(networkTablesHeight == 1) newInchesSetpoint = Heights.L1.heightInches;
