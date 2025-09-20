@@ -24,6 +24,7 @@ import com.pathplanner.lib.util.swerve.SwerveSetpoint;
 import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
 import com.studica.frc.AHRS;
 
+import edu.wpi.first.math.MathSharedStore;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
@@ -126,6 +127,60 @@ public class SwerveBase extends SubsystemBase {
 
     public double prevAccelX = 0;
     public double prevAccelY = 0; 
+    
+    // SysID
+    private final SysIdRoutine m_sysIdRoutineTranslation = new SysIdRoutine(
+        new SysIdRoutine.Config(
+            null, // Default ramp rate (1V/s)
+            Volts.of(4), // Reduce dynamic step voltage to 4 to prevent brownout
+            null, // Default timeout (10s)
+
+            state -> SignalLogger.writeString("State", state.toString())
+        ), 
+        new SysIdRoutine.Mechanism(
+            volts -> {
+                System.out.println("iwjfiejfowjfowigjerkgerngern");
+                modules[0].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+                modules[1].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+                modules[2].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+                modules[3].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+            },
+            null, // Left null when using a signal logger
+            this
+        )
+    );
+
+    // SysID
+    private final SysIdRoutine m_sysIdRoutineSteer = new SysIdRoutine(
+        new SysIdRoutine.Config(
+            null, // Default ramp rate (1V/s)
+            Volts.of(4), // Reduce dynamic step voltage to 4 to prevent brownout
+            null, // Default timeout (10s)
+
+            state -> SignalLogger.writeString("State", state.toString())
+        ), 
+        new SysIdRoutine.Mechanism(
+            volts -> {
+                modules[0].getTurnMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+                modules[1].getTurnMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+                modules[2].getTurnMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+                modules[3].getTurnMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+            },
+            null, // Left null when using a signal logger
+            this
+        )
+    );
+
+    /* The SysId routine to test */
+    private SysIdRoutine m_sysIdRoutineToApply = m_sysIdRoutineSteer; //m_sysIdRoutineSteer; m_sysIdRoutineTranslation
+
+    public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+        return m_sysIdRoutineToApply.quasistatic(direction);
+    }
+     
+    public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+        return m_sysIdRoutineToApply.dynamic(direction);
+    }
 
     /**
      * Does all da constructing
@@ -214,35 +269,6 @@ public class SwerveBase extends SubsystemBase {
         SmartDashboard.putData("Robot angle PID controller", thetaController);
 
         m_voltReq = new VoltageOut(0.0); 
-    }
-
-    // SysID
-    private SysIdRoutine m_sysIdRoutine = new SysIdRoutine(
-        new SysIdRoutine.Config(
-            null, // Default ramp rate (1V/s)
-            Volts.of(4), // Reduce dynamic step voltage to 4 to prevent brownout
-            null, // Default timeout (10s)
-
-            (state) -> SignalLogger.writeString("State", state.toString())
-        ), 
-        new SysIdRoutine.Mechanism(
-            (volts) -> {
-                modules[0].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
-                modules[1].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
-                modules[2].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
-                modules[3].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
-            },
-            null, // Left null when using a signal logger
-            this
-        )
-    );
-
-    public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
-        return m_sysIdRoutine.quasistatic(direction);
-    }
-     
-    public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-        return m_sysIdRoutine.dynamic(direction);
     }
 
 
@@ -772,7 +798,6 @@ public class SwerveBase extends SubsystemBase {
         }
     }
 
-
     /*
      * Drives the robot in teleop, we don't want it fighting the auton swerve commands
      */
@@ -784,49 +809,118 @@ public class SwerveBase extends SubsystemBase {
      * Drives swerve given chassis speeds
      * Should be called every loop
      * 
-     * @param speeds the commanded chassis speeds from the joysticks
+     * @param commandedSpeeds the commanded chassis speeds from the joysticks
      * @param fieldOriented A boolean that specifies if the robot should be driven in fieldOriented mode or not
      */
-    public void drive(ChassisSpeeds commandedSpeeds, boolean fieldOriented, boolean useMaxSpeed) {
-        ChassisSpeeds currentRobotRelSpeeds = getLatestChassisSpeed();
+    public void drive(ChassisSpeeds commandedSpeeds, boolean fieldOriented, boolean useMaxSpeed){
 
-        if (fieldOriented) {
-            commandedSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(commandedSpeeds, getSavedPose().getRotation());
+        ChassisSpeeds currentFieldRelSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(commandedSpeeds, getSavedPose().getRotation());
+
+        // I made the convention "v" means robots actual vel and "w" is robots wanted vel
+        double v_x = currentFieldRelSpeeds.vxMetersPerSecond;
+        double v_y = currentFieldRelSpeeds.vyMetersPerSecond;
+        double w_x = commandedSpeeds.vxMetersPerSecond;
+        double w_y = commandedSpeeds.vyMetersPerSecond;
+        double dt = 0.02;
+        
+        double v_mag = Math.hypot(v_x, v_y);
+        double w_along_v = 0.0;
+        
+        if (v_mag > 1e-6) {
+            // project w onto v (commanded velocity component along current velocity direction)
+            double dot = v_x * w_x + v_y * w_y; // w · v
+            w_along_v = dot / v_mag;            // signed scalar projection
+        } else {
+            // if robot is nearly stopped, just use commanded speed magnitude (all commanded vel is speeding us up)
+            w_along_v = Math.hypot(w_x, w_y);
         }
 
-        /*if (commandedSpeeds.vxMetersPerSecond == 0 && commandedSpeeds.vyMetersPerSecond == 0) {
-            commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
-            commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
-            commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
-        }*/
-
+        SmartDashboard.putNumber("w along v", w_along_v);
+        SmartDashboard.putNumber("v mag", v_mag);
         
-            double dvx = commandedSpeeds.vxMetersPerSecond - currentRobotRelSpeeds.vxMetersPerSecond;
-            double dvy = commandedSpeeds.vyMetersPerSecond - currentRobotRelSpeeds.vyMetersPerSecond;
-            
-            double currentTimeDrive = MathSharedStore.getTimestamp();
-            double dt = currentTimeDrive - lastTimeDrive;
-            SmartDashboard.putNumber("Drive Loop Time", currentTimeDrive - lastTimeDrive);
-            lastTimeDrive = currentTimeDrive;
+        // the signum signifies if we are requesting speed up/braking
+        double max_fwd_accel = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ *
+                               (1 - Math.signum(w_along_v - v_mag) * v_mag / Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP);
+        SmartDashboard.putNumber("max fwd accel", max_fwd_accel);
+        
+        double desiredDeltaAlong = w_along_v - v_mag;
+        double maxDeltaAlong = max_fwd_accel * dt;
+        double clampedForwardAccel = MathUtil.clamp(desiredDeltaAlong, -maxDeltaAlong, maxDeltaAlong)/dt;
 
-            double accelMagitude = Math.hypot(dvx, dvy) / dt;
-            
-            if (accelMagitude > Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ) {
-                double scale = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ / accelMagitude;
-                dvx *= scale;
-                dvy *= scale;
+        SmartDashboard.putNumber("clamped forward accel", clampedForwardAccel);
+
+        // project commanded vel onto forward axis, if we aren't moving rn then all wanted vel is parallel
+        double w_parallel_x = (v_mag > 1e-6) ? (v_x / v_mag) * w_along_v : w_x;
+        double w_parallel_y = (v_mag > 1e-6) ? (v_y / v_mag) * w_along_v : w_y;
+
+        // perpendicular component = commanded - parallel
+        double w_perp_x = w_x - w_parallel_x;
+        double w_perp_y = w_y - w_parallel_y;
+        double w_perp_mag = Math.hypot(w_perp_x, w_perp_y);
+
+        // current sideways vel is always 0 since no component of the current vel doesn't point in the direction of the current vel
+        double desiredDeltaPerp = w_perp_mag;
+        double maxDeltaPerp = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ * dt;
+        double clampedSkidAccel = Math.min(desiredDeltaPerp, maxDeltaPerp)/dt;
+
+        // make sure total accel doesnt exceed max accel
+        double a_req_mag = Math.hypot(clampedForwardAccel, clampedSkidAccel);
+        if(a_req_mag > 2 * Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ){
+            SmartDashboard.putBoolean("scaling acceleration", true);
+            double scale = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ/a_req_mag;
+            clampedForwardAccel *= scale;
+            clampedSkidAccel *= scale;
+        }
+        else{
+            SmartDashboard.putBoolean("scaling acceleration", false);
+        }
+        double newForwardVel = v_mag + clampedForwardAccel * dt;
+        SmartDashboard.putNumber("new forward vel", newForwardVel);
+
+        double vx_forward;
+        double vy_forward;
+        if (v_mag > 1e-6) {
+            vx_forward = (v_x/v_mag) * newForwardVel;
+            vy_forward = (v_y/v_mag) * newForwardVel;
+        }
+        else{
+            // if stopped, use commanded direction for initial forward push (preserves user intent)
+            double w_mag = Math.hypot(w_x, w_y);
+            if (w_mag > 1e-6) {
+                vx_forward = (w_x / w_mag) * newForwardVel;
+                vy_forward = (w_y / w_mag) * newForwardVel;
+            } else {
+                vx_forward = 0.0;
+                vy_forward = 0.0;
             }
-
-            commandedSpeeds.vxMetersPerSecond = currentRobotRelSpeeds.vxMetersPerSecond + dvx;
-            commandedSpeeds.vyMetersPerSecond = currentRobotRelSpeeds.vyMetersPerSecond + dvy;
-            commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
+        }
         
+        double vx_perp = 0.0;
+        double vy_perp = 0.0;
+        if(w_perp_mag > 1e-6) {
+            vx_perp = (w_perp_x / w_perp_mag) * clampedSkidAccel * dt;
+            vy_perp = (w_perp_y / w_perp_mag) * clampedSkidAccel * dt;
+        }
+
+        // vx_perp = 0;
+        // vx_perp = 0;
+
+        commandedSpeeds.vxMetersPerSecond = vx_forward + vx_perp;
+        commandedSpeeds.vyMetersPerSecond = vy_forward + vy_perp;
+
+        //commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
+        //commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
+        commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
+        //speeds = applyAccelerationLimit(speeds);
 
         SmartDashboard.putNumber("Zj", commandedSpeeds.omegaRadiansPerSecond);
         SmartDashboard.putNumber("Xj", commandedSpeeds.vxMetersPerSecond);
         SmartDashboard.putNumber("Yj", commandedSpeeds.vyMetersPerSecond);
 
         this.driveRobotRelative(commandedSpeeds, false, useMaxSpeed);
+
+        //SmartDashboard.putBoolean("collision", detectCollision());
+
     }
 
     public void updateOdometryWithKinematics(){
@@ -972,8 +1066,6 @@ public class SwerveBase extends SubsystemBase {
         SmartDashboard.putNumber("Module 4 Angle deg", modStates[3].angle.getDegrees());        
         
         SmartDashboard.putBoolean("Robot Rotation at Setpoint", atRotationSetpoint.getAsBoolean());
-
-        System.out.print(currentModulePositions[0]);
 
         if (currentModuleStates[0] != null) {
             ChassisSpeeds currentFieldRelativeSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), getSavedPose().getRotation());

@@ -258,7 +258,6 @@ public class Swerve extends SwerveBase{
             });
     }
 
-<<<<<<< HEAD
     /* public Command driveToTargetPoseStraightTrapezoidal(Pose2d targetPose, double distanceEnd){
                    
         class MotionState {
@@ -269,10 +268,6 @@ public class Swerve extends SwerveBase{
         MotionState state = new MotionState();
         
         Timer timer = new Timer();
-=======
-
-    public Command driveToTargetPoseStraightTrapezoidal(Pose2d targetPose, double distanceEnd){
->>>>>>> 8fe5a1a08dbfce8012d24e0bdfbb6241f6d24ebd
 
         return 
             (run(
@@ -322,15 +317,12 @@ public class Swerve extends SwerveBase{
                 attractY = unitY * desiredState.velocity;
                 attractX = unitX * desiredState.velocity;
             
-<<<<<<< HEAD
                 SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
 
                 SmartDashboard.putNumber("desiredStateVelocity", desiredState.velocity);
                 SmartDashboard.putNumber("Distance to target trapezoid", Math.hypot(targetPose.getX() - getSavedPose().getX(), targetPose.getY() - getSavedPose().getY()) - distanceEnd);
-=======
                 SmartDashboard.putNumber("desired trapezoidal velocity", desiredState.velocity);
                 SmartDashboard.putNumber("distance to target trapezoid", distance);
->>>>>>> 8fe5a1a08dbfce8012d24e0bdfbb6241f6d24ebd
 
                 SmartDashboard.putNumber("attract speed", Math.hypot(attractX, attractY));
                 
@@ -417,8 +409,6 @@ public class Swerve extends SwerveBase{
             });
     }
 
-<<<<<<< HEAD
-=======
     public Command driveToTargetPoseStraightTrapezoidalProfiledPIDController(Pose2d targetPose, double distanceEnd){
 
         ProfiledPIDController controller = new ProfiledPIDController( 
@@ -523,7 +513,6 @@ public class Swerve extends SwerveBase{
             }));
     }
 
->>>>>>> 8fe5a1a08dbfce8012d24e0bdfbb6241f6d24ebd
 
     public Command leftGyroReset(){
         return resetGyro(90);

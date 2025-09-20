@@ -17,10 +17,13 @@ import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import java.util.Optional;
+
+import com.ctre.phoenix6.SignalLogger;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -113,7 +116,7 @@ public class RobotContainer {
         ()-> DriverStation.isDisabled()
       )
     );
-
+/* 
     driver.a().whileTrue(
       Swerve.driveToTargetPoseStraightTrapezoidal(new Pose2d(1.75,1.5, new Rotation2d(0)), 0.1)
       .andThen(new PrintCommand("I'm Done!"))
@@ -131,8 +134,15 @@ public class RobotContainer {
 
     driver.b().whileTrue(
       Swerve.driveToTargetPoseCurved(new Pose2d(2,2.5, new Rotation2d(0)), 0.5)
-    );
-    
+    );*/
+
+    driver.rightBumper().onTrue(runOnce(() -> SignalLogger.start()));
+    driver.leftBumper().onTrue(runOnce(() -> SignalLogger.stop()));
+    driver.a().whileTrue(Swerve.sysIdQuasistatic(Direction.kForward));
+    driver.b().whileTrue(Swerve.sysIdQuasistatic(Direction.kReverse));
+    driver.x().whileTrue(Swerve.sysIdDynamic(Direction.kForward));
+    driver.y().whileTrue(Swerve.sysIdDynamic(Direction.kReverse));
+
   }
 
   public void configureDefaultCommands(){
