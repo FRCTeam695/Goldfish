@@ -35,6 +35,7 @@ public class EnhancedCommandController extends CommandXboxController{
 
     public ChassisSpeeds getRequestedChassisSpeeds(){
 
+        // this is controller-dependent
         // +X is forward and +Y is left in wpilib coordinates
         double Xj = getLeftY();
         double Yj = getLeftX();
@@ -42,16 +43,21 @@ public class EnhancedCommandController extends CommandXboxController{
         // +Z is ccw
         double Zj = -getSquaredRightStick();
 
-        if(!isRedAlliance()){
-            Xj *= -1;
-            Yj *= -1;
-        }
         double db = 0.2;
 
         Xj = MathUtil.applyDeadband(Xj, db);
         Yj = MathUtil.applyDeadband(Yj, db);
         Zj = MathUtil.applyDeadband(Zj, db);
 
+
+//--------------------------------------------------------
+
+        // everything below is robot-/field-dependent
+        if(!isRedAlliance()){
+            Xj *= -1;
+            Yj *= -1;
+        }
+        
         //WANTED FIELD RELATIVE VELOCITIES
         Xj *= Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP;
         Yj *= Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP;
