@@ -16,10 +16,11 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() {
     m_robotContainer = new RobotContainer();
+    Runnable odometryUpdater = m_robotContainer.getOdometryUpdater();
 
     // Update odometry on a different thread for faster loop period.
     // https://www.desmos.com/calculator/vdgebi9s4t
-    addPeriodic(m_robotContainer.Swerve::updateOdometryWithKinematics, 1.0/Constants.Swerve.ODOMETRY_UPDATE_RATE_HZ_INTEGER);
+    addPeriodic(odometryUpdater::run, 1.0/Constants.Swerve.ODOMETRY_UPDATE_RATE_HZ_INTEGER);
   }
 
   @Override
@@ -43,7 +44,8 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.schedule();
     }
-    m_robotContainer.Swerve.calibrateReefVerticies();
+
+   m_robotContainer.calibrateReefVerticies();
   }
 
   @Override
@@ -58,7 +60,7 @@ public class Robot extends TimedRobot {
       m_autonomousCommand.cancel();
     }
 
-    m_robotContainer.Swerve.calibrateReefVerticies();
+    m_robotContainer.calibrateReefVerticies();
   }
 
   @Override

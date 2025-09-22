@@ -11,7 +11,6 @@ import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.AlgaeDislodger;
 import frc.robot.subsystems.Coralizer;
 import frc.robot.subsystems.Climber;
-import frc.robot.subsystems.SideCar;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 
 import frc.robot.subsystems.DuoTalonLift;
@@ -28,9 +27,6 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import java.util.Optional;
 
-
-import edu.wpi.first.networktables.IntegerSubscriber;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -47,13 +43,12 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class RobotContainer {
 
-  public final Swerve Swerve;
-  public final DuoTalonLift Elevator;
-  public final Coralizer Coralizer;
-  public final AlgaeDislodger Alagizer;
-  public final Climber Climber;
-  public IntegerSubscriber scoringHeight;
-  public final LED led = new LED();
+  private final Swerve Swerve;
+  private final DuoTalonLift Elevator;
+  private final Coralizer Coralizer;
+  private final AlgaeDislodger Alagizer;
+  private final Climber Climber;
+  private final LED led = new LED();
   SendableChooser<Command> autoChooser = new SendableChooser<>();
 
   public int[] reefTags = {6,7,8,9,10,11,17,18,19,20,21,22};
@@ -78,7 +73,6 @@ public class RobotContainer {
     Coralizer = new Coralizer();
     Alagizer = new AlgaeDislodger();
     Climber = new Climber();
-    scoringHeight = NetworkTableInstance.getDefault().getTable("sidecarTable").getIntegerTopic("scoringLevel").subscribe(1);
 
     // SmartDashboarding subsystems allow you to see what commands they are running
     SmartDashboard.putData("Swerve Subsystem", Swerve);
@@ -129,6 +123,14 @@ public class RobotContainer {
     SmartDashboard.putData(autoChooser);
 
     DataLogManager.start();
+  }
+
+  public Runnable getOdometryUpdater(){
+    return Swerve::updateOdometryWithKinematics;
+  }
+
+  public void calibrateReefVerticies(){
+    Swerve.calibrateReefVerticies();
   }
 
 

@@ -17,7 +17,6 @@ import com.ctre.phoenix6.signals.ReverseLimitValue;
 import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 //import edu.wpi.first.wpilibj.DigitalInput;
@@ -25,7 +24,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.subsystems.DuoTalonLift.Heights;
 
 public class Coralizer extends SubsystemBase{
     //DigitalInput beamBreak;
@@ -42,7 +40,6 @@ public class Coralizer extends SubsystemBase{
     public Debouncer beambreakDebouncer;
     public DigitalInput fixedBeambreak;
 
-    private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
     public NetworkTable sideCarTable;
     public IntegerSubscriber scoringHeight;
     public SideCar sideCar;
