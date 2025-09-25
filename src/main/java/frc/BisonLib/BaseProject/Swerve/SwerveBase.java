@@ -776,9 +776,13 @@ public class SwerveBase extends SubsystemBase {
             if(useMaxSpeed) SwerveDriveKinematics.desaturateWheelSpeeds(tmpStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP);
             else SwerveDriveKinematics.desaturateWheelSpeeds(tmpStates, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
             var speeds = Constants.Swerve.kDriveKinematics.toChassisSpeeds(tmpStates);
-            // discretizes the chassis speeds (acccounts for robot skew)
-            chassisSpeeds = ChassisSpeeds.discretize(speeds, Constants.Swerve.DISCRETIZE_TIMESTAMP);
 
+            Rotation2d skewCompensationFactor = Rotation2d.fromRadians(speeds.omegaRadiansPerSecond * Constants.Swerve.SKEW_COMPENSATION_RATE);
+
+            chassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(
+                ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getSavedPose().getRotation()),
+                getSavedPose().getRotation().plus(skewCompensationFactor));
+    
             //SmartDashboard.putString("Swerve/Commanded Chassis Speeds", chassisSpeeds.toString());
             // convert chassis speeds to module states
             SwerveModuleState[] moduleStates = Constants.Swerve.kDriveKinematics.toSwerveModuleStates(chassisSpeeds);
@@ -814,7 +818,7 @@ public class SwerveBase extends SubsystemBase {
      */
     public void drive(ChassisSpeeds commandedSpeeds, boolean fieldOriented, boolean useMaxSpeed){
 
-        ChassisSpeeds currentFieldRelSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(commandedSpeeds, getSavedPose().getRotation());
+        ChassisSpeeds currentFieldRelSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), getSavedPose().getRotation());
 
         // I made the convention "v" means robots actual vel and "w" is robots wanted vel
         double v_x = currentFieldRelSpeeds.vxMetersPerSecond;
@@ -917,7 +921,7 @@ public class SwerveBase extends SubsystemBase {
         SmartDashboard.putNumber("Xj", commandedSpeeds.vxMetersPerSecond);
         SmartDashboard.putNumber("Yj", commandedSpeeds.vyMetersPerSecond);
 
-        this.driveRobotRelative(commandedSpeeds, false, useMaxSpeed);
+        this.driveRobotRelative(ChassisSpeeds.fromFieldRelativeSpeeds(commandedSpeeds, getSavedPose().getRotation()), false, useMaxSpeed);
 
         //SmartDashboard.putBoolean("collision", detectCollision());
 
