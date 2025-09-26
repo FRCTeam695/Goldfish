@@ -856,15 +856,17 @@ public class SwerveBase extends SubsystemBase {
         // project commanded vel onto forward axis, if we aren't moving rn then all wanted vel is parallel
         double w_parallel_x = (v_mag > 1e-6) ? (v_x / v_mag) * w_along_v : w_x;
         double w_parallel_y = (v_mag > 1e-6) ? (v_y / v_mag) * w_along_v : w_y;
+        SmartDashboard.putNumber("parallel cmd vel", Math.hypot(w_parallel_x, w_parallel_y));
 
         // perpendicular component = commanded - parallel
         double w_perp_x = w_x - w_parallel_x;
         double w_perp_y = w_y - w_parallel_y;
         double w_perp_mag = Math.hypot(w_perp_x, w_perp_y);
+        SmartDashboard.putNumber("perp cmd vel", w_perp_mag);
 
         // current sideways vel is always 0 since no component of the current vel doesn't point in the direction of the current vel
         double desiredDeltaPerp = w_perp_mag;
-        double maxDeltaPerp = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ * dt;
+        double maxDeltaPerp = 20 * dt; // oval wheel perp accel???
         double clampedSkidAccel = Math.min(desiredDeltaPerp, maxDeltaPerp)/dt;
 
         // make sure total accel doesnt exceed max accel
@@ -909,11 +911,11 @@ public class SwerveBase extends SubsystemBase {
         // vx_perp = 0;
         // vx_perp = 0;
 
-        commandedSpeeds.vxMetersPerSecond = vx_forward + vx_perp;
-        commandedSpeeds.vyMetersPerSecond = vy_forward + vy_perp;
+        //commandedSpeeds.vxMetersPerSecond = vx_forward + vx_perp;
+        //commandedSpeeds.vyMetersPerSecond = vy_forward + vy_perp;
 
-        //commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
-        //commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
+        commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
+        commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
         commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
         //speeds = applyAccelerationLimit(speeds);
 
