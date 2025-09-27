@@ -814,6 +814,55 @@ public class SwerveBase extends SubsystemBase {
         return pose;
     }
 
+    public ChassisSpeeds getNextChassisSpeeds(Pose2d targetPose) {
+
+        final double kp_attract = 3.5;
+
+        Pose2d robotPose = getSavedPose();
+
+        double dx = targetPose.getX() - robotPose.getX();
+        double dy = targetPose.getY() - robotPose.getY();
+
+        // convert to unit vector and get direction towards target
+        double distance = Math.hypot(dx, dy);
+        double unitX = dx / distance;
+        double unitY = dy / distance;
+
+        SmartDashboard.putNumber("alignment dx", dx);
+        SmartDashboard.putNumber("alignment dy", dy);
+                
+        ChassisSpeeds robotSpeed = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
+                
+        double xvel = robotSpeed.vxMetersPerSecond;
+        double yvel = robotSpeed.vyMetersPerSecond;
+
+        double currentVelocityTowardsTarget = (xvel*dx + yvel*dy)/distance;
+
+        double currentVelocity = Math.hypot(xvel, yvel);
+
+        SmartDashboard.putNumber("current field relative velocity", currentVelocity);
+                
+        SmartDashboard.putNumber("current field relative velocity to target", currentVelocityTowardsTarget);
+    
+        double attractX;
+        double attractY;
+
+        attractY = -unitY * kp_attract;
+        attractX = -unitX * kp_attract;
+            
+        SmartDashboard.putNumber("distance to target trapezoid", distance);
+
+        SmartDashboard.putNumber("attract speed", Math.hypot(attractX, attractY));
+        
+        ChassisSpeeds speeds =
+            new ChassisSpeeds(
+                MathUtil.clamp(attractX, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
+                MathUtil.clamp(attractY, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND),
+            getAngularComponentFromRotationOverride(targetPose.getRotation().getDegrees())
+        );
+
+        return speeds;
+    }
 
     @Override
     public void periodic() {
