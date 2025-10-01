@@ -26,6 +26,7 @@ import com.studica.frc.AHRS;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -37,6 +38,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -62,7 +64,6 @@ public class SwerveBase extends SubsystemBase {
     private final AHRS gyro = new AHRS(AHRS.NavXComType.kMXP_SPI, Constants.Swerve.ODOMETRY_UPDATE_RATE_HZ_INTEGER);
 
 
-    // private final BuiltInAccelerometer rioAccelerometer = new BuiltInAccelerometer();
     // private final LinearFilter xAccelFilter = LinearFilter.movingAverage(5);
     // private final LinearFilter yAccelFilter = LinearFilter.movingAverage(5);
     private final PIDController thetaController = new PIDController(Constants.Swerve.ROBOT_ROTATION_KP, 0, 0);
@@ -102,12 +103,13 @@ public class SwerveBase extends SubsystemBase {
     private final Object gyroLock = new Object();
 
     private Pose2d currentRobotPose = new Pose2d();
-    private SwerveModulePosition[] currentModulePositions = new SwerveModulePosition[4];
-    private SwerveModuleState[] currentModuleStates = new SwerveModuleState[4];
+    private SwerveModulePosition[] currentModulePositions = {new SwerveModulePosition(), new SwerveModulePosition(), new SwerveModulePosition(), new SwerveModulePosition()};
+    private SwerveModuleState[] currentModuleStates = {new SwerveModuleState(), new SwerveModuleState(), new SwerveModuleState(), new SwerveModuleState()};
 
     protected String[] camNames;
     private final SwerveSetpointGenerator setpointGenerator;
     private SwerveSetpoint previousSetpoint;
+
  
     public SlewRateLimiter omegaFilter = new SlewRateLimiter(Math.toRadians(1074.5588535));
     public SlewRateLimiter xFilter = new SlewRateLimiter(Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
@@ -118,6 +120,63 @@ public class SwerveBase extends SubsystemBase {
     //6-11
     // 17 -22
     public int[] validTagIDs;
+
+    public double prevAccelX = 0;
+    public double prevAccelY = 0; 
+    
+    // SysID
+    // private final SysIdRoutine m_sysIdRoutineTranslation = new SysIdRoutine(
+    //     new SysIdRoutine.Config(
+    //         null, // Default ramp rate (1V/s)
+    //         Volts.of(4), // Reduce dynamic step voltage to 4 to prevent brownout
+    //         null, // Default timeout (10s)
+
+    //         state -> SignalLogger.writeString("State", state.toString())
+    //     ), 
+    //     new SysIdRoutine.Mechanism(
+    //         volts -> {
+    //             System.out.println("iwjfiejfowjfowigjerkgerngern");
+    //             modules[0].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+    //             modules[1].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+    //             modules[2].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+    //             modules[3].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+    //         },
+    //         null, // Left null when using a signal logger
+    //         this
+    //     )
+    // );
+
+    // SysID
+    private final SysIdRoutine m_sysIdRoutineSteer = new SysIdRoutine(
+        new SysIdRoutine.Config(
+            null, // Default ramp rate (1V/s)
+            Volts.of(4), // Reduce dynamic step voltage to 4 to prevent brownout
+            null, // Default timeout (10s)
+
+            state -> SignalLogger.writeString("State", state.toString())
+        ), 
+        new SysIdRoutine.Mechanism(
+            volts -> {
+                modules[0].getTurnMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+                modules[1].getTurnMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+                modules[2].getTurnMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+                modules[3].getTurnMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
+            },
+            null, // Left null when using a signal logger
+            this
+        )
+    );
+
+    /* The SysId routine to test */
+    private SysIdRoutine m_sysIdRoutineToApply = m_sysIdRoutineSteer; //m_sysIdRoutineSteer; m_sysIdRoutineTranslation
+
+    public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+        return m_sysIdRoutineToApply.quasistatic(direction);
+    }
+     
+    public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+        return m_sysIdRoutineToApply.dynamic(direction);
+    }
 
     /**
      * Does all da constructing
@@ -208,35 +267,6 @@ public class SwerveBase extends SubsystemBase {
         m_voltReq = new VoltageOut(0.0); 
     }
 
-    // SysID
-    private SysIdRoutine m_sysIdRoutine = new SysIdRoutine(
-        new SysIdRoutine.Config(
-            null, // Default ramp rate (1V/s)
-            Volts.of(4), // Reduce dynamic step voltage to 4 to prevent brownout
-            null, // Default timeout (10s)
-
-            (state) -> SignalLogger.writeString("State", state.toString())
-        ), 
-        new SysIdRoutine.Mechanism(
-            (volts) -> {
-                modules[0].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
-                modules[1].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
-                modules[2].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
-                modules[3].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
-            },
-            null, // Left null when using a signal logger
-            this
-        )
-    );
-
-    public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
-        return m_sysIdRoutine.quasistatic(direction);
-    }
-     
-    public Command sysIdDynamic(SysIdRoutine.Direction direction) {
-        return m_sysIdRoutine.dynamic(direction);
-    }
-
 
     public void playSong(){
         if(modules[0].getModuleType().equals("TalonFXModule")){
@@ -305,13 +335,37 @@ public class SwerveBase extends SubsystemBase {
     /*
      * Sets all the swerve modules to the states we want them to be in (velocity + angle)
      */
-    public void setModules(SwerveModuleState[] desiredStates, boolean useMaxSpeed) {
+   public void setModules(SwerveModuleState[] desiredStates, boolean useMaxSpeed) {
         if(useMaxSpeed) SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP);
         else SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
 
+        double maxAngleDelta = 0;
         for(var module : modules){
-            //SmartDashboard.putString("Swerve/Module State " + module.index, desiredStates[module.index].toString());
-            module.setDesiredState(desiredStates[module.index]);
+            // configure optimization
+            Object[] result = module.getOptimizedModuleState(desiredStates[module.index]);
+            desiredStates[module.index] = (SwerveModuleState) result[0];
+            double angleDelta = (double) result[1];
+
+            //pick largest angle delta
+            maxAngleDelta = Math.max(angleDelta, maxAngleDelta);
+        }
+
+        // calculate compensation factor, I suspect that we need something smoother than the sigmoid but sharper than cosine for optimal better results
+        // consider figuring out a way to change our compensation function depending on what our swerve drive is doing maybe?
+        
+        //this is a function I wanted to try after seeing what happened to the previous one but didn't end up having time
+        //double compensationFactor = -1/(1+Math.pow(Math.E, -30 * (maxAngleDelta-0.3))) + 1;
+
+        // this is the original function I wanted to use, but it would cause the robot to sometimes stop abruptly while changing direction at medium/high velocities because I guess one of the wheels would be far from setpoint
+        //double compensationFactor = -1/(1+Math.pow(Math.E, -90 * (maxAngleDelta-0.1))) + 1;
+        double compensationFactor = Math.cos(maxAngleDelta);
+        SmartDashboard.putNumber("Max Angle Delta", maxAngleDelta);
+        SmartDashboard.putNumber("Module Compensation Factor", compensationFactor);
+
+        for(var module : modules){
+            SwerveModuleState angleOptimizedState = desiredStates[module.index];
+            // set desired state with compensation factor
+            module.setDesiredState(new SwerveModuleState(angleOptimizedState.speedMetersPerSecond * compensationFactor, angleOptimizedState.angle));
         }
         
     }
@@ -494,6 +548,101 @@ public class SwerveBase extends SubsystemBase {
         return resetGyro(0);
     }
     
+    public Command driveToPose(Pose2d targetPose, double distanceEnd){
+
+        // creates a profiled PID controller object and gives it constraints
+        ProfiledPIDController controller = new ProfiledPIDController(
+                    1, 0.0, 0.0,
+                    new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
+
+        // goal state is (0,0) because the distance to the target pose will ultimately be (0,0)
+        TrapezoidProfile.State goalState = new TrapezoidProfile.State(0, 0);
+
+        // setting the goal onto the controller
+        controller.setGoal(goalState);
+
+        return
+            runOnce(()->{
+                Pose2d robotPose = getSavedPose();
+
+                double dx = targetPose.getX() - robotPose.getX();
+                double dy = targetPose.getY() - robotPose.getY();
+
+                double distance = Math.hypot(dx, dy); // diagonal distance from robot to target pose
+
+                SmartDashboard.putNumber("alignment dx", dx);
+                SmartDashboard.putNumber("alignment dy", dy);
+               
+                // retrieiving the current field relative speeds of the robot
+                ChassisSpeeds robotSpeed = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
+               
+                double xvel = robotSpeed.vxMetersPerSecond;
+                double yvel = robotSpeed.vyMetersPerSecond;
+
+                // projecting the current velocity vector onto the ideal distance vector to only get velocity towards target
+                double currentVelocityTowardsTarget = (xvel*dx + yvel*dy)/distance;
+
+                controller.reset(distance, currentVelocityTowardsTarget);
+                controller.calculate(distance, 0);
+
+            }).andThen(
+            (run(
+            ()->{
+
+                SmartDashboard.putBoolean("reached destination", false);
+ 
+                m_field.getObject("targetPose").setPose(targetPose);
+                SmartDashboard.putString("targetPose", targetPose.toString());
+
+                // the current field relative robot pose
+                Pose2d robotPose = getSavedPose();
+
+                double dx = targetPose.getX() - robotPose.getX();
+                double dy = targetPose.getY() - robotPose.getY();
+
+                // converting the errors to components of a unit vector
+                double distance = Math.hypot(dx, dy);
+                double unitX = dx / distance;
+                double unitY = dy / distance;
+
+                SmartDashboard.putNumber("alignment dx", dx);
+                SmartDashboard.putNumber("alignment dy", dy);
+
+                // calculating the desired velocity based on the controller
+                double desiredVelocity = controller.getSetpoint().velocity;
+
+                // calculating the desired velocity for the next loop
+                controller.calculate(distance, 0);
+
+                double attractX;
+                double attractY;
+
+                // makes robot go straight by applying calculated velocity to unit vector
+                attractY = -unitY * desiredVelocity;
+                attractX = -unitX * desiredVelocity;
+           
+                SmartDashboard.putNumber("desired velocity", desiredVelocity);
+                SmartDashboard.putNumber("distance to target trapezoid", distance);
+                SmartDashboard.putNumber("attract speed", Math.hypot(attractX, attractY));
+                
+                ChassisSpeeds speeds =
+                    new ChassisSpeeds(
+                        MathUtil.clamp(attractX, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND),
+                        MathUtil.clamp(attractY, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND),
+                    getAngularComponentFromRotationOverride(targetPose.getRotation().getDegrees())
+                );
+                SmartDashboard.putString("align speeds", speeds.toString());
+
+                drive(speeds, true, false);
+            }
+            ).until(() -> getDistanceToTranslation(targetPose.getTranslation()) < distanceEnd))
+            .andThen(runOnce(()-> {
+                SmartDashboard.putBoolean("reached destination", true);
+                this.stopModules();
+            }))
+        );
+    }
+
 
     public Command resetGyro(double angle){
         return runOnce(
@@ -647,9 +796,13 @@ public class SwerveBase extends SubsystemBase {
             if(useMaxSpeed) SwerveDriveKinematics.desaturateWheelSpeeds(tmpStates, Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP);
             else SwerveDriveKinematics.desaturateWheelSpeeds(tmpStates, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
             var speeds = Constants.Swerve.kDriveKinematics.toChassisSpeeds(tmpStates);
-            // discretizes the chassis speeds (acccounts for robot skew)
-            chassisSpeeds = ChassisSpeeds.discretize(speeds, Constants.Swerve.DISCRETIZE_TIMESTAMP);
 
+            Rotation2d skewCompensationFactor = Rotation2d.fromRadians(speeds.omegaRadiansPerSecond * Constants.Swerve.SKEW_COMPENSATION_RATE);
+
+            chassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(
+                ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getSavedPose().getRotation()),
+                getSavedPose().getRotation().plus(skewCompensationFactor));
+    
             //SmartDashboard.putString("Swerve/Commanded Chassis Speeds", chassisSpeeds.toString());
             // convert chassis speeds to module states
             SwerveModuleState[] moduleStates = Constants.Swerve.kDriveKinematics.toSwerveModuleStates(chassisSpeeds);
@@ -669,7 +822,6 @@ public class SwerveBase extends SubsystemBase {
         }
     }
 
-
     /*
      * Drives the robot in teleop, we don't want it fighting the auton swerve commands
      */
@@ -681,26 +833,121 @@ public class SwerveBase extends SubsystemBase {
      * Drives swerve given chassis speeds
      * Should be called every loop
      * 
-     * @param speeds the commanded chassis speeds from the joysticks
+     * @param commandedSpeeds the commanded chassis speeds from the joysticks
      * @param fieldOriented A boolean that specifies if the robot should be driven in fieldOriented mode or not
      */
-    public void drive(ChassisSpeeds speeds, boolean fieldOriented, boolean useMaxSpeed){
-        speeds.vxMetersPerSecond = xFilter.calculate(speeds.vxMetersPerSecond);
-        speeds.vyMetersPerSecond = yFilter.calculate(speeds.vyMetersPerSecond);
-        speeds.omegaRadiansPerSecond = omegaFilter.calculate(speeds.omegaRadiansPerSecond);
-        //speeds = applyAccelerationLimit(speeds);
+    public void drive(ChassisSpeeds commandedSpeeds, boolean fieldOriented, boolean useMaxSpeed){
 
-        SmartDashboard.putNumber("Zj", speeds.omegaRadiansPerSecond);
-        SmartDashboard.putNumber("Xj", speeds.vxMetersPerSecond);
-        SmartDashboard.putNumber("Yj", speeds.vyMetersPerSecond);
+        ChassisSpeeds currentFieldRelSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), getSavedPose().getRotation());
 
-        if (fieldOriented) {
-            speeds = ChassisSpeeds.fromFieldRelativeSpeeds(speeds, getSavedPose().getRotation());
+        // I made the convention "v" means robots actual vel and "w" is robots wanted vel
+        double v_x = currentFieldRelSpeeds.vxMetersPerSecond;
+        double v_y = currentFieldRelSpeeds.vyMetersPerSecond;
+        double w_x = commandedSpeeds.vxMetersPerSecond;
+        double w_y = commandedSpeeds.vyMetersPerSecond;
+        double dt = 0.02;
+        
+        double v_mag = Math.hypot(v_x, v_y);
+        double w_along_v = 0.0;
+        
+        if (v_mag > 1e-6) {
+            // project w onto v (commanded velocity component along current velocity direction)
+            double dot = v_x * w_x + v_y * w_y; // w · v
+            w_along_v = dot / v_mag;            // signed scalar projection
+        } else {
+            // if robot is nearly stopped, just use commanded speed magnitude (all commanded vel is speeding us up)
+            w_along_v = Math.hypot(w_x, w_y);
         }
 
-        this.driveRobotRelative(speeds, false, useMaxSpeed);
-    }
+        SmartDashboard.putNumber("w along v", w_along_v);
+        SmartDashboard.putNumber("v mag", v_mag);
+        
+        // the signum signifies if we are requesting speed up/braking
+        double max_fwd_accel = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ *
+                               (1 - Math.signum(w_along_v - v_mag) * v_mag / Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP);
+        SmartDashboard.putNumber("max fwd accel", max_fwd_accel);
+        
+        double desiredDeltaAlong = w_along_v - v_mag;
+        double maxDeltaAlong = max_fwd_accel * dt;
+        double clampedForwardAccel = MathUtil.clamp(desiredDeltaAlong, -maxDeltaAlong, maxDeltaAlong)/dt;
 
+        SmartDashboard.putNumber("clamped forward accel", clampedForwardAccel);
+
+        // project commanded vel onto forward axis, if we aren't moving rn then all wanted vel is parallel
+        double w_parallel_x = (v_mag > 1e-6) ? (v_x / v_mag) * w_along_v : w_x;
+        double w_parallel_y = (v_mag > 1e-6) ? (v_y / v_mag) * w_along_v : w_y;
+        SmartDashboard.putNumber("parallel cmd vel", Math.hypot(w_parallel_x, w_parallel_y));
+
+        // perpendicular component = commanded - parallel
+        double w_perp_x = w_x - w_parallel_x;
+        double w_perp_y = w_y - w_parallel_y;
+        double w_perp_mag = Math.hypot(w_perp_x, w_perp_y);
+        SmartDashboard.putNumber("perp cmd vel", w_perp_mag);
+
+        // current sideways vel is always 0 since no component of the current vel doesn't point in the direction of the current vel
+        double desiredDeltaPerp = w_perp_mag;
+        double maxDeltaPerp = 20 * dt; // oval wheel perp accel???
+        double clampedSkidAccel = Math.min(desiredDeltaPerp, maxDeltaPerp)/dt;
+
+        // make sure total accel doesnt exceed max accel
+        double a_req_mag = Math.hypot(clampedForwardAccel, clampedSkidAccel);
+        if(a_req_mag > 2 * Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ){
+            SmartDashboard.putBoolean("scaling acceleration", true);
+            double scale = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ/a_req_mag;
+            clampedForwardAccel *= scale;
+            clampedSkidAccel *= scale;
+        }
+        else{
+            SmartDashboard.putBoolean("scaling acceleration", false);
+        }
+        double newForwardVel = v_mag + clampedForwardAccel * dt;
+        SmartDashboard.putNumber("new forward vel", newForwardVel);
+
+        // double vx_forward;
+        // double vy_forward;
+        // if (v_mag > 1e-6) {
+        //     vx_forward = (v_x/v_mag) * newForwardVel;
+        //     vy_forward = (v_y/v_mag) * newForwardVel;
+        // }
+        // else{
+        //     // if stopped, use commanded direction for initial forward push (preserves user intent)
+        //     double w_mag = Math.hypot(w_x, w_y);
+        //     if (w_mag > 1e-6) {
+        //         vx_forward = (w_x / w_mag) * newForwardVel;
+        //         vy_forward = (w_y / w_mag) * newForwardVel;
+        //     } else {
+        //         vx_forward = 0.0;
+        //         vy_forward = 0.0;
+        //     }
+        // }
+        
+        // double vx_perp = 0.0;
+        // double vy_perp = 0.0;
+        // if(w_perp_mag > 1e-6) {
+        //     vx_perp = (w_perp_x / w_perp_mag) * clampedSkidAccel * dt;
+        //     vy_perp = (w_perp_y / w_perp_mag) * clampedSkidAccel * dt;
+        // }
+
+        // vx_perp = 0;
+        // vx_perp = 0;
+
+        //commandedSpeeds.vxMetersPerSecond = vx_forward + vx_perp;
+        //commandedSpeeds.vyMetersPerSecond = vy_forward + vy_perp;
+
+        commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
+        commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
+        commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
+        //speeds = applyAccelerationLimit(speeds);
+
+        SmartDashboard.putNumber("Zj", commandedSpeeds.omegaRadiansPerSecond);
+        SmartDashboard.putNumber("Xj", commandedSpeeds.vxMetersPerSecond);
+        SmartDashboard.putNumber("Yj", commandedSpeeds.vyMetersPerSecond);
+
+        this.driveRobotRelative(ChassisSpeeds.fromFieldRelativeSpeeds(commandedSpeeds, getSavedPose().getRotation()), false, useMaxSpeed);
+
+        //SmartDashboard.putBoolean("collision", detectCollision());
+
+    }
 
     public void updateOdometryWithKinematics(){
         lastTime = currentTime;
@@ -803,22 +1050,7 @@ public class SwerveBase extends SubsystemBase {
         }
     }
 
-    public Pose2d getSavedPose(){
-        Pose2d pose;
-        odometryLock.readLock().lock();
-        try{
-            pose = currentRobotPose;
-        }finally{
-            odometryLock.readLock().unlock();
-        }
-        return pose;
-    }
-
-    public ChassisSpeeds getNextChassisSpeeds(Pose2d targetPose) {
-
-        final double kp_attract = 3.5;
-
-        Pose2d robotPose = getSavedPose();
+    public ChassisSpeeds getNextSpeedsOutput(Pose2d targetPose, Pose2d robotPose){
 
         double dx = targetPose.getX() - robotPose.getX();
         double dy = targetPose.getY() - robotPose.getY();
@@ -830,29 +1062,17 @@ public class SwerveBase extends SubsystemBase {
 
         SmartDashboard.putNumber("alignment dx", dx);
         SmartDashboard.putNumber("alignment dy", dy);
-                
-        ChassisSpeeds robotSpeed = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
-                
-        double xvel = robotSpeed.vxMetersPerSecond;
-        double yvel = robotSpeed.vyMetersPerSecond;
 
-        double currentVelocityTowardsTarget = (xvel*dx + yvel*dy)/distance;
+        double speed = MathUtil.clamp(3.5 * distance, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
 
-        double currentVelocity = Math.hypot(xvel, yvel);
-
-        SmartDashboard.putNumber("current field relative velocity", currentVelocity);
-                
-        SmartDashboard.putNumber("current field relative velocity to target", currentVelocityTowardsTarget);
-    
         double attractX;
         double attractY;
+        
+        attractY = unitY * speed;
+        attractX = unitX * speed;
+    
 
-        attractY = -unitY * kp_attract;
-        attractX = -unitX * kp_attract;
-            
-        SmartDashboard.putNumber("distance to target trapezoid", distance);
-
-        SmartDashboard.putNumber("attract speed", Math.hypot(attractX, attractY));
+        SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
         
         ChassisSpeeds speeds =
             new ChassisSpeeds(
@@ -863,6 +1083,63 @@ public class SwerveBase extends SubsystemBase {
 
         return speeds;
     }
+
+    public Command driveToTargetPose(Pose2d targetPose, double distanceEnd){
+            
+        return 
+            (run(
+            ()->{
+                // the current field relative robot pose
+                Pose2d robotPose = getSavedPose();
+
+                double dx = targetPose.getX() - robotPose.getX();
+                double dy = targetPose.getY() - robotPose.getY();
+
+                // convert to unit vector and get direction towards target
+                double distance = Math.hypot(dx, dy);
+                double unitX = dx / distance;
+                double unitY = dy / distance;
+
+                SmartDashboard.putNumber("alignment dx", dx);
+                SmartDashboard.putNumber("alignment dy", dy);
+
+                double speed = MathUtil.clamp(3.5 * distance, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
+
+                double attractX;
+                double attractY;
+                
+                attractY = unitY * speed;
+                attractX = unitX * speed;
+            
+
+                SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
+                
+                ChassisSpeeds speeds =
+                    new ChassisSpeeds(
+                        MathUtil.clamp(attractX, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
+                        MathUtil.clamp(attractY, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND),
+                    getAngularComponentFromRotationOverride(targetPose.getRotation().getDegrees())
+                );
+
+                drive(speeds, true, false);
+            }
+            ).until(() -> getDistanceToTranslation(targetPose.getTranslation()) < distanceEnd))
+            .andThen(runOnce(()-> {
+                this.stopModules();
+            }));
+    }
+
+    public Pose2d getSavedPose(){
+        Pose2d pose;
+        odometryLock.readLock().lock();
+        try{
+            pose = currentRobotPose;
+        }finally{
+            odometryLock.readLock().unlock();
+        }
+        return pose;
+    }
+
 
     @Override
     public void periodic() {
@@ -894,5 +1171,13 @@ public class SwerveBase extends SubsystemBase {
         SmartDashboard.putNumber("Module 4 Angle deg", modStates[3].angle.getDegrees());        
         
         SmartDashboard.putBoolean("Robot Rotation at Setpoint", atRotationSetpoint.getAsBoolean());
+
+        if (currentModuleStates[0] != null) {
+            ChassisSpeeds currentFieldRelativeSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), getSavedPose().getRotation());
+            double currentvx = currentFieldRelativeSpeeds.vxMetersPerSecond;
+            double currentvy = currentFieldRelativeSpeeds.vyMetersPerSecond;
+            SmartDashboard.putNumber("Currentvx", currentvx);
+            SmartDashboard.putNumber("Currentvy", currentvy);
+        }
     }
 }

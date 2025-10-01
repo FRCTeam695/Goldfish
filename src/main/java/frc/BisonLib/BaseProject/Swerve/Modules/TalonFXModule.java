@@ -123,6 +123,11 @@ public class TalonFXModule{
         config.Slot0.kS = 0.2;
         config.Slot0.kA = 0.0054112;
 
+        // config.Slot0.kP = 0.2156; 
+        // config.Slot0.kV = 0.1232; 
+        // config.Slot0.kS = 0.2;
+        // config.Slot0.kA = 0.0054112;
+
         config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
         config.CurrentLimits.StatorCurrentLimit = Constants.Swerve.STATOR_CURRENT_LIMIT;
         config.CurrentLimits.SupplyCurrentLimit = Constants.Swerve.SUPPLY_CURRENT_LIMIT;
@@ -139,8 +144,8 @@ public class TalonFXModule{
 
         // Motion Magic (Trapezoid speed control)
         var motionMagicConfigs = config.MotionMagic;
-        motionMagicConfigs.MotionMagicCruiseVelocity = 100; 
-        motionMagicConfigs.MotionMagicAcceleration = 6.5 * Constants.Swerve.DRIVING_GEAR_RATIO / Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS; 
+        motionMagicConfigs.MotionMagicCruiseVelocity = Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP * Constants.Swerve.DRIVING_GEAR_RATIO / Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS; 
+        motionMagicConfigs.MotionMagicAcceleration = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ * Constants.Swerve.DRIVING_GEAR_RATIO / Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS; 
         //motionMagicConfigs.MotionMagicJerk = 2000;
 
         driveMotor.getConfigurator().apply(config);
@@ -173,10 +178,15 @@ public class TalonFXModule{
         // config.Slot0.kP = Constants.Swerve.TURN_WHEEL_KP;
         // config.Slot0.kD = Constants.Swerve.TURN_WHEEL_KD;
         // config.Slot0.kS = Constants.Swerve.TURN_WHEEL_KS;
+        // config.Slot0.kP = 43.8;
+        // config.Slot0.kS = 0.1111;
+        // config.Slot0.kA = 0.12783;
+        // config.Slot0.kV = 2.4877;
         config.Slot0.kP = 43.8;
         config.Slot0.kS = 0.1111;
         config.Slot0.kA = 0.12783;
         config.Slot0.kV = 2.4877;
+
 
         config.Slot0.StaticFeedforwardSign = StaticFeedforwardSignValue.UseVelocitySign;
         
@@ -227,6 +237,10 @@ public class TalonFXModule{
         turnMotor.set(v);
     }
 
+    public void setDriveMotor(double v){
+        driveMotor.set(v);
+    }
+
     public double start_rotation_sample(){
         rot_sample = getRawDrivePosition();
         return rot_sample;
@@ -248,10 +262,6 @@ public class TalonFXModule{
         return driveMotor.getAcceleration().getValueAsDouble() / Constants.Swerve.DRIVING_GEAR_RATIO * Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS;
     }
 
-    public double getTurnVelocity(){
-        return turnMotor.getVelocity().getValueAsDouble() / Constants.Swerve.TURNING_GEAR_RATIO * Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS;
-    }
-
     protected double getCANCoderRadians(){
         double angleRad = rotationSignal.getValueAsDouble() * 2 * Math.PI;
         // SmartDashboard.putNumber("Module " + (this.index + 1) +  " Angle Radians", angleRad);
@@ -270,12 +280,7 @@ public class TalonFXModule{
     }
 
 
-    /**
-     * Sets the module to a given state
-     * 
-     * 2DO - Use feedforward on drive motor
-     */
-    public void setDesiredState(SwerveModuleState desiredState) {
+    public Object[] getOptimizedModuleState(SwerveModuleState desiredState){
         Rotation2d latestAngle;
 
         // this way drive and odometry cant acess the angle in latestPosition at the same time
@@ -295,14 +300,21 @@ public class TalonFXModule{
               -desiredState.speedMetersPerSecond, desiredState.angle.rotateBy(Rotation2d.kPi));
         }
 
-        double velocity = Math.cos(Math.abs(desiredState.angle.getRadians() -  latestAngle.getRadians())) * desiredState.speedMetersPerSecond;
-        //driveMotor.set(velocity/Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS);
+        return new Object[]{desiredState, Math.abs(desiredState.angle.minus(latestAngle).getRadians())};
+    }
+
+
+    /**
+     * Sets the module to a given state
+     * 
+     * 2DO - Use feedforward on drive motor
+     */
+    public void setDesiredState(SwerveModuleState desiredState) {
+        
         driveMotor.setControl(
-            velocitySetter.withVelocity(velocity * Constants.Swerve.DRIVING_GEAR_RATIO/Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS)
+            velocitySetter.withVelocity(desiredState.speedMetersPerSecond * Constants.Swerve.DRIVING_GEAR_RATIO/Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS)
         );
         
-        //driveMotor.set(Math.cos(Math.abs(desiredState.angle.getRadians() -  latestAngle.getRadians())) * desiredState.speedMetersPerSecond/Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS);
-
 
         turnMotor.setControl(
             //rotationSetter.withPosition(Rotation2d.fromDegrees(175 * Math.signum(desiredState.angle.getDegrees())).getRotations())
@@ -316,9 +328,6 @@ public class TalonFXModule{
         SmartDashboard.putNumber("Module " + (this.index+1) + " Angular Acceleration", turnMotor.getAcceleration().getValueAsDouble());
 
         SmartDashboard.putNumber("Module " + (this.index+1) + " Motor Velocity", driveMotor.getVelocity().getValueAsDouble() / Constants.Swerve.DRIVING_GEAR_RATIO * Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS);
-        SmartDashboard.putNumber("Module " + (this.index+1) + " PID Desired Velocity", velocity);
-
-        SmartDashboard.putNumber("Module " + (this.index+1) + " Velocity Error", (velocity)-(driveMotor.getVelocity().getValueAsDouble() / Constants.Swerve.DRIVING_GEAR_RATIO * Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS));
 
         
     }

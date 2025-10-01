@@ -31,9 +31,9 @@ public class Coralizer extends SubsystemBase {
 
     // triggers
     public boolean isSafeToRaiseElevator;
-    public static Trigger safeToRaiseElevator;
+    public final Trigger safeToRaiseElevator;
     private boolean hasSeenFirstBreak;
-    public static Trigger seenFirstBreak;
+    public final Trigger seenFirstBreak;
 
     // sidecar & network tables
     public IntegerSubscriber scoringHeight;
@@ -121,13 +121,13 @@ public class Coralizer extends SubsystemBase {
     public Command advanceCoralOntoElevatorUntilCoralizerDetectsPositionChange() {
         return runOnce(() -> {
             coralizer.setPosition(0.0);
-            intake.set(0.25);
-            coralizer.set(0.25);
+            intake.set(0.2);
+            coralizer.set(0.2);
 
         }).andThen(run(() -> {})
 
         ).until(() -> 
-            (coralizer.getPosition().getValueAsDouble() >= 21.0) && (!beamBreak.get())
+            (coralizer.getPosition().getValueAsDouble() >= 19.5) && (!beamBreak.get())
 
         ).finallyDo(() -> {
             coralizer.set(0.0);

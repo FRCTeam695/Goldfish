@@ -135,6 +135,10 @@ public class RobotContainer {
   }
 
 
+  public Runnable getOdometryUpdater(){
+    return Swerve::updateOdometryWithKinematics;
+  }
+  
   
   /**
    * Use this method to define your trigger->command mappings. Triggers can be created via the
@@ -230,6 +234,7 @@ public class RobotContainer {
 
     // auto score
     driver.x().whileTrue(
+      //Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false)
       alignAndScore(Optional.empty())
     );
 
