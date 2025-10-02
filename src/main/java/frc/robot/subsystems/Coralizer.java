@@ -136,6 +136,19 @@ public class Coralizer extends SubsystemBase {
         });
     }
 
+    public Command rollbackUntilCoralIsNotTooFarOut(){
+        return runOnce(()-> {
+            coralizer.setPosition(0.0);
+            coralizer.set(-0.2);
+        }).andThen(run(() -> {})
+        ).until(() -> 
+            (coralizer.getPosition().getValueAsDouble() <= -2.0) || (beamBreak.get())
+        ).finallyDo(() -> {
+            coralizer.set(0.0);
+            coralizer.setPosition(0.0);
+        });
+    }
+
     public Command L1Scoring() {
         return runOnce(
             () -> {
@@ -210,7 +223,7 @@ public class Coralizer extends SubsystemBase {
         return either(
                 L1Scoring(),
                 runIndexerInwardUntilCoralizerEncoderDetectsCoral()
-                        .andThen(advanceCoralOntoElevatorUntilCoralizerDetectsPositionChange()),
+                        .andThen(advanceCoralOntoElevatorUntilCoralizerDetectsPositionChange()).andThen(rollbackUntilCoralIsNotTooFarOut()),
                 () -> (int) Math.round(scoringHeight.get(Constants.Coralizer.scoringHeightDefault)) == 1)
                 .withName("intake");
 
