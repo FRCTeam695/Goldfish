@@ -39,7 +39,7 @@ public class Swerve extends SwerveBase{
     
 
 
-    public final double kp_attract = 3.5;
+    public final double kp_attract = 3;
 
     // we will tune this on the practice field
     public final double kp_repulse = 2;
@@ -113,12 +113,21 @@ public class Swerve extends SwerveBase{
                 double dx = targetLocationPose.getX()-robotPose.getX();
                 double dy = targetLocationPose.getY() - robotPose.getY();
 
+                double distance = Math.hypot(dx, dy);
+
                 SmartDashboard.putNumber("alignment dx", dx);
                 SmartDashboard.putNumber("alignment dy", dy);
 
+                double unitX = dx/distance;
+                double unitY = dy/distance;
+
+                double speed = MathUtil.clamp(kp_attract * distance, 
+                -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, 
+                Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
+                
                 // calculate attraction forces
-                double attractX = kp_attract * dx;
-                double attractY = kp_attract * dy;
+                double attractX = speed * unitX;
+                double attractY = speed * unitY;
 
                 double repulsionX = 0;
                 double repulsionY = 0;
@@ -129,6 +138,8 @@ public class Swerve extends SwerveBase{
                 // if its negative we have to move backwards
                 double distanceForward = dx * targetLocationPose.getRotation().getCos() + dy * targetLocationPose.getRotation().getSin();
                 double distanceToTarget = getDistanceToTranslation(targetLocationPose.getTranslation());
+
+              
 
                 // if we are within 20 cm of target its impossible 4 us 2 collide
                 boolean willCollideWithReef = distanceForward < 0 && distanceToTarget > 0.2;

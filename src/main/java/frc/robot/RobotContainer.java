@@ -234,7 +234,7 @@ public class RobotContainer {
 
     // auto score
     driver.x().whileTrue(
-      //Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false)
+      //Swerve.alignToReef(Optional.of("A"), ()-> Elevator.getElevatorTimeToArrival(), false)
       alignAndScore(Optional.empty())
     );
 
