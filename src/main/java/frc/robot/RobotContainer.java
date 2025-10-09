@@ -176,7 +176,7 @@ public class RobotContainer {
 
     // starts the intake
     driver.leftTrigger().onTrue(
-        Coralizer.intake()
+        Coralizer.intake().andThen(new WaitCommand(0.25).andThen(Coralizer.setSafeToRaiseElevator()))
     );
 
     // drives to the nearest feeder station
@@ -231,11 +231,10 @@ public class RobotContainer {
 
     driver.a().onFalse(Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp));
 
-
     // auto score
     driver.x().whileTrue(
-      //Swerve.alignToReef(Optional.of("A"), ()-> Elevator.getElevatorTimeToArrival(), false)
-      alignAndScore(Optional.empty())
+      Swerve.alignToReef(Optional.of("A"), ()-> Elevator.getElevatorTimeToArrival(), false)
+      //alignAndScore(Optional.empty())
     );
 
 
@@ -330,6 +329,10 @@ public class RobotContainer {
     //   ).andThen(new WaitCommand(0.6))
     //   .andThen(Coralizer.runCoralizer(()-> 0).alongWith(Elevator.slowRaise(0)))
     // );
+
+    driver.rightStick().whileTrue(
+      Coralizer.ejectCoral().andThen(Coralizer.runIntakeAndCoralizer(()->0))
+    );
   }
 
   public void configureDefaultCommands(){
