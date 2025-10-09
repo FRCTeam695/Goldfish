@@ -3,8 +3,6 @@ package frc.robot;
 import java.util.HashMap;
 import java.util.Map;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
@@ -105,6 +103,7 @@ public class Constants {
         public static final double GYRO_DRIFT_COMPENSATION = CHOSEN_CONSTANTS.gyroDriftCompensation;
         public static final double SKEW_COMPENSATION_RATE = -0.07;
 
+        public static final double MAX_SKID_ACCEL = 20;
         public static final double MAX_ACCELERATION_RADIANS_PER_SECOND_SQUARED = CHOSEN_CONSTANTS.maxAngularAccelerationRadPerSecondSquared;
         public static final double DISCRETIZE_TIMESTAMP = 0.02;
         public static final int ODOMETRY_UPDATE_RATE_HZ_INTEGER = 200;

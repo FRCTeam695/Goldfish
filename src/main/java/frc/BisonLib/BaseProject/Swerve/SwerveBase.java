@@ -13,7 +13,6 @@ import com.ctre.phoenix6.Orchestra;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.controls.VoltageOut;
-import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.PIDConstants;
@@ -24,7 +23,6 @@ import com.pathplanner.lib.util.swerve.SwerveSetpoint;
 import com.pathplanner.lib.util.swerve.SwerveSetpointGenerator;
 import com.studica.frc.AHRS;
 
-import edu.wpi.first.math.MathSharedStore;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.controller.PIDController;
@@ -42,10 +40,8 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
-import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.BuiltInAccelerometer.Range;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -68,7 +64,6 @@ public class SwerveBase extends SubsystemBase {
     private final AHRS gyro = new AHRS(AHRS.NavXComType.kMXP_SPI, Constants.Swerve.ODOMETRY_UPDATE_RATE_HZ_INTEGER);
 
 
-    private final BuiltInAccelerometer rioAccelerometer = new BuiltInAccelerometer();
     // private final LinearFilter xAccelFilter = LinearFilter.movingAverage(5);
     // private final LinearFilter yAccelFilter = LinearFilter.movingAverage(5);
     private final PIDController thetaController = new PIDController(Constants.Swerve.ROBOT_ROTATION_KP, 0, 0);
@@ -127,28 +122,7 @@ public class SwerveBase extends SubsystemBase {
 
     public double prevAccelX = 0;
     public double prevAccelY = 0; 
-    
-    // SysID
-    private final SysIdRoutine m_sysIdRoutineTranslation = new SysIdRoutine(
-        new SysIdRoutine.Config(
-            null, // Default ramp rate (1V/s)
-            Volts.of(4), // Reduce dynamic step voltage to 4 to prevent brownout
-            null, // Default timeout (10s)
 
-            state -> SignalLogger.writeString("State", state.toString())
-        ), 
-        new SysIdRoutine.Mechanism(
-            volts -> {
-                System.out.println("iwjfiejfowjfowigjerkgerngern");
-                modules[0].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
-                modules[1].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
-                modules[2].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
-                modules[3].getDriveMotor().setControl(m_voltReq.withOutput(volts.in(Volts)));
-            },
-            null, // Left null when using a signal logger
-            this
-        )
-    );
 
     // SysID
     private final SysIdRoutine m_sysIdRoutineSteer = new SysIdRoutine(
@@ -847,11 +821,7 @@ public class SwerveBase extends SubsystemBase {
                                (1 - Math.signum(w_along_v - v_mag) * v_mag / Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP);
         SmartDashboard.putNumber("max fwd accel", max_fwd_accel);
         
-        double desiredDeltaAlong = w_along_v - v_mag;
-        double maxDeltaAlong = max_fwd_accel * dt;
-        double clampedForwardAccel = MathUtil.clamp(desiredDeltaAlong, -maxDeltaAlong, maxDeltaAlong)/dt;
-
-        SmartDashboard.putNumber("clamped forward accel", clampedForwardAccel);
+        double desiredForwardAccel = (w_along_v - v_mag)/dt;
 
         // project commanded vel onto forward axis, if we aren't moving rn then all wanted vel is parallel
         double w_parallel_x = (v_mag > 1e-6) ? (v_x / v_mag) * w_along_v : w_x;
@@ -865,22 +835,21 @@ public class SwerveBase extends SubsystemBase {
         SmartDashboard.putNumber("perp cmd vel", w_perp_mag);
 
         // current sideways vel is always 0 since no component of the current vel doesn't point in the direction of the current vel
-        double desiredDeltaPerp = w_perp_mag;
-        double maxDeltaPerp = 20 * dt; // oval wheel perp accel???
-        double clampedSkidAccel = Math.min(desiredDeltaPerp, maxDeltaPerp)/dt;
+        double desiredSkidAccel = w_perp_mag;
 
         // make sure total accel doesnt exceed max accel
-        double a_req_mag = Math.hypot(clampedForwardAccel, clampedSkidAccel);
-        if(a_req_mag > 2 * Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ){
+        double norm = Math.pow(desiredForwardAccel/Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ, 2)
+                    + Math.pow(desiredSkidAccel/Constants.Swerve.MAX_SKID_ACCEL, 2);
+        if(norm > 1){
             SmartDashboard.putBoolean("scaling acceleration", true);
-            double scale = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ/a_req_mag;
-            clampedForwardAccel *= scale;
-            clampedSkidAccel *= scale;
+            double scale = 1 / Math.sqrt(norm);
+            desiredForwardAccel *= scale;
+            desiredSkidAccel *= scale;
         }
         else{
             SmartDashboard.putBoolean("scaling acceleration", false);
         }
-        double newForwardVel = v_mag + clampedForwardAccel * dt;
+        double newForwardVel = v_mag + desiredForwardAccel * dt;
         SmartDashboard.putNumber("new forward vel", newForwardVel);
 
         double vx_forward;
@@ -904,18 +873,18 @@ public class SwerveBase extends SubsystemBase {
         double vx_perp = 0.0;
         double vy_perp = 0.0;
         if(w_perp_mag > 1e-6) {
-            vx_perp = (w_perp_x / w_perp_mag) * clampedSkidAccel * dt;
-            vy_perp = (w_perp_y / w_perp_mag) * clampedSkidAccel * dt;
+            vx_perp = (w_perp_x / w_perp_mag) * desiredSkidAccel * dt;
+            vy_perp = (w_perp_y / w_perp_mag) * desiredSkidAccel * dt;
         }
 
         // vx_perp = 0;
         // vx_perp = 0;
 
-        //commandedSpeeds.vxMetersPerSecond = vx_forward + vx_perp;
-        //commandedSpeeds.vyMetersPerSecond = vy_forward + vy_perp;
+        commandedSpeeds.vxMetersPerSecond = vx_forward + vx_perp;
+        commandedSpeeds.vyMetersPerSecond = vy_forward + vy_perp;
 
-        commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
-        commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
+        // commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
+        // commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
         commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
         //speeds = applyAccelerationLimit(speeds);
 

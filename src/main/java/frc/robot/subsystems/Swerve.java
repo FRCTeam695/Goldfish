@@ -1,24 +1,16 @@
 package frc.robot.subsystems;
 
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.DoubleSupplier;
-import java.util.function.Supplier;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringSubscriber;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -428,8 +420,8 @@ public class Swerve extends SwerveBase{
 
                 // convert to unit vector and get direction towards target
                 double distance = Math.hypot(dx, dy);
-                double unitX = dx / distance;
-                double unitY = dy / distance;
+                // double unitX = dx / distance;
+                // double unitY = dy / distance;
 
                 SmartDashboard.putNumber("alignment dx", dx);
                 SmartDashboard.putNumber("alignment dy", dy);
