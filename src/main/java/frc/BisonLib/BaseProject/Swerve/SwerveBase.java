@@ -587,7 +587,7 @@ public class SwerveBase extends SubsystemBase {
                 );
                 SmartDashboard.putString("align speeds", speeds.toString());
 
-                drive(speeds, true, false);
+                drive(speeds, true, false, false);
             }
             ).until(() -> getDistanceToTranslation(targetPose.getTranslation()) < distanceEnd))
             .andThen(runOnce(()-> {
@@ -733,7 +733,7 @@ public class SwerveBase extends SubsystemBase {
             ()-> {
                     ChassisSpeeds speeds = speedSupplier.get();
                     speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(angleDegrees.getAsDouble());
-                    drive(speeds, true, true);
+                    drive(speeds, true, true, false);
                  }
         );
     }
@@ -779,9 +779,9 @@ public class SwerveBase extends SubsystemBase {
     /*
      * Drives the robot in teleop, we don't want it fighting the auton swerve commands
      */
-    public void teleopDefaultCommand(Supplier<ChassisSpeeds> speedsSupplier, boolean fieldOriented){
-        drive(speedsSupplier.get(), true, true);
-    }
+    public void teleopDefaultCommand(Supplier<ChassisSpeeds> speedsSupplier, boolean fieldOriented, boolean accelComp){
+        drive(speedsSupplier.get(), true, true, accelComp);
+    } //590, 736
     
     /**
      * Drives swerve given chassis speeds
@@ -790,7 +790,7 @@ public class SwerveBase extends SubsystemBase {
      * @param commandedSpeeds the commanded chassis speeds from the joysticks
      * @param fieldOriented A boolean that specifies if the robot should be driven in fieldOriented mode or not
      */
-    public void drive(ChassisSpeeds commandedSpeeds, boolean fieldOriented, boolean useMaxSpeed){
+    public void drive(ChassisSpeeds commandedSpeeds, boolean fieldOriented, boolean useMaxSpeed, boolean filter){
 
         ChassisSpeeds currentFieldRelSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), getSavedPose().getRotation());
 
@@ -835,7 +835,7 @@ public class SwerveBase extends SubsystemBase {
         SmartDashboard.putNumber("perp cmd vel", w_perp_mag);
 
         // current sideways vel is always 0 since no component of the current vel doesn't point in the direction of the current vel
-        double desiredSkidAccel = w_perp_mag;
+        double desiredSkidAccel = w_perp_mag/dt;
 
         // make sure total accel doesnt exceed max accel
         double norm = Math.pow(desiredForwardAccel/Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ, 2)
@@ -879,12 +879,17 @@ public class SwerveBase extends SubsystemBase {
 
         // vx_perp = 0;
         // vx_perp = 0;
-
         commandedSpeeds.vxMetersPerSecond = vx_forward + vx_perp;
         commandedSpeeds.vyMetersPerSecond = vy_forward + vy_perp;
-
-        // commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
-        // commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
+        /* 
+        if (filter) {
+            commandedSpeeds.vxMetersPerSecond = vx_forward + vx_perp;
+            commandedSpeeds.vyMetersPerSecond = vy_forward + vy_perp;
+        }
+        else {
+            commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
+            commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
+        }*/
         commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
         //speeds = applyAccelerationLimit(speeds);
 
@@ -897,6 +902,7 @@ public class SwerveBase extends SubsystemBase {
         //SmartDashboard.putBoolean("collision", detectCollision());
 
     }
+
 
     public void updateOdometryWithKinematics(){
         lastTime = currentTime;

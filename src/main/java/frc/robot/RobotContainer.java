@@ -57,6 +57,9 @@ public class RobotContainer {
   private static final EnhancedCommandController driver =
       new EnhancedCommandController(0);
 
+
+  public boolean stupidBool = true;
+
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     Swerve = new Swerve(camNames, modules, reefTags);
@@ -131,12 +134,17 @@ public class RobotContainer {
       Swerve.driveToTargetPoseCurved(new Pose2d(2,2.5, new Rotation2d(0)), 0.5)
     );*/
 
+    driver.leftBumper().whileTrue(run(() -> stupidBool = true)); //filters
+    driver.leftBumper().whileFalse(run(() -> stupidBool = false));
+    
+    /* sysID
     driver.rightBumper().onTrue(runOnce(() -> SignalLogger.start()));
     driver.leftBumper().onTrue(runOnce(() -> SignalLogger.stop()));
     driver.a().whileTrue(Swerve.sysIdQuasistatic(Direction.kForward));
     driver.b().whileTrue(Swerve.sysIdQuasistatic(Direction.kReverse));
     driver.x().whileTrue(Swerve.sysIdDynamic(Direction.kForward));
     driver.y().whileTrue(Swerve.sysIdDynamic(Direction.kReverse));
+    */
 
   }
 
@@ -149,7 +157,8 @@ public class RobotContainer {
             ()-> 
               Swerve.teleopDefaultCommand(
                 driver::getRequestedChassisSpeeds,
-                true
+                true,
+                stupidBool
               )
               ,
               Swerve
