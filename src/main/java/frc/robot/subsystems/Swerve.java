@@ -33,11 +33,6 @@ public class Swerve extends SwerveBase{
 
     //NT
     public NetworkTableInstance inst;
-    public NetworkTable sideCarTable;
-    public StringSubscriber scoringLocationSub; 
-    public StringSubscriber scoringModeSub;
-    
-
 
     public final double kp_attract = 3.5;
 
@@ -67,9 +62,6 @@ public class Swerve extends SwerveBase{
         sideCar = new SideCar();
 
         inst = NetworkTableInstance.getDefault();
-        sideCarTable = inst.getTable("sidecarTable");  
-        scoringLocationSub = sideCarTable.getStringTopic("scoringLocation").subscribe("");
-        scoringModeSub = sideCarTable.getStringTopic("currentIntakeMode").subscribe("");
 
         isCloseToDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 2.5);
         isAtDestination = new Trigger(() -> getDistanceToTranslation(targetLocationPose.getTranslation()) < 0.02);
@@ -93,7 +85,7 @@ public class Swerve extends SwerveBase{
      *                 If you supply an empty optional, then it pulls the location to 
      *                 align to off networktables from the operator interface
      */
-    public Command alignToReef(Optional<String> location, DoubleSupplier elevatorTimeToArrival, boolean willRaiseElevator){
+    public Command alignToReef(Optional<String> location, String scoringHeight, DoubleSupplier elevatorTimeToArrival, boolean willRaiseElevator){
         return 
             runOnce(()-> currentlyFullyAutonomous = true)
             .andThen(
@@ -104,7 +96,7 @@ public class Swerve extends SwerveBase{
                 Pose2d robotPose = getSavedPose();
                 // if no location is provided, we grab it from networktables
                 if(location.isEmpty()){
-                    targetLocationPose = getCoralScoringLocation(sideCar.getScoringLocation().get());
+                    targetLocationPose = getCoralScoringLocation(scoringHeight);
                 }
                 // if a location is provided, we just drive to the provided lcoation
                 else{

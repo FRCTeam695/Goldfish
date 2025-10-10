@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import java.util.HashMap;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTable;
@@ -27,18 +28,14 @@ public class SideCar extends SubsystemBase{
 
     public Heights getScoringLevel(){
         int integerHeight = (int)Math.round(scoringHeight.get(2));
+        HashMap<String, Heights> heightsMap = new HashMap<>();
         
-        Heights height = Heights.L1; //defaults to L1
-        
-        if (integerHeight == 1){
-            height = Heights.L1;
-        } else if(integerHeight == 2){
-            height = Heights.L2;
-        } else if(integerHeight == 3){
-            height = Heights.L3;
-        } else if(integerHeight == 4){
-            height = Heights.L4;
-        } 
+        heightsMap.put("1", Heights.L1);
+        heightsMap.put("2", Heights.L2);
+        heightsMap.put("3", Heights.L3);
+        heightsMap.put("4", Heights.L4);
+
+        Heights height = heightsMap.get(Integer.toString(integerHeight)); //defaults to ground level
 
         return height;
     }

@@ -12,6 +12,7 @@ import frc.robot.subsystems.AlgaeDislodger;
 import frc.robot.subsystems.Coralizer;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.SideCar;
+import frc.robot.subsystems.DuoTalonLift.Heights;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 
 import frc.robot.subsystems.DuoTalonLift;
@@ -54,6 +55,7 @@ public class RobotContainer {
   public final Climber Climber;
   public IntegerSubscriber scoringHeight;
   public final LED led = new LED();
+  public final SideCar sideCar;
   SendableChooser<Command> autoChooser = new SendableChooser<>();
 
   public int[] reefTags = {6,7,8,9,10,11,17,18,19,20,21,22};
@@ -78,6 +80,7 @@ public class RobotContainer {
     Coralizer = new Coralizer();
     Alagizer = new AlgaeDislodger();
     Climber = new Climber();
+    sideCar = new SideCar();
     scoringHeight = NetworkTableInstance.getDefault().getTable("sidecarTable").getIntegerTopic("scoringLevel").subscribe(1);
 
     // SmartDashboarding subsystems allow you to see what commands they are running
@@ -185,11 +188,10 @@ public class RobotContainer {
     driver.back().onTrue(Swerve.resetGyro());
 
 
-
     //driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
     driver.rightBumper().onTrue(
       either(
-        Elevator.goToScoringHeight(), new WaitCommand(0), Coralizer.safeToRaiseElevator
+        Elevator.goToScoringHeight(sideCar.getScoringLevel().heightInches), new WaitCommand(0), Coralizer.safeToRaiseElevator
       )
     );
     driver.rightBumper().onFalse(
@@ -398,7 +400,7 @@ public class RobotContainer {
         Elevator.configureSetpoint().andThen(
         parallel(
           
-          Swerve.alignToReef(location, ()-> Elevator.getElevatorTimeToArrival(), true),
+          Swerve.alignToReef(location, sideCar.getScoringLocation().get(), ()-> Elevator.getElevatorTimeToArrival(), true),
           
           // all these things need 2 be true b4 it's safe to raise the elevator
           new WaitUntilCommand(
@@ -411,7 +413,7 @@ public class RobotContainer {
             updateTelemetryState(2)
           ).andThen
             (
-              Elevator.goToScoringHeight()
+              Elevator.goToScoringHeight(sideCar.getScoringLevel().heightInches)
             ).until(Elevator.atSetpoint)
         ))
         .andThen(

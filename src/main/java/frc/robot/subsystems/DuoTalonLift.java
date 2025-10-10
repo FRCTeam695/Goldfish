@@ -59,21 +59,15 @@ public class DuoTalonLift extends SubsystemBase{
     private final DoublePublisher closedLoopPub = elevatorTable.getDoubleTopic("Closed Loop Output").publish(PubSubOption.periodic(0.02));
     private final DoublePublisher FFPub = elevatorTable.getDoubleTopic("Feed Forward").publish(PubSubOption.periodic(0.02));
 
-    //public NetworkTable sideCarTable;
-   // public IntegerSubscriber scoringHeight;
     public Trigger atSetpoint;
     public Trigger isDeployed;
     public double inchesSetpoint = 0;
     public boolean isRunning = false;
-    public SideCar sideCar;
 
     public TrapezoidProfile heightProfile;
 
     // Constructor
     public DuoTalonLift () {
-        sideCar = new SideCar();
-        //sideCarTable = inst.getTable("sidecarTable");
-        //scoringHeight = sideCarTable.getIntegerTopic("scoringLevel").subscribe(1);
         atSetpoint = new Trigger(()-> (Math.abs(r_leaderTalon.getPosition().getValueAsDouble() / rotationsPerInch - inchesSetpoint) < 0.25) && isRunning);
         isDeployed = new Trigger(()-> (Math.abs(r_leaderTalon.getPosition().getValueAsDouble() / rotationsPerInch - Heights.Ground.heightInches) > 0.25));
 
@@ -136,38 +130,18 @@ public class DuoTalonLift extends SubsystemBase{
         SmartDashboard.putNumber("Elevator Set Inches", 0);
     }
 
-    public Command goToScoringHeight(){
+    public Command goToScoringHeight(double height){
         return run(()->{
-            double newInchesSetpoint = sideCar.getScoringLevel().heightInches;
-
-            /*
-            int networkTablesHeight = (int)Math.round(scoringHeight.get(2));
-            if(networkTablesHeight == 1) newInchesSetpoint = Heights.L1.heightInches;
-            else if(networkTablesHeight == 2) newInchesSetpoint = Heights.L2.heightInches;
-            else if(networkTablesHeight == 3)  {
-                newInchesSetpoint = Heights.L3.heightInches;
-                SmartDashboard.putNumber("Elevator Set Inches", newInchesSetpoint);
-            }
-            else if(networkTablesHeight == 4)  newInchesSetpoint = Heights.L4.heightInches;
-            else newInchesSetpoint = Heights.L1.heightInches;
-            */
+            double newInchesSetpoint = height;
             elevatorSetInches(newInchesSetpoint);
             isRunning = true;
         }).finallyDo(()-> {isRunning = false;});
     }
 
 
-    public Command configureSetpoint(){
+    public Command configureSetpoint(double height){
         return runOnce(()->{
-            double newInchesSetpoint = sideCar.getScoringLevel().heightInches;
-            /*
-            int networkTablesHeight = (int)Math.round(scoringHeight.get(2));
-            if(networkTablesHeight == 1) newInchesSetpoint = Heights.L1.heightInches;
-            else if(networkTablesHeight == 2) newInchesSetpoint = Heights.L2.heightInches;
-            else if(networkTablesHeight == 3)  newInchesSetpoint = Heights.L3.heightInches;
-            else if(networkTablesHeight == 4)  newInchesSetpoint = Heights.L4.heightInches;
-            else newInchesSetpoint = Heights.L1.heightInches;
-            */
+            double newInchesSetpoint = height;
             inchesSetpoint = newInchesSetpoint;
         });
     }
@@ -224,7 +198,7 @@ public class DuoTalonLift extends SubsystemBase{
         L4 ("L4", 56.4214672108);
 
         String level;
-        double heightInches;
+        public double heightInches;
 
         // Constructor
         Heights(String level, double heightInches) {
