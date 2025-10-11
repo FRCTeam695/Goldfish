@@ -112,6 +112,7 @@ public class Constants {
             public static final double MAX_ACCELERATION_METERS_PER_SECOND_SQ = 10;
             public static final double SUPPLY_CURRENT_LIMIT = CHOSEN_CONSTANTS.supplyCurrentLimit;
             public static final double STATOR_CURRENT_LIMIT = CHOSEN_CONSTANTS.statorCurrentLimit;
+            public static final double MAX_SKID_ACCEL_METTERS_PER_SECOND_SQ = 20;
     
             // configs for drive wheel (closed-loop velocity control)
             public static final double DRIVE_WHEEL_KP = CHOSEN_CONSTANTS.driveWheelKP;
