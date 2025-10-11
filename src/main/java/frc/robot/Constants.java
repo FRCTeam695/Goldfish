@@ -293,7 +293,7 @@ public class Constants {
             public static final Pose2d CORAL_L_SCORING_LOCATION = new Pose2d(13.85,2.99, Rotation2d.fromDegrees(120));
             
             public static final Pose2d FEED_LOCATION_RIGHT = new Pose2d((16.45 + 16.47)/2, (7.02 + 7.05)/2, Rotation2d.fromDegrees(-126.46));
-            public static final Pose2d FEED_LOCATION_LEFT = new Pose2d((16.35 + 16.38)/2, (1.03 + 1.00)/2, Rotation2d.fromDegrees((124.4 + 126.46)/2)); // rotation was 124.4, was fudged
+            public static final Pose2d FEED_LOCATION_LEFT = new Pose2d((16.27 + 16.23)/2, (0.99 + 0.92)/2, Rotation2d.fromDegrees((128.07 + 128.06)/2)); // rotation was 124.4, was fudged
 
             // public static final Pose2d CORAL_A_SCORING_LOCATION = new Pose2d(14.35, (3.83+3.86)/2, Rotation2d.fromDegrees(180));
             // public static final Pose2d CORAL_B_SCORING_LOCATION = new Pose2d(14.35, 4.19, Rotation2d.fromDegrees(180));;

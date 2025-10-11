@@ -233,8 +233,8 @@ public class RobotContainer {
 
     // auto score
     driver.x().whileTrue(
-      Swerve.alignToReef(Optional.of("A"), ()-> Elevator.getElevatorTimeToArrival(), false)
-      //alignAndScore(Optional.empty())
+      // Swerve.alignToReef(Optional.of("A"), ()-> Elevator.getElevatorTimeToArrival(), false)
+      alignAndScore(Optional.empty())
     );
 
 
@@ -249,6 +249,7 @@ public class RobotContainer {
       )
     );
 
+    
     
     // enter "algae dislodge mode"
     driver.rightTrigger().whileTrue(

@@ -39,7 +39,7 @@ public class Swerve extends SwerveBase{
     
 
 
-    public final double kp_attract = 2.9;
+    public final double kp_attract = 3.3;
 
     // we will tune this on the practice field
     public final double kp_repulse = 2;
@@ -374,15 +374,29 @@ public class Swerve extends SwerveBase{
                 //ChassisSpeeds currentRobotChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
                 // double attractX = xProfile.calculate(0.02, new TrapezoidProfile.State(dx, currentRobotChassisSpeeds.vxMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
                 // double attractY = yProfile.calculate(0.02, new TrapezoidProfile.State(dy, currentRobotChassisSpeeds.vyMetersPerSecond), new TrapezoidProfile.State(0, 0)).velocity;
+               
                 double attractX;
                 double attractY;
+                
+                double distance = Math.hypot(dx, dy);
+
+                double unitX = dx/distance;
+                double unitY = dy/distance;
+
+                // change this value to a constant later
+                double speed = MathUtil.clamp(2.9 * distance, 
+                -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, 
+                Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
+
                 if(DriverStation.isAutonomous()){
-                    attractY = kp_attract * dy;
-                    attractX = kp_attract * dx;
+                    // calculate attraction forces
+                    attractX = speed * unitX;
+                    attractY = speed * unitY;
                 }
                 else{
-                    attractX = kp_attract * dx;
-                    attractY = kp_attract * dy;
+                    // calculate attraction forces
+                    attractX = speed * unitX;
+                    attractY = speed * unitY;
                 }
 
                 SmartDashboard.putNumber("Attract Speed", Math.hypot(attractX, attractY));
