@@ -384,7 +384,7 @@ public class Swerve extends SwerveBase{
                 double unitY = dy/distance;
 
                 // change this value to a constant later
-                double speed = MathUtil.clamp(2.9 * distance, 
+                double speed = MathUtil.clamp(kp_attract * distance, 
                 -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, 
                 Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
 
