@@ -189,7 +189,7 @@ public class RobotContainer {
     
 
     // make sure you gyro reset by aligning with the reef, not eyeballing it
-    driver.back().onTrue(Swerve.resetGyro());
+    driver.back().and(driver.start()).onTrue(Swerve.resetGyro());
 
 
 
@@ -271,7 +271,7 @@ public class RobotContainer {
     driver.povLeft().onTrue(
       new ConditionalCommand(
         Swerve.leftGyroReset(), 
-        new WaitCommand(0), 
+        Coralizer.ejectCoral().andThen(Coralizer.runIntakeAndCoralizer(()->0)), 
         ()-> DriverStation.isDisabled()
       )
     );
