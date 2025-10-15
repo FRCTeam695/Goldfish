@@ -166,11 +166,12 @@ public class Swerve extends SwerveBase{
                     if(willCollideWithReef) hasDetectedCollision = true;
                     currentlyApplyingRepulsion = true;
                     Transform2d repulsionVector;
+                    // no collision with the reef but the elevator is getting to height late, so we need to back up/slow down
                     if(elevatorNotInTime && !willCollideWithReef) {
+                        hasDetectedCollision = false;
                         SmartDashboard.putBoolean("strong repulsion", false);
                         repulsionVector = getRepulsionVector(robotPose, 0.6);
                     }
-                    // no collision with the reef but the elevator is getting to height late, so we need to back up/slow down
                     else {
                         SmartDashboard.putBoolean("strong repulsion", true);
                         repulsionVector = getRepulsionVector(robotPose, kp_repulse);
