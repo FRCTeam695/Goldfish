@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.DoubleSupplier;
@@ -143,6 +144,8 @@ public class Swerve extends SwerveBase{
 
                 // if we are within 20 cm of target its impossible 4 us 2 collide
                 boolean willCollideWithReef = distanceForward < 0 && distanceToTarget > 0.2;
+                SmartDashboard.putNumber("distance forward", distanceForward);
+                SmartDashboard.putNumber("distance to target", distanceToTarget);
 
                 ChassisSpeeds currentRobotChassisSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
                 // if we aren't going to collide with the reef then check if we need to apply repulsion vectors by seeing if the elevator will hit any coral/algae already on the reef if we raise rn
@@ -150,11 +153,11 @@ public class Swerve extends SwerveBase{
                     double currentSpeedMagnitude = Math.hypot(currentRobotChassisSpeeds.vxMetersPerSecond, currentRobotChassisSpeeds.vyMetersPerSecond);
                     distanceProfile.calculate(0.02, new TrapezoidProfile.State(Math.hypot(dx, dy), currentSpeedMagnitude), new TrapezoidProfile.State(0, 0));
                     double swerveTimeToArrival = distanceProfile.timeLeftUntil(0);
-
+                    double elevatorTime = elevatorTimeToArrival.getAsDouble();
                     SmartDashboard.putNumber("Swerve ETA", swerveTimeToArrival);
-
+                    SmartDashboard.putNumber("Elevator ETA", elevatorTime);
                     // if the elevator gets to height BEFORE we arrive at the target position, we aren't going to hit anything
-                    elevatorNotInTime = elevatorTimeToArrival.getAsDouble() > swerveTimeToArrival;
+                    elevatorNotInTime = elevatorTime > swerveTimeToArrival;
                 }
 
                 // if we are just testing the auto align and don't plan on actually raising the elevator, 
@@ -167,6 +170,7 @@ public class Swerve extends SwerveBase{
                     currentlyApplyingRepulsion = true;
                     Transform2d repulsionVector;
                     if(elevatorNotInTime && !willCollideWithReef) {
+                        hasDetectedCollision = false;
                         SmartDashboard.putBoolean("strong repulsion", false);
                         repulsionVector = getRepulsionVector(robotPose, 0.6);
                     }

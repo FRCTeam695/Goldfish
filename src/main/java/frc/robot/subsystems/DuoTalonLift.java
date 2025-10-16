@@ -177,7 +177,6 @@ public class DuoTalonLift extends SubsystemBase{
     public double getElevatorTimeToArrival(){
         heightProfile.calculate(0.02, new TrapezoidProfile.State(r_leaderTalon.getPosition().getValueAsDouble(), r_leaderTalon.getVelocity().getValueAsDouble()), new TrapezoidProfile.State(inchesSetpoint * rotationsPerInch, 0));
         double time = heightProfile.timeLeftUntil(inchesSetpoint * rotationsPerInch);
-        SmartDashboard.putNumber("Elevator ETA", time);
         return time;
     }
 
