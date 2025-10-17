@@ -21,7 +21,6 @@ import edu.wpi.first.networktables.PubSubOption;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.Constants;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
@@ -60,8 +59,6 @@ public class DuoTalonLift extends SubsystemBase{
     private final DoublePublisher closedLoopPub = elevatorTable.getDoubleTopic("Closed Loop Output").publish(PubSubOption.periodic(0.02));
     private final DoublePublisher FFPub = elevatorTable.getDoubleTopic("Feed Forward").publish(PubSubOption.periodic(0.02));
 
-    public NetworkTable sideCarTable;
-    public IntegerSubscriber scoringHeight;
     public Trigger atSetpoint;
     public Trigger isDeployed;
     public double inchesSetpoint = 0;
@@ -71,8 +68,6 @@ public class DuoTalonLift extends SubsystemBase{
 
     // Constructor
     public DuoTalonLift () {
-        sideCarTable = inst.getTable("sidecarTable");
-        scoringHeight = sideCarTable.getIntegerTopic("scoringLevel").subscribe(1);
         atSetpoint = new Trigger(()-> (Math.abs(r_leaderTalon.getPosition().getValueAsDouble() / rotationsPerInch - inchesSetpoint) < 0.25) && isRunning);
         isDeployed = new Trigger(()-> (Math.abs(r_leaderTalon.getPosition().getValueAsDouble() / rotationsPerInch - Heights.Ground.heightInches) > 0.25));
 
@@ -135,35 +130,18 @@ public class DuoTalonLift extends SubsystemBase{
         SmartDashboard.putNumber("Elevator Set Inches", 0);
     }
 
-    public Command goToScoringHeight(){
+    public Command goToScoringHeight(double height){
         return run(()->{
-            double newInchesSetpoint;
-            int networkTablesHeight = (int)Math.round(scoringHeight.get(Constants.DuoTalonLift.scoringHeight));
-            if(networkTablesHeight == 1) newInchesSetpoint = Heights.L1.heightInches;
-            else if(networkTablesHeight == 2) newInchesSetpoint = Heights.L2.heightInches;
-            else if(networkTablesHeight == 3)  {
-                newInchesSetpoint = Heights.L3.heightInches;
-                SmartDashboard.putNumber("Elevator Set Inches", newInchesSetpoint);
-            }
-            else if(networkTablesHeight == 4)  newInchesSetpoint = Heights.L4.heightInches;
-            else newInchesSetpoint = Heights.L1.heightInches;
-
+            double newInchesSetpoint = height;
             elevatorSetInches(newInchesSetpoint);
             isRunning = true;
         }).finallyDo(()-> {isRunning = false;});
     }
 
 
-    public Command configureSetpoint(){
+    public Command configureSetpoint(double height){
         return runOnce(()->{
-            double newInchesSetpoint;
-            int networkTablesHeight = (int)Math.round(scoringHeight.get(2));
-            if(networkTablesHeight == 1) newInchesSetpoint = Heights.L1.heightInches;
-            else if(networkTablesHeight == 2) newInchesSetpoint = Heights.L2.heightInches;
-            else if(networkTablesHeight == 3)  newInchesSetpoint = Heights.L3.heightInches;
-            else if(networkTablesHeight == 4)  newInchesSetpoint = Heights.L4.heightInches;
-            else newInchesSetpoint = Heights.L1.heightInches;
-
+            double newInchesSetpoint = height;
             inchesSetpoint = newInchesSetpoint;
         });
     }
@@ -177,6 +155,7 @@ public class DuoTalonLift extends SubsystemBase{
     public double getElevatorTimeToArrival(){
         heightProfile.calculate(0.02, new TrapezoidProfile.State(r_leaderTalon.getPosition().getValueAsDouble(), r_leaderTalon.getVelocity().getValueAsDouble()), new TrapezoidProfile.State(inchesSetpoint * rotationsPerInch, 0));
         double time = heightProfile.timeLeftUntil(inchesSetpoint * rotationsPerInch);
+        SmartDashboard.putNumber("Elevator ETA", time);
         return time;
     }
 
@@ -219,7 +198,7 @@ public class DuoTalonLift extends SubsystemBase{
         L4 ("L4", 56.4214672108);
 
         String level;
-        double heightInches;
+        public double heightInches;
 
         // Constructor
         Heights(String level, double heightInches) {
@@ -238,7 +217,7 @@ public class DuoTalonLift extends SubsystemBase{
         SmartDashboard.putNumber("Elevator Commaded Position", inchesSetpoint);
         SmartDashboard.putBoolean("Elevator is deployed", isDeployed.getAsBoolean());
         SmartDashboard.putBoolean("Elevator is running", isRunning);
-
+ 
         // Field variable outputs
         // Position
         r_masterRotPub.set(r_leaderTalon.getPosition(true).getValueAsDouble());
