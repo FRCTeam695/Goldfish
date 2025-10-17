@@ -233,7 +233,7 @@ public class Coralizer extends SubsystemBase {
     public Command intake() {
         return either(
                 L1Scoring(),
-                runIndexerInwardUntilCoralizerEncoderDetectsCoral()
+                runIndexerInwardUntilCoralizerEncoderDetectsCoral().andThen(setFirstBreakStateTrue())
                         .andThen(advanceCoralOntoElevatorUntilCoralizerDetectsPositionChange()).andThen(rollbackUntilCoralIsNotTooFarOut()).andThen(setSafeToRaiseElevator()),
                 () -> (int) Math.round(scoringHeight.get(Constants.Coralizer.scoringHeightDefault)) == 1)
                 .withName("intake");
@@ -254,6 +254,6 @@ public class Coralizer extends SubsystemBase {
         SmartDashboard.putNumber("Intake current", intake.getSupplyCurrent().getValueAsDouble());
         SmartDashboard.putNumber("Coralizer current", coralizer.getSupplyCurrent().getValueAsDouble());
         SmartDashboard.putBoolean("Safe to Raise elevator", safeToRaiseElevator.getAsBoolean());
-
+        SmartDashboard.putBoolean("First Break State True", seenFirstBreak.getAsBoolean());
     }
 }
