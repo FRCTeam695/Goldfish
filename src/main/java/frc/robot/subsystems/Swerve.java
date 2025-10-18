@@ -387,8 +387,15 @@ public class Swerve extends SwerveBase{
                 double unitX = dx/distance;
                 double unitY = dy/distance;
 
+                double kp;
+                if(DriverStation.isAutonomous()){
+                    kp = 3.1;
+                }
+                else{
+                    kp = kp_attract;
+                }
                 // change this value to a constant later
-                double speed = MathUtil.clamp(kp_attract * distance, 
+                double speed = MathUtil.clamp(kp * distance, 
                 -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, 
                 Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
 
