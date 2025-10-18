@@ -287,27 +287,26 @@ public class RobotContainer {
     );
 
     // L1 play
-    driver.b().onTrue(  
+    driver.b().whileTrue(  
+      deadline(
+        Coralizer.runIntakeAndCoralizer(()-> -1).withTimeout(0.2),
+        Alagizer.goToPosition(()-> -20.1)
+      )
+      .andThen(
         parallel(
-        Coralizer.runIntakeAndCoralizerNoStop(()-> -1)
-        .withTimeout(0.6)
-        // .andThen(Alagizer.goToPosition(()-> -20.1))
-        // .andThen(
-        //   parallel(
-        //    Alagizer.goToPosition(()-> Constants.Alagizer.dump),
-        //     Coralizer.runIntakeAndCoralizer(()-> -1)
-        //   )
-      ).andThen(
-        Alagizer.goToPosition(()-> Constants.Alagizer.dump).until(Alagizer.atSetpoint))
-        .andThen(
-          new WaitCommand(0.25) 
+          Alagizer.goToPosition(()-> Constants.Alagizer.dump),
+          Coralizer.runIntakeAndCoralizer(()-> -1)
         )
-        .andThen(Alagizer.dump())
+      )
     );
 
-    // driver.b().onFalse(
-      
-    // );
+    driver.b().onFalse(
+      Alagizer.goToPosition(()-> Constants.Alagizer.dump).until(Alagizer.atSetpoint)
+      .andThen(
+        new WaitCommand(0.25)
+      )
+      .andThen(Alagizer.dump())
+    );
 
     driver.povDown().whileTrue(
       either(
