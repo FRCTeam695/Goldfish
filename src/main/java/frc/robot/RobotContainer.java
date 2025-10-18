@@ -64,7 +64,7 @@ public class RobotContainer {
             new TalonFXModule(Constants.Swerve.BACK_RIGHT_DRIVE_ID, Constants.Swerve.BACK_RIGHT_TURN_ID, Constants.Swerve.BACK_RIGHT_ABS_ENCODER_OFFSET_ROTATIONS, Constants.Swerve.BACK_RIGHT_CANCODER_ID, 3)
           };
 
-  private final String[] camNames = {"limelight-left", "limelight-right"};
+  private final String[] camNames = {"limelight-right"};
   private static final EnhancedCommandController driver =
       new EnhancedCommandController(0);
 

@@ -389,7 +389,7 @@ public class Swerve extends SwerveBase{
 
                 double kp;
                 if(DriverStation.isAutonomous()){
-                    kp = 3.1;
+                    kp = 3.0;
                 }
                 else{
                     kp = kp_attract;
