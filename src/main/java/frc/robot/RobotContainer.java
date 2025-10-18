@@ -279,7 +279,7 @@ public class RobotContainer {
     // right gyro reset before auton
     driver.povRight().onTrue(
       new ConditionalCommand(
-        Swerve.leftGyroReset(), 
+        Swerve.rightGyroReset(), 
         //Elevator.goToScoringHeight().until(Elevator.atSetpoint).andThen(Coralizer.ejectCoral()).andThen(Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01)).andThen(new WaitCommand(5)),
         new WaitCommand(0), 
         ()-> DriverStation.isDisabled()
