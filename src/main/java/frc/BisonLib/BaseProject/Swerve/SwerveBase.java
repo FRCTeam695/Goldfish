@@ -879,17 +879,10 @@ public class SwerveBase extends SubsystemBase {
 
         // vx_perp = 0;
         // vx_perp = 0;
-        commandedSpeeds.vxMetersPerSecond = vx_forward + vx_perp;
-        commandedSpeeds.vyMetersPerSecond = vy_forward + vy_perp;
-        /* 
-        if (filter) {
-            commandedSpeeds.vxMetersPerSecond = vx_forward + vx_perp;
-            commandedSpeeds.vyMetersPerSecond = vy_forward + vy_perp;
-        }
-        else {
-            commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
-            commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
-        }*/
+        //commandedSpeeds.vxMetersPerSecond = vx_forward + vx_perp;
+        //commandedSpeeds.vyMetersPerSecond = vy_forward + vy_perp;
+        commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
+        commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
         commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
         //speeds = applyAccelerationLimit(speeds);
 

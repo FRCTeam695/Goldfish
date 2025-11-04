@@ -13,25 +13,46 @@ public class Constants {
     public static final double g = 9.81;
     public static final class Swerve {
         
+        public static final SwerveConfig QC_Config =
+            new SwerveConfig(
+                //must find all offsets
+            0, // front right
+            0, // front left
+            0, // back left
+            0, // back right
+            // ask about this
+            6.12,
+            // has to be tuned
+            16.5,
+            // has to be tuned
+            4 * Math.PI, 
+            // must find this kp
+            70, 
+            // must find wheelbase and track width
+            23.75, 23.75, 
+            150.0/7, 
+            true, 
+            // must tune this
+            0.01, 
+            // find this with field
+            0, 
+            // tune stator limit; supply limit doesn't get applied
+            90, 40, 
+            // tune velocity pid and ff
+            0, 0.145, 0, 
+            0.05, 0.12, 0.2, 1.0/1.003344);
         public static final SwerveConfig QBConfig = 
                 new SwerveConfig(-0.4625, 
                 -0.1408, 
                  0.018799, 
                 -0.068115, 6.12, 16.5,
-                4 * Math.PI, 45, 1, 23.75, 
+                4 * Math.PI, 45, 23.75, 
                 23.75, 150.0/7, true, 
-                0.006, 1, 
+                0.006, 
                 0, 90, 
                 40, 0, 0, 
                 0, 0.25, 
                 0.11, 0.2, 1);
-
-                /*
-                 *                 -0.45874, // front right
-                0.4375 +0.5, // front left
-                -0.438477 +0.5, // back left
-                0.354292 +0.5
-                 */
         public static final SwerveConfig production2025Config =
                 new SwerveConfig(
                     //must find all offsets
@@ -41,11 +62,11 @@ public class Constants {
                 -0.14446, // back right
                  8.14, Units.metersToFeet(3.6), 4 * Math.PI, 
                  // must find this kp
-                 70, 1, 
+                 70, 
                  // must find wheelbase and track width
                  23.75, 23.75, 150.0/7, true, 
                  // must tune this
-                 0.01, 1, 
+                 0.01, 
                  // find this with field
                  0, 
                  // tune stator limit; supply limit doesn't get applied
@@ -54,26 +75,6 @@ public class Constants {
                  0, 0.145, 0, 
                  0.05, 0.12, 0.2, 1.0/1.003344);
                  //0.99622314806
-
-                 // drive wheel kP = 0.05
-                 // drive wheel kV = 0.12
-                 // drive wheel kS = 0.2
-    
-                 // turn wheel kP = 65
-                 // turn wheel kS = 50
-
-                 // new turn wheel kp = 70, kd = 0, ks = 0.145
-
-                 //SYSID 
-                 // kp = 0.21361
-                 // kv = 0.1232
-                 // ks = 0.45
-                 // all for velocity (drive)
-
-                 //turning motor
-                 // kp = 43.8
-                 // ks = 0.1111
-                 // kv = 2.4877
 
         public static final Map<String, SwerveConfig> ROBOT_MAP = new HashMap<String, SwerveConfig>() {
             {
@@ -87,7 +88,7 @@ public class Constants {
         public static final SwerveConfig CHOSEN_CONSTANTS = ROBOT_MAP.get("QB");
 
         // miscellaneous constants
-        public static final double MAX_SPEED_METERS_PER_SECONDS_TELEOP = Units.feetToMeters(12.9);
+        public static final double MAX_SPEED_METERS_PER_SECONDS_TELEOP = CHOSEN_CONSTANTS.maxSpeedMetersPerSec;
         public static final double MAX_TRACKABLE_SPEED_METERS_PER_SECOND = 15;
         public static final double MAX_ANGULAR_SPEED_RAD_PER_SECOND = CHOSEN_CONSTANTS.maxAngularSpeedRadPerSec;
         public static final double TURNING_GEAR_RATIO = CHOSEN_CONSTANTS.turningGearRatio;
@@ -97,8 +98,6 @@ public class Constants {
         public static final double TURN_WHEEL_KS = CHOSEN_CONSTANTS.turnWheelKS;
         public static final double TURN_WHEEL_KD = CHOSEN_CONSTANTS.turnWheelKD;
         public static final double ROBOT_ROTATION_KP = 0.008;
-        public static final double PATHPLANNER_OMEGA_KP = CHOSEN_CONSTANTS.pathplannerOmegaKP;
-        public static final double PATHPLANNER_TRANSLATION_KP = CHOSEN_CONSTANTS.pathplannerTranslationKP;
         public static final double MAX_WHEEL_ROTATIONAL_SPEED = CHOSEN_CONSTANTS.maxWheelRotationalSpeed;
         public static final double GYRO_DRIFT_COMPENSATION = CHOSEN_CONSTANTS.gyroDriftCompensation;
         public static final double SKEW_COMPENSATION_RATE = -0.07;
@@ -108,7 +107,7 @@ public class Constants {
         public static final double DISCRETIZE_TIMESTAMP = 0.02;
         public static final int ODOMETRY_UPDATE_RATE_HZ_INTEGER = 200;
         public static final boolean MODULE_IS_INVERTED = CHOSEN_CONSTANTS.driveMotorInverted;
-        public static final double MAX_ACCELERATION_METERS_PER_SECOND_SQ = 17.5;
+        public static final double MAX_ACCELERATION_METERS_PER_SECOND_SQ = 10.;//17.5;
         public static final double SUPPLY_CURRENT_LIMIT = CHOSEN_CONSTANTS.supplyCurrentLimit;
         public static final double STATOR_CURRENT_LIMIT = CHOSEN_CONSTANTS.statorCurrentLimit;
 

@@ -18,8 +18,6 @@ public class SwerveConfig {
         public final double turnWheelKP;
         public final double turnWheelKS;
         public final double turnWheelKD;
-        public final double pathplannerOmegaKP;
-        public final double pathplannerTranslationKP;
         public final double rotationOverrideKP;
         public final double maxSpeedMetersPerSec;
         public final double maxAccelMetersPerSec;
@@ -73,9 +71,8 @@ public class SwerveConfig {
          * @param driveWheelKS
          */
         public SwerveConfig(double frontRightOffset, double frontLeftOffset, double backLeftOffset, double backRightOffset, 
-                            double drivingGearRatio, double maxSpeedFeetPerSec, double wheelCircumferenceInches, double turnWheelKP,
-                            double profiledKPvalPathplanner, double wheelbaseInches, double trackwidthInches,
-                            double turningGearRatio, boolean driveMotorInverted, double rotationToAngleKPval, double pathplannerTranslationKP,
+                            double drivingGearRatio, double maxSpeedFeetPerSec, double wheelCircumferenceInches, double turnWheelKP, double wheelbaseInches, double trackwidthInches,
+                            double turningGearRatio, boolean driveMotorInverted, double rotationToAngleKPval,
                             double maxAccelFeetPerSec, double statorCurrentLimit, double supplyCurrentLimit, double turnWheelKD, double turnWheelKS, double maxWheelRotationalSpeed, 
                             double driveWheelKP, double driveWheelKV, double driveWheelKS, double gyroDriftCompensation){
             
@@ -109,9 +106,7 @@ public class SwerveConfig {
             this.turnWheelKP = turnWheelKP;
             this.turnWheelKD = turnWheelKD;
             this.turnWheelKS = turnWheelKS;
-            this.pathplannerOmegaKP = profiledKPvalPathplanner;
             this.rotationOverrideKP = rotationToAngleKPval;
-            this.pathplannerTranslationKP = pathplannerTranslationKP;
             this.driveMotorInverted = driveMotorInverted;
             this.statorCurrentLimit = statorCurrentLimit;
             this.supplyCurrentLimit = supplyCurrentLimit;
