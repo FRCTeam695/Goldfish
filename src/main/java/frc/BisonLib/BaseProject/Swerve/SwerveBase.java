@@ -837,19 +837,28 @@ public class SwerveBase extends SubsystemBase {
         // current sideways vel is always 0 since no component of the current vel doesn't point in the direction of the current vel
         double desiredSkidAccel = w_perp_mag/dt;
 
+        // compute angular acceleration component
+        double currentOmega = getLatestChassisSpeed().omegaRadiansPerSecond;
+        double desiredOmega = commandedSpeeds.omegaRadiansPerSecond;
+        double desiredAngularAccel = (desiredOmega - currentOmega) / dt;
+
+        // Ellipsoid normalization (3D)
         // make sure total accel doesnt exceed max accel
-        double norm = Math.pow(desiredForwardAccel/Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ, 2)
-                    + Math.pow(desiredSkidAccel/Constants.Swerve.MAX_SKID_ACCEL, 2);
-        if(norm > 1){
+        double norm = Math.pow(desiredForwardAccel / Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ, 2)
+                    + Math.pow(desiredSkidAccel / Constants.Swerve.MAX_SKID_ACCEL, 2)
+                    + Math.pow(desiredAngularAccel / Constants.Swerve.MAX_ANGULAR_SPEED_RAD_PER_SECOND, 2);
+
+        if (norm > 1) {
             SmartDashboard.putBoolean("scaling acceleration", true);
             double scale = 1 / Math.sqrt(norm);
             desiredForwardAccel *= scale;
             desiredSkidAccel *= scale;
-        }
-        else{
+            desiredAngularAccel *= scale;
+        } else {
             SmartDashboard.putBoolean("scaling acceleration", false);
         }
         double newForwardVel = v_mag + desiredForwardAccel * dt;
+        double newOmega = currentOmega + desiredAngularAccel * dt;
         SmartDashboard.putNumber("new forward vel", newForwardVel);
 
         double vx_forward;
@@ -881,6 +890,7 @@ public class SwerveBase extends SubsystemBase {
         // vx_perp = 0;
         commandedSpeeds.vxMetersPerSecond = vx_forward + vx_perp;
         commandedSpeeds.vyMetersPerSecond = vy_forward + vy_perp;
+        commandedSpeeds.omegaRadiansPerSecond = newOmega;
         /* 
         if (filter) {
             commandedSpeeds.vxMetersPerSecond = vx_forward + vx_perp;
@@ -890,7 +900,8 @@ public class SwerveBase extends SubsystemBase {
             commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
             commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
         }*/
-        commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
+
+        //commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
         //speeds = applyAccelerationLimit(speeds);
 
         SmartDashboard.putNumber("Zj", commandedSpeeds.omegaRadiansPerSecond);
