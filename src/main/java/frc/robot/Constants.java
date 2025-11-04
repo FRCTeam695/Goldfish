@@ -16,10 +16,10 @@ public class Constants {
         public static final SwerveConfig QC_Config =
             new SwerveConfig(
                 //must find all offsets
-            0, // front right
-            0, // front left
-            0, // back left
-            0, // back right
+            -0.206298828125, // front right
+            0.182373046875 + 0.5, // front left
+            -0.04443359375 + 0.5, // back left
+            0.076904296875, // back right
             // ask about this
             6.12,
             // has to be tuned
@@ -40,7 +40,8 @@ public class Constants {
             90, 40, 
             // tune velocity pid and ff
             0, 0.145, 0, 
-            0.05, 0.12, 0.2, 1.0/1.003344);
+            0.25, (0.1143+0.11333+0.11466+0.11502)/4, (0.0034407+0.0025259+0.003926+0.0029749)/4, (0.11912+0.11589+0.10749+0.10791)/4, 1/(((360*30)-180)/11468.4));
+            //kp, kv, ka, ks
         public static final SwerveConfig QBConfig = 
                 new SwerveConfig(-0.4625, 
                 -0.1408, 
@@ -52,7 +53,7 @@ public class Constants {
                 0, 90, 
                 40, 0, 0, 
                 0, 0.25, 
-                0.11, 0.2, 1);
+                0.11, 0, 0.2, 1);
         public static final SwerveConfig production2025Config =
                 new SwerveConfig(
                     //must find all offsets
@@ -73,19 +74,20 @@ public class Constants {
                  90, 40, 
                  // tune velocity pid and ff
                  0, 0.145, 0, 
-                 0.05, 0.12, 0.2, 1.0/1.003344);
+                 0.05, 0.12,0,  0.2, 1.0/1.003344);
                  //0.99622314806
 
         public static final Map<String, SwerveConfig> ROBOT_MAP = new HashMap<String, SwerveConfig>() {
             {
                 put("QB", QBConfig);
                 put("Production_2025", production2025Config);
+                put("QC", QC_Config);
             }
         };
         
 
         // CHOOSE WHICH ROBOT YOU'RE USING
-        public static final SwerveConfig CHOSEN_CONSTANTS = ROBOT_MAP.get("QB");
+        public static final SwerveConfig CHOSEN_CONSTANTS = ROBOT_MAP.get("QC");
 
         // miscellaneous constants
         public static final double MAX_SPEED_METERS_PER_SECONDS_TELEOP = CHOSEN_CONSTANTS.maxSpeedMetersPerSec;
@@ -115,6 +117,7 @@ public class Constants {
         public static final double DRIVE_WHEEL_KP = CHOSEN_CONSTANTS.driveWheelKP;
         public static final double DRIVE_WHEEL_KV = CHOSEN_CONSTANTS.driveWheelKV;
         public static final double DRIVE_WHEEL_KS = CHOSEN_CONSTANTS.driveWheelKS;
+        public static final double DRIVE_WHEEL_KA = CHOSEN_CONSTANTS.driveWheelKA;
 
 
         public static final int GYRO_ID = 8;

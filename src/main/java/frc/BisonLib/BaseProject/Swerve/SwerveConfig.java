@@ -41,6 +41,7 @@ public class SwerveConfig {
         public final double driveWheelKP;
         public final double driveWheelKV;
         public final double driveWheelKS;
+        public final double driveWheelKA;
 
         public final double gyroDriftCompensation;
 
@@ -74,7 +75,7 @@ public class SwerveConfig {
                             double drivingGearRatio, double maxSpeedFeetPerSec, double wheelCircumferenceInches, double turnWheelKP, double wheelbaseInches, double trackwidthInches,
                             double turningGearRatio, boolean driveMotorInverted, double rotationToAngleKPval,
                             double maxAccelFeetPerSec, double statorCurrentLimit, double supplyCurrentLimit, double turnWheelKD, double turnWheelKS, double maxWheelRotationalSpeed, 
-                            double driveWheelKP, double driveWheelKV, double driveWheelKS, double gyroDriftCompensation){
+                            double driveWheelKP, double driveWheelKV, double driveWheelKA, double driveWheelKS, double gyroDriftCompensation){
             
             this.frontRightOffset = frontRightOffset;
             this.frontLeftOffset = frontLeftOffset;
@@ -114,6 +115,7 @@ public class SwerveConfig {
             this.driveWheelKP = driveWheelKP;
             this.driveWheelKV = driveWheelKV;
             this.driveWheelKS = driveWheelKS;
+            this.driveWheelKA = driveWheelKA;
 
             this.gyroDriftCompensation = gyroDriftCompensation;
         }
