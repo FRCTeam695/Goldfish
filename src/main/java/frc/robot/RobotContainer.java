@@ -23,6 +23,8 @@ import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
+import edu.wpi.first.wpilibj2.command.PrintCommand;
+
 import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import java.util.Optional;
@@ -51,6 +53,8 @@ public class RobotContainer {
   public final Climber Climber;
   public IntegerSubscriber scoringHeight;
   public final LED led = new LED();
+  
+  
   SendableChooser<Command> autoChooser = new SendableChooser<>();
 
   public int[] reefTags = {6,7,8,9,10,11,17,18,19,20,21,22};
@@ -68,6 +72,8 @@ public class RobotContainer {
   private static final EnhancedCommandController driver =
       new EnhancedCommandController(0);
 
+    
+
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     Swerve = new Swerve(camNames, modules, reefTags);
@@ -75,6 +81,7 @@ public class RobotContainer {
     Coralizer = new Coralizer();
     Alagizer = new AlgaeDislodger();
     Climber = new Climber();
+    
     scoringHeight = NetworkTableInstance.getDefault().getTable("sidecarTable").getIntegerTopic("scoringLevel").subscribe(1);
 
     // SmartDashboarding subsystems allow you to see what commands they are running
@@ -151,6 +158,9 @@ public class RobotContainer {
    */
   private void configureBindings() {
 
+   // final Trigger flick = new Trigger(()-> driver.getFlick());
+
+
     // indication for human player to drop coral
     Swerve.isWithin10cm.and(Coralizer.seenFirstBreak.negate()).and(()-> DriverStation.isAutonomous()).whileTrue(
       led.solidColor(3)
@@ -191,7 +201,7 @@ public class RobotContainer {
     // make sure you gyro reset by aligning with the reef, not eyeballing it
     driver.back().onTrue(Swerve.resetGyro());
 
-
+    driver.flick.onTrue(new PrintCommand("flick is true"));
 
     //driver.b().whileTrue(Swerve.alignToReef(Optional.empty(), ()-> Elevator.getElevatorTimeToArrival(), false));
     driver.rightBumper().onTrue(
