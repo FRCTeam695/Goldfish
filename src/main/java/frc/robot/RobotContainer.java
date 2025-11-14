@@ -29,13 +29,28 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import java.util.Optional;
 
-
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.ConditionalCommand;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.BisonLib.BaseProject.Controller.EnhancedCommandController;
+import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
+import frc.robot.subsystems.AlgaeDislodger;
+import frc.robot.subsystems.Climber;
+import frc.robot.subsystems.Coralizer;
+import frc.robot.subsystems.DuoTalonLift;
+import frc.robot.subsystems.DuoTalonLift.Heights;
+import frc.robot.subsystems.LED;
+// import frc.robot.Subsystems.CoralGripper2Motors;
+import frc.robot.subsystems.Swerve;
 
 
 /**
@@ -68,7 +83,7 @@ public class RobotContainer {
             new TalonFXModule(Constants.Swerve.BACK_RIGHT_DRIVE_ID, Constants.Swerve.BACK_RIGHT_TURN_ID, Constants.Swerve.BACK_RIGHT_ABS_ENCODER_OFFSET_ROTATIONS, Constants.Swerve.BACK_RIGHT_CANCODER_ID, 3)
           };
 
-  private final String[] camNames = {"limelight-left", "limelight-right"};
+  private final String[] camNames = {"limelight-right"};
   private static final EnhancedCommandController driver =
       new EnhancedCommandController(0);
 
@@ -100,9 +115,9 @@ public class RobotContainer {
                                 .andThen(
                                   pickUpAlignAndScore(Optional.of("L"))
                                 )
-                                .andThen(
-                                  pickUpAlignAndScore(Optional.of("M"))
-                                )
+                                // .andThen(
+                                //   pickUpAlignAndScore(Optional.of("M"))
+                                // )
                                 .andThen(
                                   parallel(
                                     Swerve.driveToNearestFeed(),
@@ -121,9 +136,9 @@ public class RobotContainer {
                               .andThen(
                                 pickUpAlignAndScore(Optional.of("C"))
                               )
-                              .andThen(
-                                pickUpAlignAndScore(Optional.of("B"))
-                              )
+                              // .andThen(
+                              //   pickUpAlignAndScore(Optional.of("B"))
+                              // )
                               .andThen(
                                 parallel(
                                   Swerve.driveToNearestFeed(),
@@ -186,7 +201,7 @@ public class RobotContainer {
 
     // starts the intake
     driver.leftTrigger().onTrue(
-        Coralizer.intake()
+        Coralizer.intake().andThen(new WaitCommand(0.25).andThen(Coralizer.setSafeToRaiseElevator()))
     );
 
     // drives to the nearest feeder station
@@ -199,7 +214,7 @@ public class RobotContainer {
     
 
     // make sure you gyro reset by aligning with the reef, not eyeballing it
-    driver.back().onTrue(Swerve.resetGyro());
+    driver.back().and(driver.start()).onTrue(Swerve.resetGyro());
 
     driver.flick.onTrue(new PrintCommand("flick is true"));
 
@@ -241,10 +256,9 @@ public class RobotContainer {
 
     driver.a().onFalse(Alagizer.goToPosition(()-> Constants.Alagizer.holdRamp));
 
-
     // auto score
     driver.x().whileTrue(
-      //Swerve.alignToReef(Optional.of("A"), ()-> Elevator.getElevatorTimeToArrival(), false)
+      // Swerve.alignToReef(Optional.of("A"), ()-> Elevator.getElevatorTimeToArrival(), false)
       alignAndScore(Optional.empty())
     );
 
@@ -260,6 +274,7 @@ public class RobotContainer {
       )
     );
 
+    
     
     // enter "algae dislodge mode"
     driver.rightTrigger().whileTrue(
@@ -278,12 +293,12 @@ public class RobotContainer {
     driver.povUp().onTrue(Alagizer.dump());
 
     // left gyro reset before auton
+    driver.povLeft().and(new Trigger(()-> DriverStation.isDisabled())).onTrue(
+        Swerve.leftGyroReset()
+    );
+
     driver.povLeft().onTrue(
-      new ConditionalCommand(
-        Swerve.leftGyroReset(), 
-        new WaitCommand(0), 
-        ()-> DriverStation.isDisabled()
-      )
+      Coralizer.ejectCoral().andThen(Coralizer.runIntakeAndCoralizer(()->0))
     );
     
     // right gyro reset before auton
@@ -297,27 +312,26 @@ public class RobotContainer {
     );
 
     // L1 play
-    driver.b().onTrue(  
+    driver.b().whileTrue(  
+      deadline(
+        Coralizer.runIntakeAndCoralizer(()-> -1).withTimeout(0.2),
+        Alagizer.goToPosition(()-> -20.1)
+      )
+      .andThen(
         parallel(
-        Coralizer.runIntakeAndCoralizerNoStop(()-> -1)
-        .withTimeout(0.6)
-        // .andThen(Alagizer.goToPosition(()-> -20.1))
-        // .andThen(
-        //   parallel(
-        //    Alagizer.goToPosition(()-> Constants.Alagizer.dump),
-        //     Coralizer.runIntakeAndCoralizer(()-> -1)
-        //   )
-      ).andThen(
-        Alagizer.goToPosition(()-> Constants.Alagizer.dump).until(Alagizer.atSetpoint))
-        .andThen(
-          new WaitCommand(0.25) 
+          Alagizer.goToPosition(()-> Constants.Alagizer.dump),
+          Coralizer.runIntakeAndCoralizer(()-> -1)
         )
-        .andThen(Alagizer.dump())
+      )
     );
 
-    // driver.b().onFalse(
-      
-    // );
+    driver.b().onFalse(
+      Alagizer.goToPosition(()-> Constants.Alagizer.dump).until(Alagizer.atSetpoint)
+      .andThen(
+        new WaitCommand(0.25)
+      )
+      .andThen(Alagizer.dump())
+    );
 
     driver.povDown().whileTrue(
       either(
@@ -340,6 +354,10 @@ public class RobotContainer {
     //   ).andThen(new WaitCommand(0.6))
     //   .andThen(Coralizer.runCoralizer(()-> 0).alongWith(Elevator.slowRaise(0)))
     // );
+
+    driver.rightStick().whileTrue(
+      Coralizer.ejectCoral().andThen(Coralizer.runIntakeAndCoralizer(()->0))
+    );
   }
 
   public void configureDefaultCommands(){
@@ -386,15 +404,16 @@ public class RobotContainer {
 
   public Command pickUpAlignAndScore(Optional<String> location){
     return 
-      parallel(
         parallel(
           Swerve.driveToNearestFeed(),
           Elevator.setHeightLevel(Heights.Ground).until(Elevator.atSetpoint)
         )
-        .andThen(new WaitUntilCommand(Coralizer.seenFirstBreak))
-        .andThen(alignAndScore(location)),
-        Coralizer.intake().asProxy()
-      );
+        .andThen(
+          parallel(
+            Coralizer.intake().asProxy(),
+            new WaitUntilCommand(Coralizer.seenFirstBreak).andThen(alignAndScore(location))
+          )
+        );
   }
 
 

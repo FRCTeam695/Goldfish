@@ -99,10 +99,20 @@ public class Coralizer extends SubsystemBase {
         return runOnce(() -> isSafeToRaiseElevator = true);
     }
 
+    public Command tuneVoltage() {
+        return runOnce(() -> {
+            intake.setVoltage(0.25);
+            System.out.println("Voltage Set");
+        });
+    }
+
+
     public Command runIndexerInwardUntilCoralizerEncoderDetectsCoral() {
         return runOnce(() -> {
+            
             encoder = coralizer.getPosition().getValueAsDouble();
-            intake.set(0.5);
+            intake.setVoltage(0.25);
+            intake.set(1.0); //.5
 
         }).andThen(run(
             () -> {})
@@ -121,7 +131,8 @@ public class Coralizer extends SubsystemBase {
     public Command advanceCoralOntoElevatorUntilCoralizerDetectsPositionChange() {
         return runOnce(() -> {
             coralizer.setPosition(0.0);
-            intake.set(0.2);
+            intake.setVoltage(0.25);
+            intake.set(0.2); //.2
             coralizer.set(0.2);
 
         }).andThen(run(() -> {})
@@ -222,8 +233,8 @@ public class Coralizer extends SubsystemBase {
     public Command intake() {
         return either(
                 L1Scoring(),
-                runIndexerInwardUntilCoralizerEncoderDetectsCoral()
-                        .andThen(advanceCoralOntoElevatorUntilCoralizerDetectsPositionChange()).andThen(rollbackUntilCoralIsNotTooFarOut()),
+                runIndexerInwardUntilCoralizerEncoderDetectsCoral().andThen(setFirstBreakStateTrue())
+                        .andThen(advanceCoralOntoElevatorUntilCoralizerDetectsPositionChange()).andThen(rollbackUntilCoralIsNotTooFarOut()).andThen(setSafeToRaiseElevator()),
                 () -> (int) Math.round(scoringHeight.get(Constants.Coralizer.scoringHeightDefault)) == 1)
                 .withName("intake");
 
@@ -236,11 +247,13 @@ public class Coralizer extends SubsystemBase {
 
     @Override
     public void periodic() {
+        
         SmartDashboard.putNumber("max intake velocity", maxVelocity);
         SmartDashboard.putNumber("intake velocity", intake.getVelocity().getValueAsDouble());
         SmartDashboard.putNumber("Coralizer speed", coralizer.getVelocity().getValueAsDouble());
         SmartDashboard.putNumber("Intake current", intake.getSupplyCurrent().getValueAsDouble());
         SmartDashboard.putNumber("Coralizer current", coralizer.getSupplyCurrent().getValueAsDouble());
-
+        SmartDashboard.putBoolean("Safe to Raise elevator", safeToRaiseElevator.getAsBoolean());
+        SmartDashboard.putBoolean("First Break State True", seenFirstBreak.getAsBoolean());
     }
 }
