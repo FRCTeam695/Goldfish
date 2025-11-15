@@ -12,6 +12,7 @@ import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
+import edu.wpi.first.wpilibj2.command.PrintCommand;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -22,6 +23,8 @@ import static edu.wpi.first.wpilibj2.command.Commands.*;
 
 import com.ctre.phoenix6.SignalLogger;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
@@ -120,10 +123,16 @@ public class RobotContainer {
       .andThen(new PrintCommand("I'm Done!"))
     );
 
+    */
+
     driver.x().whileTrue(
-      Swerve.driveToTargetPoseStraightTrapezoidalProfiledPIDController(new Pose2d(1.75,1, new Rotation2d(0)), 0.01)
+      Swerve.driveToPose(new Pose2d(1.75,1, new Rotation2d(0)), 0.01)
       .andThen(new PrintCommand("I'm Done!"))
     );
+
+    driver.b().whileTrue(Swerve.driveAtSpeed(0.01));
+
+    /*
     
     driver.y().whileTrue(
       Swerve.driveToTargetPoseStraight(new Pose2d(1.75,1.5, new Rotation2d(0)), 0.5)

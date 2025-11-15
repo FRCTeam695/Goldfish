@@ -40,8 +40,9 @@ public class Constants {
             90, 40, 
             // tune velocity pid and ff
             0, 0.145, 0, 
-            0.25, (0.1143+0.11333+0.11466+0.11502)/4, (0.0034407+0.0025259+0.003926+0.0029749)/4, (0.11912+0.11589+0.10749+0.10791)/4, 1/(((360*30)-180)/11468.4));
-            //kp, kv, ka, ks
+            0.38, (0.1143+0.11333+0.11466+0.11502)/4, (0.0034407+0.0025259+0.003926+0.0029749)/4, 0.15032, 1/(((360*30)-180)/11468.4));
+            //kp, kv, ka, kV
+            //old ks: (0.11912+0.11589+0.10749+0.10791)/4
         public static final SwerveConfig QBConfig = 
                 new SwerveConfig(-0.4625, 
                 -0.1408, 
@@ -91,7 +92,7 @@ public class Constants {
 
         // miscellaneous constants
         public static final double MAX_SPEED_METERS_PER_SECONDS_TELEOP = CHOSEN_CONSTANTS.maxSpeedMetersPerSec;
-        public static final double MAX_TRACKABLE_SPEED_METERS_PER_SECOND = 15;
+        public static final double MAX_TRACKABLE_SPEED_METERS_PER_SECOND = 4;
         public static final double MAX_ANGULAR_SPEED_RAD_PER_SECOND = CHOSEN_CONSTANTS.maxAngularSpeedRadPerSec;
         public static final double TURNING_GEAR_RATIO = CHOSEN_CONSTANTS.turningGearRatio;
         public static final double DRIVING_GEAR_RATIO = CHOSEN_CONSTANTS.drivingGearRatio;
