@@ -543,7 +543,7 @@ public class SwerveBase extends SubsystemBase {
 
                 // projecting the current velocity vector onto the ideal distance vector to only get velocity towards target
                 double currentVelocityTowardsTarget = (xvel*dx + yvel*dy)/distance;
-                outputSetpoint = profile.calculate(0.02, new TrapezoidProfile.State(distance, currentVelocityTowardsTarget), goalState);
+                outputSetpoint = profile.calculate(0.02, new TrapezoidProfile.State(distance, -currentVelocityTowardsTarget), goalState);
             }).andThen(
             (run(
             ()->{
