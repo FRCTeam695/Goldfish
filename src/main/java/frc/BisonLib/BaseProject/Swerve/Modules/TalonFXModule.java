@@ -326,7 +326,7 @@ public class TalonFXModule{
 
         SmartDashboard.putNumber("Module" + (this.index+1) + "Acceleration", getDriveAcceleration());
 
-        SmartDashboard.putNumber("Module" + (this.index+1) + "Duty cycle", driveMotor.getDutyCycle().getValueAsDouble());
+        SmartDashboard.putNumber("Module " + (this.index+1) + "Duty cycle", driveMotor.getDutyCycle().getValueAsDouble());
 
         
     }

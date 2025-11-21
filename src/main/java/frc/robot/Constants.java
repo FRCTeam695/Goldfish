@@ -40,8 +40,10 @@ public class Constants {
             90, 40, 
             // tune velocity pid and ff
             0, 0.145, 0, 
-            0.38, (0.1143+0.11333+0.11466+0.11502)/4, (0.0034407+0.0025259+0.003926+0.0029749)/4, 0.15032, 1/(((360*30)-180)/11468.4));
-            //kp, kv, ka, kV
+            0.38, (0.1143+0.11333+0.11466+0.11502)/4, //(0.0034407+0.0025259+0.003926+0.0029749)/4, 
+            0.003216875 + 0.004,
+            0.15032, 1/(((360*30)-180)/11468.4));
+            //kp, kv, ka, kS
             //old ks: (0.11912+0.11589+0.10749+0.10791)/4
         public static final SwerveConfig QBConfig = 
                 new SwerveConfig(-0.4625, 
@@ -110,7 +112,7 @@ public class Constants {
         public static final double DISCRETIZE_TIMESTAMP = 0.02;
         public static final int ODOMETRY_UPDATE_RATE_HZ_INTEGER = 200;
         public static final boolean MODULE_IS_INVERTED = CHOSEN_CONSTANTS.driveMotorInverted;
-        public static final double MAX_ACCELERATION_METERS_PER_SECOND_SQ = 10.;//17.5;
+        public static final double MAX_ACCELERATION_METERS_PER_SECOND_SQ = 4;//17.5;
         public static final double SUPPLY_CURRENT_LIMIT = CHOSEN_CONSTANTS.supplyCurrentLimit;
         public static final double STATOR_CURRENT_LIMIT = CHOSEN_CONSTANTS.statorCurrentLimit;
 
