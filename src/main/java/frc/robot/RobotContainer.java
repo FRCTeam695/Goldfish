@@ -58,7 +58,6 @@ public class RobotContainer {
       new EnhancedCommandController(0);
 
 
-  public boolean stupidBool = true;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -91,6 +90,8 @@ public class RobotContainer {
    * joysticks}.
    */
   private void configureBindings() {
+
+    driver.a().onTrue(Swerve.runWheelCharacterization());
  
     // make sure you gyro reset by aligning with the reef, not eyeballing it
     driver.back().onTrue(Swerve.resetGyro());
@@ -134,8 +135,6 @@ public class RobotContainer {
       Swerve.driveToTargetPoseCurved(new Pose2d(2,2.5, new Rotation2d(0)), 0.5)
     );*/
 
-    driver.leftBumper().whileTrue(run(() -> stupidBool = true)); //filters
-    driver.leftBumper().whileFalse(run(() -> stupidBool = false));
     
     /* sysID
     driver.rightBumper().onTrue(runOnce(() -> SignalLogger.start()));
@@ -158,7 +157,7 @@ public class RobotContainer {
               Swerve.teleopDefaultCommand(
                 driver::getRequestedChassisSpeeds,
                 true,
-                stupidBool
+                true
               )
               ,
               Swerve

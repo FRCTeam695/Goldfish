@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Volts;
 import static edu.wpi.first.wpilibj2.command.Commands.deadline;
 import static edu.wpi.first.wpilibj2.command.Commands.waitSeconds;
 
+import java.util.Arrays;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -53,7 +54,10 @@ import frc.BisonLib.BaseProject.LimelightHelpers;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 import frc.robot.Constants;
 
-public class SwerveBase extends SubsystemBase {
+public class 
+SwerveBase extends SubsystemBase {
+
+    
 
     protected TalonFXModule[] modules;
 
@@ -71,10 +75,6 @@ public class SwerveBase extends SubsystemBase {
 
     protected double max_accel = 0;
     protected double robotRotationError = 0;
-
-    // used for wheel characterization
-    protected double initialGyroAngle = 0;
-    protected double[] initialPositions = new double[4];
 
     // odometry stuff
     protected double lastTime = Timer.getFPGATimestamp();
@@ -122,6 +122,9 @@ public class SwerveBase extends SubsystemBase {
 
     public double prevAccelX = 0;
     public double prevAccelY = 0; 
+
+    double initialGyroAngle;
+    double[] initialPositions;
 
 
     // SysID
@@ -243,6 +246,9 @@ public class SwerveBase extends SubsystemBase {
         SmartDashboard.putData("Robot angle PID controller", thetaController);
 
         m_voltReq = new VoltageOut(0.0); 
+
+        initialGyroAngle = gyro.getAngle();
+        initialPositions = getRawDrivePositions();
     }
 
 
@@ -587,7 +593,7 @@ public class SwerveBase extends SubsystemBase {
                 );
                 SmartDashboard.putString("align speeds", speeds.toString());
 
-                drive(speeds, true, false, false);
+                drive(speeds, true, false);
             }
             ).until(() -> getDistanceToTranslation(targetPose.getTranslation()) < distanceEnd))
             .andThen(runOnce(()-> {
@@ -642,64 +648,73 @@ public class SwerveBase extends SubsystemBase {
      * 
      * COMMENT OUT DRIVEBASE AND ODOMETRY CODE BEFORE RUNNING THIS
      */
-    public Command runWheelCharacterization(){
+    public Command runWheelCharacterization() {
 
-        // total distance each module should travel for one rotation
-        // circumferenc = pi * d
-        double one_rotation_distance = Constants.Swerve.WHEEL_BASE_METERS * Math.PI * Math.sqrt(2);
+        /*
+         * wheel Base is the width or distance from one wheel to the next on the chassis
+         * let wheel base = w
+         * sqrt((w / 2)^2+(w/2)^2) = distance from wheel to center, or radius = sqrt2 *
+         * w/2
+         * multiply by 2 to get diameter --> d = sqrt2 * w
+         * multiply by pi to get circumference:
+         */
 
-        return runOnce(()-> {
-
-            //get each module in positions
-            for(var mod : modules){
-                    mod.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(45 + mod.index * 90)));
-            }
-
+        double oneRotation = Constants.Swerve.WHEEL_BASE_METERS * Math.PI * Math.sqrt(2);
+        backwardsResetGyro();
+        initialGyroAngle = gyro.getAngle();
+        
+        return runOnce(() -> {
+            
+            // get each module in positions
+            // sets each motor to stop moving, and converts the module index (which quadrant
+            // relative to the chassis the motor is - 1) to degrees
+            // for (var mod : modules) {
+            //     mod.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(45 + mod.index * 90)));
+            // }
+            
         })
-        .andThen(
-         waitSeconds(0.5)
-        )
-        .andThen(runOnce(
-          ()-> {
-            initialPositions = getRawDrivePositions();
-            initialGyroAngle = gyro.getAngle();
-          }
-        ))
+        .andThen(waitSeconds(0.5))
         .andThen(
             deadline(
-                new WaitCommand(6)
-                ,
-                run(()-> {
-                    // closed loop control to turn in place one rotation
-                    for(var mod : modules){
-                        mod.setDesiredState(new SwerveModuleState(0.3, Rotation2d.fromDegrees(45 + mod.index * 90)));
-                    }
-                })
-                )
-        )
-        .andThen(
-            waitSeconds(1)
-        )
-        .andThen(
-            runOnce(()-> {
+                new WaitCommand(6),
+                run(() -> {
+                // closed loop control to turn in place one rotation
+                // for (var mod : modules) {
+                //     mod.setDesiredState(new SwerveModuleState(0.3,
+                //     Rotation2d.fromDegrees(45 + mod.index * 90)));
+                // }
+                drive( new ChassisSpeeds(0.0,0.0,0.3),false,false);
+        }))).andThen(runOnce(() -> {
+            //stop motors
+            for (var mod : modules) {
+                mod.setDesiredState(new SwerveModuleState(0, Rotation2d.fromDegrees(45 + mod.index * 90)));
+            }
+
+        })).andThen(waitSeconds(1))
+        .andThen(runOnce(() -> {
+
                 double[] currentPositions = getRawDrivePositions();
                 double avg_calculated_wheel_circumference = 0;
-                double actual_distance_traveled = one_rotation_distance * Math.abs(gyro.getAngle()-initialGyroAngle)/360;
-                for(var mod : modules){
-                    //original_circumference/new_circumference = calculated_distance/actual_distance
-                    // actual_distance * original_circumference = new_circumference * calculated_distance
-                    // new_circumference = actual_distance * original_circumference / (calculated_distance)
-                    double new_circumference = actual_distance_traveled * Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS / (initialPositions[mod.index] - currentPositions[mod.index]);
-                    avg_calculated_wheel_circumference += new_circumference;
-                    SmartDashboard.putNumber("initial distance " + mod.index, initialPositions[mod.index]);
-                    SmartDashboard.putNumber("current distance " + mod.index, currentPositions[mod.index]);
+                //distance of one rotation * number of rotations based on gyro
+                double actual_distance_traveled =  oneRotation * Math.abs(gyro.getAngle()/Constants.Swerve.GYRO_DRIFT_COMPENSATION) / 360;
+                for (var mod : modules) {
+
+                    //actual distance / wheel rotations = wheel circumference, because wheel circumference * number of rotations = linear distance the wheel travels
+                    //actual distance / (pi * wheel rotations (current rotations - original rotations) / gear ratio to account for motor spins per wheel spin)
+                    double new_circumference = actual_distance_traveled / 
+                    (Math.PI * (currentPositions[mod.index] - initialPositions[mod.index]) /((Constants.Swerve.DRIVING_GEAR_RATIO)));
+                    
+                    avg_calculated_wheel_circumference += Math.abs(new_circumference);
+
+                    SmartDashboard.putNumber("Actual Distance", actual_distance_traveled);
+                    SmartDashboard.putNumber("new circumference " + mod.index, new_circumference);
+                    SmartDashboard.putNumber("raw initial distance " + mod.index, initialPositions[mod.index]);
+                    SmartDashboard.putNumber("raw current distance " + mod.index, currentPositions[mod.index]);
                     SmartDashboard.putNumber(mod.index + "calculated wheel circumference", new_circumference);
                 }
                 avg_calculated_wheel_circumference /= 4;
                 SmartDashboard.putNumber("Average Calculated Wheel Circumference", avg_calculated_wheel_circumference);
-            })
-        )
-        ;
+            }));
     }
 
     public Command requireSubsystem(){
@@ -733,7 +748,7 @@ public class SwerveBase extends SubsystemBase {
             ()-> {
                     ChassisSpeeds speeds = speedSupplier.get();
                     speeds.omegaRadiansPerSecond = getAngularComponentFromRotationOverride(angleDegrees.getAsDouble());
-                    drive(speeds, true, true, false);
+                    drive(speeds, true, true);
                  }
         );
     }
@@ -780,7 +795,7 @@ public class SwerveBase extends SubsystemBase {
      * Drives the robot in teleop, we don't want it fighting the auton swerve commands
      */
     public void teleopDefaultCommand(Supplier<ChassisSpeeds> speedsSupplier, boolean fieldOriented, boolean accelComp){
-        drive(speedsSupplier.get(), true, true, accelComp);
+        drive(speedsSupplier.get(), true, true);
     } //590, 736
     
     /**
@@ -790,7 +805,7 @@ public class SwerveBase extends SubsystemBase {
      * @param commandedSpeeds the commanded chassis speeds from the joysticks
      * @param fieldOriented A boolean that specifies if the robot should be driven in fieldOriented mode or not
      */
-    public void drive(ChassisSpeeds commandedSpeeds, boolean fieldOriented, boolean useMaxSpeed, boolean filter){
+    public void drive(ChassisSpeeds commandedSpeeds, boolean fieldOriented, boolean useMaxSpeed){
 
         ChassisSpeeds currentFieldRelSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), getSavedPose().getRotation());
 
@@ -924,6 +939,17 @@ public class SwerveBase extends SubsystemBase {
         }finally{
             odometryLock.writeLock().unlock();
         }
+    }
+
+    public void setValidTagIDs(int[] ids) {
+
+        validTagIDs = ids;
+
+        for (String cam : camNames) {
+            LimelightHelpers.SetFiducialIDFiltersOverride(cam, ids);
+        }
+
+        SmartDashboard.putString("Valid Tag IDs", Arrays.toString(validTagIDs));
     }
 
 
