@@ -5,6 +5,8 @@ import static edu.wpi.first.wpilibj2.command.Commands.deadline;
 import static edu.wpi.first.wpilibj2.command.Commands.waitSeconds;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -126,6 +128,8 @@ SwerveBase extends SubsystemBase {
     double initialGyroAngle;
     double[] initialPositions;
 
+    Map<String, int[]> tagDictionary;
+
 
     // SysID
     private final SysIdRoutine m_sysIdRoutineSteer = new SysIdRoutine(
@@ -159,6 +163,10 @@ SwerveBase extends SubsystemBase {
         return m_sysIdRoutineToApply.dynamic(direction);
     }
 
+    public void addTagToDictionary(String tagSetName, int[] tagSet){
+        tagDictionary.put(tagSetName, tagSet);
+    }
+
     /**
      * Does all da constructing
      * 
@@ -167,6 +175,11 @@ SwerveBase extends SubsystemBase {
      * @param validTagIDs April Tag IDs which are safe to use for pose estimation (stable tags that don't move around too much)
      */
     public SwerveBase(String[] camNames, TalonFXModule[] modules, int[] validTagIDs) {
+
+        tagDictionary = new HashMap<String, int[]>();
+
+        addTagToDictionary("currentTagSet", validTagIDs);
+
         //pigeon.setYaw(0);
         // 4 modules * 3 signals per module
         allOdomSignals = new BaseStatusSignal[(4 * 3)];
@@ -941,15 +954,16 @@ SwerveBase extends SubsystemBase {
         }
     }
 
-    public void setValidTagIDs(int[] ids) {
+    public void setValidTagIDs(String tagSetName) {
 
-        validTagIDs = ids;
+        validTagIDs = tagDictionary.get(tagSetName);
 
         for (String cam : camNames) {
-            LimelightHelpers.SetFiducialIDFiltersOverride(cam, ids);
+            LimelightHelpers.SetFiducialIDFiltersOverride(cam, validTagIDs);
         }
 
         SmartDashboard.putString("Valid Tag IDs", Arrays.toString(validTagIDs));
+        SmartDashboard.putString(" Valid Tag Set Name ", tagSetName);
     }
 
 
