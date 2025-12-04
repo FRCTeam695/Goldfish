@@ -103,7 +103,7 @@ public class RobotContainer {
       .andThen(new PrintCommand("I'm Done!"))
     );
 
-    driver.b().whileTrue(Swerve.driveAtSpeed(0.01));
+    driver.b().onTrue(Swerve.runWheelCharacterization());
 
     /* sysID
     driver.rightBumper().onTrue(runOnce(() -> SignalLogger.start()));

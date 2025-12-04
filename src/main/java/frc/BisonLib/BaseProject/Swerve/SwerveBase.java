@@ -675,11 +675,6 @@ public class SwerveBase extends SubsystemBase {
             deadline(
                 new WaitCommand(6),
                 run(() -> {
-                // closed loop control to turn in place one rotation
-                // for (var mod : modules) {
-                //     mod.setDesiredState(new SwerveModuleState(0.3,
-                //     Rotation2d.fromDegrees(45 + mod.index * 90)));
-                // }
                 drive( new ChassisSpeeds(0.0,0.0,0.3),false,false);
         }))).andThen(runOnce(() -> {
             //stop motors
