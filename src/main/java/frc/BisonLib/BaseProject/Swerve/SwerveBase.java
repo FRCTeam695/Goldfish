@@ -113,12 +113,10 @@ public class SwerveBase extends SubsystemBase {
     //                 1, 0.0, 0.0,
     //                 new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
     
-    private TrapezoidProfile profile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
+    private TrapezoidProfile profile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCEL_METERS_PER_SECOND_SQ_AUTOALIGN));
 
-    private double distanceNeededToBrakeAtThisSpeed;
     private double distanceToTarget;
     private boolean trapezoidalOn;
-    private boolean pidOn;
 
     private TrapezoidProfile.State goalState = new TrapezoidProfile.State(0, 0);
     private TrapezoidProfile.State currentState;
@@ -518,11 +516,6 @@ public class SwerveBase extends SubsystemBase {
     
 
     public Command driveToPose(Pose2d targetPose, double distanceEnd){
-
-        final double position_kP = 0.5;
-
-        final double velocity_kP = 0.7;
-
         return
             (run(
             ()->{
@@ -542,104 +535,44 @@ public class SwerveBase extends SubsystemBase {
 
                 // converting the errors to components of a unit vector
                 distanceToTarget = Math.hypot(dx, dy);
+                SmartDashboard.putNumber("Distance To Target", distanceToTarget);
                 double unitX = dx / distanceToTarget;
                 double unitY = dy / distanceToTarget;
 
                 SmartDashboard.putNumber("alignment dx", dx);
                 SmartDashboard.putNumber("alignment dy", dy);
 
-                double speed = MathUtil.clamp(3.0 * distanceToTarget, 
-                -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, 
-                Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
+                ChassisSpeeds robotSpeed = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
+                // projecting the current velocity vector onto the ideal distance vector to only get velocity towards target
+                double currentVelocityTowardsTarget = (robotSpeed.vxMetersPerSecond*dx + robotSpeed.vyMetersPerSecond*dy)/distanceToTarget;
 
+                SmartDashboard.putNumber("current velocity towards target", currentVelocityTowardsTarget);
+
+                double distanceNeededToBrakeAtThisSpeed = Math.pow(currentVelocityTowardsTarget, 2)/(2*Constants.Swerve.MAX_ACCEL_METERS_PER_SECOND_SQ_AUTOALIGN);
+                SmartDashboard.putNumber("distance needed to brake", distanceNeededToBrakeAtThisSpeed);
+
+                double speed;
+                if(Math.hypot(dx, dy) > distanceNeededToBrakeAtThisSpeed){
+                    speed = MathUtil.clamp(3.5 * distanceToTarget, 
+                    -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, 
+                    Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
+                }
+                else{
+                    currentState = new TrapezoidProfile.State(distanceToTarget, -currentVelocityTowardsTarget);
+                    goalState = new TrapezoidProfile.State(0, 0);
+                    outputSetpoint = profile.calculate(0.02, currentState, goalState);
+    
+                    speed = outputSetpoint.velocity;
+                }
                 double attractX = speed * unitX;
                 double attractY = speed * unitY;
+                
 
                 ChassisSpeeds speeds = new ChassisSpeeds(
                     MathUtil.clamp(attractX, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
                     MathUtil.clamp(attractY, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
                     getAngularComponentFromRotationOverride(targetPose.getRotation().getDegrees()));
                 
-                SmartDashboard.putString("Chassis Speeds Commanded", speeds.toString());
-                
-                drive(speeds, true, false, false);
-
-                ChassisSpeeds robotSpeed = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
-               
-                double xvel = robotSpeed.vxMetersPerSecond;
-                double yvel = robotSpeed.vyMetersPerSecond;
-
-                // projecting the current velocity vector onto the ideal distance vector to only get velocity towards target
-                double currentVelocityTowardsTarget = (xvel*dx + yvel*dy)/distanceToTarget;
- 
-                SmartDashboard.putNumber("current velocity towards target", currentVelocityTowardsTarget);
-
-                distanceNeededToBrakeAtThisSpeed = Math.pow(currentVelocityTowardsTarget, 2)/(2*Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ);
-
-                SmartDashboard.putNumber("distance needed to brake", distanceNeededToBrakeAtThisSpeed);
-
-            })).until(
-                () -> (getDistanceToTranslation(targetPose.getTranslation()) < distanceNeededToBrakeAtThisSpeed))
-            .andThen(run(() -> {
-                
-                trapezoidalOn = true;
-
-                double dx = targetPose.getX() - getSavedPose().getX();
-                double dy = targetPose.getY() - getSavedPose().getY();
-
-                // converting the errors to components of a unit vector
-                distanceToTarget = Math.hypot(dx, dy);
-                double unitX = dx / distanceToTarget;
-                double unitY = dy / distanceToTarget;
-
-                ChassisSpeeds robotSpeed = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), getSavedPose().getRotation());
-               
-                double xvel = robotSpeed.vxMetersPerSecond;
-                double yvel = robotSpeed.vyMetersPerSecond;
-
-                // projecting the current velocity vector onto the ideal distance vector to only get velocity towards target
-                double currentVelocityTowardsTarget = (xvel*dx + yvel*dy)/distanceToTarget;
- 
-                SmartDashboard.putNumber("current velocity towards target", currentVelocityTowardsTarget);
-
-                currentState = new TrapezoidProfile.State(distanceToTarget, -currentVelocityTowardsTarget);
-                goalState = new TrapezoidProfile.State(0, 0);
-
-                outputSetpoint = profile.calculate(0.02, currentState, goalState);
-
-                double setpointPosition = outputSetpoint.position;
-
-                // double positionCompensation = 0.7 * (outputSetpoint.position - distance);
-
-               // double velocityCompensation = 1 * (outputSetpoint.velocity + currentVelocityTowardsTarget);
-
-                double setpointVelocity = outputSetpoint.velocity //+ //velocityCompensation
-                //positionCompensation
-                ;
-            
-                //SmartDashboard.putNumber("added position", positionCompensation);
-                //SmartDashboard.putNumber("added velocity", velocityCompensation);
-                SmartDashboard.putNumber("setpoint vel", -setpointVelocity);
-                SmartDashboard.putNumber("setpoint position", setpointPosition); 
-
-                double attractX;
-                double attractY;
-
-                // makes robot go straight by applying calculated velocity to unit vector
-                attractY = -unitY * setpointVelocity;
-                attractX = -unitX * setpointVelocity;
-           
-                SmartDashboard.putNumber("distance to target trapezoid", distanceToTarget);
-                SmartDashboard.putNumber("attract speed", Math.hypot(attractX, attractY));
-                
-                ChassisSpeeds speeds =
-                    new ChassisSpeeds(
-                        MathUtil.clamp(attractX, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND),
-                        MathUtil.clamp(attractY, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND),
-                    getAngularComponentFromRotationOverride(targetPose.getRotation().getDegrees())
-                );
-                SmartDashboard.putString("align speeds", speeds.toString());
-
                 drive(speeds, true, false, false);
 
             })
@@ -907,7 +840,7 @@ public class SwerveBase extends SubsystemBase {
         double desiredSkidAccel = w_perp_mag/dt;
 
         // make sure total accel doesnt exceed max accel
-        double norm = Math.pow(desiredForwardAccel/Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ, 2)
+        double norm = Math.pow(desiredForwardAccel/max_fwd_accel, 2)
                     + Math.pow(desiredSkidAccel/Constants.Swerve.MAX_SKID_ACCEL, 2);
         if(norm > 1){
             SmartDashboard.putBoolean("scaling acceleration", true);
@@ -948,10 +881,10 @@ public class SwerveBase extends SubsystemBase {
 
         // vx_perp = 0;
         // vx_perp = 0;
-        //commandedSpeeds.vxMetersPerSecond = vx_forward + vx_perp;
-        //commandedSpeeds.vyMetersPerSecond = vy_forward + vy_perp;
-        commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
-        commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
+        commandedSpeeds.vxMetersPerSecond = vx_forward + vx_perp;
+        commandedSpeeds.vyMetersPerSecond = vy_forward + vy_perp;
+        //commandedSpeeds.vxMetersPerSecond = xFilter.calculate(commandedSpeeds.vxMetersPerSecond);
+        //commandedSpeeds.vyMetersPerSecond = yFilter.calculate(commandedSpeeds.vyMetersPerSecond);
         commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
         //speeds = applyAccelerationLimit(speeds);
 

@@ -12,12 +12,41 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.Constants;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import edu.wpi.first.wpilibj.Timer;
 
 
 public class EnhancedCommandController extends CommandXboxController{
 
+    
+    public Trigger flick;
+    boolean isFlicked = false;
+    double oldTime = 0;
+    double oldLeftX = 0;
+
+    boolean upJump = false;
+    boolean downJump = false;
+    double upJumpTime = 1;
+    double downJumpTime = 1000;
+    double timeSinceUp = 0;
+    double timeSinceDown = 0;
+    boolean jumpTimeSpanValid = false;
+    double oldJumpTimeSpan = 0;
+
+
+    boolean isJoystickStill = true;
+    boolean wasCenteredBeforeMove = false;
+    double lastTimeCentered = 0;
+    double timeSinceFlick = 0;
+    boolean flickCooldownDone = false;
+    
+
     public EnhancedCommandController(int port){
         super(port);
+
+        flick = new Trigger(()->isFlicked);
+        
+        
     }
 
 
@@ -32,15 +61,108 @@ public class EnhancedCommandController extends CommandXboxController{
         return false;
     }
 
+    public boolean getFlick(){
+        return isFlicked;
+    }
 
     public ChassisSpeeds getRequestedChassisSpeeds(){
-
+        
         // +X is forward and +Y is left in wpilib coordinates
         double Xj = getLeftY();
         double Yj = getLeftX();
 
+        double newTime = Timer.getFPGATimestamp();
+        
+
+            
+            double elapsedTime = newTime - oldTime;
+            double newLeftX = getLeftX();
+            double derivativeAbs = Math.abs((newLeftX-oldLeftX)/elapsedTime);
+            double derivative = (newLeftX-oldLeftX)/elapsedTime;
+
+            timeSinceUp = newTime - upJumpTime;
+            timeSinceDown = newTime - downJumpTime;
+
+            if(Math.abs(newLeftX) < 0.2 && derivativeAbs < 0.05){
+                lastTimeCentered = newTime;
+            }
+
+            wasCenteredBeforeMove = (newTime - lastTimeCentered) > 0.05;
+
+            if(derivative > 0 && derivativeAbs > 0.01){
+                upJump = true;
+                
+                upJumpTime = newTime;
+            }
+            
+            if(derivative < 0 && derivativeAbs > 0.01){
+                downJump = true;
+                
+                downJumpTime = newTime;
+            }
+
+            SmartDashboard.putBoolean("upJump", upJump);
+            SmartDashboard.putBoolean("downJump", downJump);
+            SmartDashboard.putNumber("upJumpTime", upJumpTime);
+            SmartDashboard.putNumber("downJumpTime", downJumpTime);
+
+            double jumpTimeSpanAbs = Math.abs(upJumpTime - downJumpTime);
+            double newjumpTimeSpan = upJumpTime - downJumpTime;
+                //if negative, up happened first. If positive, down happened first
+            double timeSinceLastJump = 0;
+            if(newjumpTimeSpan < 0){
+                timeSinceLastJump = timeSinceDown;
+                //down is currently happening
+
+            }
+            if(newjumpTimeSpan > 0){
+                timeSinceLastJump = timeSinceUp;
+            }
+            oldJumpTimeSpan = newjumpTimeSpan;
+
+            if(derivativeAbs < 0.01){
+                isJoystickStill = true;
+            }else{
+                isJoystickStill = false;
+            }
+            
+            if((newTime - timeSinceFlick) < 0.04){
+                flickCooldownDone = false;
+            }else{
+                flickCooldownDone = true;
+            }
+
+            SmartDashboard.putNumber("newjumpTimeSpan", newjumpTimeSpan);
+            SmartDashboard.putNumber("jumpTimeSpanAbs", jumpTimeSpanAbs);
+            jumpTimeSpanValid = false;
+
+            if(jumpTimeSpanAbs <= 0.1 && !isFlicked && timeSinceLastJump < 0.04 && wasCenteredBeforeMove && flickCooldownDone){
+                upJump = false;
+                downJump = false;
+                jumpTimeSpanValid = true;
+                
+                isFlicked = true;
+                timeSinceFlick = newTime;
+
+                
+            }else{
+                if(isFlicked && isJoystickStill)
+                 isFlicked = false;
+                
+                
+            }
+            oldTime = newTime;
+            oldLeftX = newLeftX;
+
+            SmartDashboard.putBoolean("jumpTimeSpanValid", jumpTimeSpanValid);
+            SmartDashboard.putNumber("Derivative of Flick", derivative);
+            SmartDashboard.putNumber("oldLeftX", oldLeftX);
+            SmartDashboard.putNumber("newLeftX", newLeftX);
+            SmartDashboard.putBoolean("isFlicked", isFlicked);
+
         // +Z is ccw
         double Zj = -getSquaredRightStick();
+
 
         if(!isRedAlliance()){
             Xj *= -1;
