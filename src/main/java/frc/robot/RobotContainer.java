@@ -18,6 +18,8 @@ import frc.robot.subsystems.DuoTalonLift.Heights;
 import frc.robot.subsystems.LED;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ConditionalCommand;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -70,6 +72,7 @@ public class RobotContainer {
   public final LED led = new LED();
   
   
+  
   SendableChooser<Command> autoChooser = new SendableChooser<>();
 
   public int[] reefTags = {6,7,8,9,10,11,17,18,19,20,21,22};
@@ -84,7 +87,7 @@ public class RobotContainer {
           };
 
   private final String[] camNames = {"limelight-right"};
-  private static final EnhancedCommandController driver =
+  public static final EnhancedCommandController driver =
       new EnhancedCommandController(0);
 
     
@@ -96,6 +99,8 @@ public class RobotContainer {
     Coralizer = new Coralizer();
     Alagizer = new AlgaeDislodger();
     Climber = new Climber();
+
+
     
     scoringHeight = NetworkTableInstance.getDefault().getTable("sidecarTable").getIntegerTopic("scoringLevel").subscribe(1);
 
@@ -173,7 +178,7 @@ public class RobotContainer {
    */
   private void configureBindings() {
 
-   // final Trigger flick = new Trigger(()-> driver.getFlick());
+   
 
 
     // indication for human player to drop coral
@@ -325,13 +330,13 @@ public class RobotContainer {
       )
     );
 
-    driver.b().onFalse(
-      Alagizer.goToPosition(()-> Constants.Alagizer.dump).until(Alagizer.atSetpoint)
-      .andThen(
-        new WaitCommand(0.25)
-      )
-      .andThen(Alagizer.dump())
-    );
+    // driver.b().onFalse(
+    //   Alagizer.goToPosition(()-> Constants.Alagizer.dump).until(Alagizer.atSetpoint)
+    //   .andThen(
+    //     new WaitCommand(0.25)
+    //   )
+    //   .andThen(Alagizer.dump())
+    // );
 
     driver.povDown().whileTrue(
       either(
@@ -340,6 +345,13 @@ public class RobotContainer {
         ()-> DriverStation.isDisabled()
       )
     );
+
+   
+    driver.b().whileTrue( 
+      (Swerve.driveForwards().until(driver.flick).andThen(Swerve.driveBackwards().until(driver.flick))).repeatedly()
+    
+    );
+    
 
 
     // display all calibrated field constants on glass
@@ -368,7 +380,7 @@ public class RobotContainer {
           (
             ()-> 
               Swerve.teleopDefaultCommand(
-                driver::getRequestedChassisSpeeds,
+                driver::getRequestedChassisSpeeds, // ()-> driver.getRequestedChassisSpeeds()
                 true
               )
               ,

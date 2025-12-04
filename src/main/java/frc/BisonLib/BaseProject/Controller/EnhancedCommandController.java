@@ -72,10 +72,35 @@ public class EnhancedCommandController extends CommandXboxController{
         // +X is forward and +Y is left in wpilib coordinates
         double Xj = getLeftY();
         double Yj = getLeftX();
-
-        double newTime = Timer.getFPGATimestamp();
         
 
+        // +Z is ccw
+        double Zj = -getSquaredRightStick();
+
+
+        if(!isRedAlliance()){
+            Xj *= -1;
+            Yj *= -1;
+        }
+        double db = 0.2;
+
+        Xj = MathUtil.applyDeadband(Xj, db);
+        Yj = MathUtil.applyDeadband(Yj, db);
+        Zj = MathUtil.applyDeadband(Zj, db);
+
+        //WANTED FIELD RELATIVE VELOCITIES
+        Xj *= Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP;
+        Yj *= Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP;
+        Zj *= Constants.Swerve.MAX_ANGULAR_SPEED_RAD_PER_SECOND;
+
+        return new ChassisSpeeds(Xj, Yj, Zj);
+    }
+
+
+
+    public void flickDetection(){
+        double newTime = Timer.getFPGATimestamp();
+        
             
             double elapsedTime = newTime - oldTime;
             double newLeftX = getLeftX();
@@ -168,35 +193,7 @@ public class EnhancedCommandController extends CommandXboxController{
             SmartDashboard.putNumber("oldLeftX", oldLeftX);
             SmartDashboard.putNumber("newLeftX", newLeftX);
             SmartDashboard.putBoolean("isFlicked", isFlicked);
-        
-
-       
-        
-
-        
-
-        // +Z is ccw
-        double Zj = -getSquaredRightStick();
-
-
-        if(!isRedAlliance()){
-            Xj *= -1;
-            Yj *= -1;
-        }
-        double db = 0.2;
-
-        Xj = MathUtil.applyDeadband(Xj, db);
-        Yj = MathUtil.applyDeadband(Yj, db);
-        Zj = MathUtil.applyDeadband(Zj, db);
-
-        //WANTED FIELD RELATIVE VELOCITIES
-        Xj *= Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP;
-        Yj *= Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP;
-        Zj *= Constants.Swerve.MAX_ANGULAR_SPEED_RAD_PER_SECOND;
-
-        return new ChassisSpeeds(Xj, Yj, Zj);
     }
-
 
     /**
      * Squares the rightX stick values, makes the robot accel. less for smaller joystick inputs
