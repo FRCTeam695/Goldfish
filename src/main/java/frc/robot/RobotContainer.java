@@ -7,13 +7,11 @@ package frc.robot;
 import frc.BisonLib.BaseProject.Controller.EnhancedCommandController;
 
 // import frc.robot.Subsystems.CoralGripper2Motors;
-import frc.robot.subsystems.Swerve;
+import frc.BisonLib.BaseProject.Swerve.SwerveBase;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.ConditionalCommand;
 import edu.wpi.first.wpilibj2.command.PrintCommand;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
@@ -26,7 +24,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.IntegerSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DataLogManager;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -39,7 +36,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class RobotContainer {
 
-  public final Swerve Swerve;
+  public final SwerveBase Swerve;
   public IntegerSubscriber scoringHeight;
   SendableChooser<Command> autoChooser = new SendableChooser<>();
 
@@ -59,11 +56,9 @@ public class RobotContainer {
       new EnhancedCommandController(0);
 
 
-  public boolean stupidBool = true;
-
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    Swerve = new Swerve(camNames, modules, reefTags);
+    Swerve = new SwerveBase(camNames, modules, reefTags);
    
     scoringHeight = NetworkTableInstance.getDefault().getTable("sidecarTable").getIntegerTopic("scoringLevel").subscribe(1);
 
@@ -95,26 +90,6 @@ public class RobotContainer {
  
     // make sure you gyro reset by aligning with the reef, not eyeballing it
     driver.back().onTrue(Swerve.resetGyro());
-
-
-    // left gyro reset before auton
-    driver.povLeft().onTrue(
-      new ConditionalCommand(
-        Swerve.leftGyroReset(), 
-        new WaitCommand(0), 
-        ()-> DriverStation.isDisabled()
-      )
-    );
-    
-    // right gyro reset before auton
-    driver.povRight().onTrue(
-      new ConditionalCommand(
-        Swerve.rightGyroReset(), 
-        //Elevator.goToScoringHeight().until(Elevator.atSetpoint).andThen(Coralizer.ejectCoral()).andThen(Coralizer.runIntakeAndCoralizer(()-> 0).withTimeout(0.01)).andThen(new WaitCommand(5)),
-        new WaitCommand(0), 
-        ()-> DriverStation.isDisabled()
-      )
-    );
 /* 
     driver.a().whileTrue(
       Swerve.driveToTargetPoseStraightTrapezoidal(new Pose2d(1.75,1.5, new Rotation2d(0)), 0.1)
@@ -130,20 +105,6 @@ public class RobotContainer {
 
     driver.b().whileTrue(Swerve.driveAtSpeed(0.01));
 
-    /*
-    
-    driver.y().whileTrue(
-      Swerve.driveToTargetPoseStraight(new Pose2d(1.75,1.5, new Rotation2d(0)), 0.5)
-      .andThen(new PrintCommand("I'm Done!"))
-    );
-
-    driver.b().whileTrue(
-      Swerve.driveToTargetPoseCurved(new Pose2d(2,2.5, new Rotation2d(0)), 0.5)
-    );*/
-
-    driver.leftBumper().whileTrue(run(() -> stupidBool = true)); //filters
-    driver.leftBumper().whileFalse(run(() -> stupidBool = false));
-    
     /* sysID
     driver.rightBumper().onTrue(runOnce(() -> SignalLogger.start()));
     driver.leftBumper().onTrue(runOnce(() -> SignalLogger.stop()));
@@ -164,8 +125,7 @@ public class RobotContainer {
             ()-> 
               Swerve.teleopDefaultCommand(
                 driver::getRequestedChassisSpeeds,
-                true,
-                stupidBool
+                true
               )
               ,
               Swerve
