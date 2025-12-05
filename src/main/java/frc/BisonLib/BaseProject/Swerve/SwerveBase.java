@@ -13,6 +13,7 @@ import com.ctre.phoenix6.Orchestra;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.StatusCode;
 import com.ctre.phoenix6.controls.VoltageOut;
+import com.ctre.phoenix6.controls.jni.ControlJNI;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.PIDConstants;
@@ -517,11 +518,11 @@ public class SwerveBase extends SubsystemBase {
 
     public Command driveToPose(Pose2d targetPose, double distanceEnd){
         return
-            (run(
+            runOnce( () -> {
+                trapezoidalOn = false;
+            }).andThen(run(
             ()->{
                 
-                trapezoidalOn = false;
-
                 SmartDashboard.putBoolean("reached destination", false);
  
                 m_field.getObject("targetPose").setPose(targetPose);
@@ -550,24 +551,31 @@ public class SwerveBase extends SubsystemBase {
 
                 double distanceNeededToBrakeAtThisSpeed = Math.pow(currentVelocityTowardsTarget, 2)/(2*Constants.Swerve.MAX_ACCEL_METERS_PER_SECOND_SQ_AUTOALIGN);
                 SmartDashboard.putNumber("distance needed to brake", distanceNeededToBrakeAtThisSpeed);
+                
 
                 double speed;
-                if(Math.hypot(dx, dy) > distanceNeededToBrakeAtThisSpeed){
-                    speed = MathUtil.clamp(3.5 * distanceToTarget, 
+                // if(distanceToTarget > distanceNeededToBrakeAtThisSpeed && !trapezoidalOn){
+                    speed = MathUtil.clamp(6 * distanceToTarget, 
                     -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, 
                     Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND);
-                }
-                else{
-                    currentState = new TrapezoidProfile.State(distanceToTarget, -currentVelocityTowardsTarget);
-                    goalState = new TrapezoidProfile.State(0, 0);
-                    outputSetpoint = profile.calculate(0.02, currentState, goalState);
+                // }
+                // else{
+//                     trapezoidalOn = true;
+
+//                     currentState = new TrapezoidProfile.State(distanceToTarget, -currentVelocityTowardsTarget);
+
+//                     goalState = new TrapezoidProfile.State(0, 0);
+
+//                     outputSetpoint = profile.calculate(0.02, currentState, goalState);
     
-                    speed = outputSetpoint.velocity;
-                }
+// ;                   speed = outputSetpoint.velocity * -1;
+
+                SmartDashboard.putNumber("Trapezoidal Commanded Speed", speed);
+                    
+                 
                 double attractX = speed * unitX;
                 double attractY = speed * unitY;
                 
-
                 ChassisSpeeds speeds = new ChassisSpeeds(
                     MathUtil.clamp(attractX, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 
                     MathUtil.clamp(attractY, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND), 

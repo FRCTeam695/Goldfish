@@ -90,6 +90,7 @@ public class RobotContainer {
  
     // make sure you gyro reset by aligning with the reef, not eyeballing it
     driver.back().onTrue(Swerve.resetGyro());
+    driver.y().onTrue(runOnce(()-> Swerve.resetOdometry(new Pose2d(0,0,Swerve.getSavedPose().getRotation()))));
 /* 
     driver.a().whileTrue(
       Swerve.driveToTargetPoseStraightTrapezoidal(new Pose2d(1.75,1.5, new Rotation2d(0)), 0.1)
