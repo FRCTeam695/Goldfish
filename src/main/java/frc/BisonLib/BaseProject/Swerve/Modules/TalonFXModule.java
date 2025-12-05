@@ -4,8 +4,14 @@ package frc.BisonLib.BaseProject.Swerve.Modules;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.networktables.DoublePublisher;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.PubSubOption;
+import edu.wpi.first.networktables.StringPublisher;
 //import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -25,7 +31,7 @@ import com.ctre.phoenix6.configs.CANcoderConfiguration;
 
 import frc.robot.Constants;
 
-public class TalonFXModule{
+public class TalonFXModule extends SubsystemBase{
     private final TalonFX driveMotor;
     private final TalonFX turnMotor;
 
@@ -72,6 +78,37 @@ public class TalonFXModule{
      */
     public int index;
 
+    // 50 Hz Networktables
+    private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
+    private final NetworkTable swerveTable = inst.getTable("SwerveModules");
+
+    // Position
+    private DoublePublisher currentAngle;
+    private DoublePublisher desiredAngle;
+    private DoublePublisher unoptimizedAng;
+    private DoublePublisher modAngDelta;
+
+    // Velocity
+    private DoublePublisher currentVelocity;
+    private DoublePublisher desiredVelocity;
+    private DoublePublisher PIDdesiredVelocity;
+    private DoublePublisher VelocityError;
+    private DoublePublisher currentAngVel;
+
+    // Accel
+    private DoublePublisher currentAccel;
+    private DoublePublisher currentAngAccel;
+
+    // State
+    private StringPublisher moduleState;
+
+    // Currents
+    private DoublePublisher StatorCurrent;
+
+    // Voltage
+    private DoublePublisher ModSupVoltDraw;
+    private DoublePublisher ModVoltDraw;
+
 
     public TalonFXModule(int driveMotorId, int turnMotorId, double absoluteEncoderOffset, int TurnCANCoderId, int moduleIndex){
         this.index = moduleIndex;
@@ -100,6 +137,38 @@ public class TalonFXModule{
         odomSignals[0] = drivePositionSignal;
         odomSignals[1] = driveVelocitySignal;
         odomSignals[2] = rotationSignal;
+
+        NetworkTable moduleTable = swerveTable.getSubTable("Module " + (this.index+1));
+
+        //Position
+        currentAngle = moduleTable.getDoubleTopic("Current Angle").publish();
+        desiredAngle = moduleTable.getDoubleTopic("Desired Angle").publish();
+        unoptimizedAng = moduleTable.getDoubleTopic("Unoptimized Angle (deg)").publish();
+        modAngDelta = moduleTable.getDoubleTopic("Module Angle Delta (deg)").publish();
+
+        //Velocity
+        currentVelocity = moduleTable.getDoubleTopic("Current Linear Vel").publish();
+        desiredVelocity = moduleTable.getDoubleTopic("Desired Linear Vel").publish();
+        PIDdesiredVelocity = moduleTable.getDoubleTopic("PID Desired Linear Vel").publish();
+        VelocityError = moduleTable.getDoubleTopic("Velocity Difference").publish();
+
+        currentAngVel = moduleTable.getDoubleTopic("Current Angular Vel").publish();
+
+        //Acceleration
+        currentAccel = moduleTable.getDoubleTopic("Current Linear Accel").publish();
+        //private final DoublePublisher desiredAccel = moduleTable.getDoubleTopic("Desired Linear Accel").publish(PubSubOption.periodic(0.02));
+        currentAngAccel = moduleTable.getDoubleTopic("Current Angular Accel").publish();
+        //private final DoublePublisher desiredAngAccel = moduleTable.getDoubleTopic("Desired Angular Accel").publish(PubSubOption.periodic(0.02));    
+        
+        //Module state
+        moduleState = moduleTable.getStringTopic("Swerve/Module State").publish();
+
+        //Currents
+        StatorCurrent = moduleTable.getDoubleTopic("Drive Stator Current").publish();
+
+        //Voltage
+        ModSupVoltDraw = moduleTable.getDoubleTopic("Swerve/Module Supply Voltage Draw (Volt)").publish();
+        ModVoltDraw = moduleTable.getDoubleTopic("Swerve/Module Voltage Draw (Volt)").publish();
     }
 
 
@@ -219,8 +288,8 @@ public class TalonFXModule{
     
     public void driveWithVoltage(double volts){
         driveMotor.setVoltage(volts);
-        SmartDashboard.putNumber("Swerve/Module " + (this.index + 1) + "/Supply Voltage Draw", driveMotor.getSupplyVoltage().getValueAsDouble());
-        SmartDashboard.putNumber("Swerve/Module " + (this.index + 1) + "/Voltage Draw", driveMotor.getMotorVoltage().getValueAsDouble());
+        ModSupVoltDraw.set(driveMotor.getSupplyVoltage().getValueAsDouble());
+        ModVoltDraw.set(driveMotor.getMotorVoltage().getValueAsDouble());
     }
 
     public void setTurnMotor(double v){
@@ -288,8 +357,9 @@ public class TalonFXModule{
         
         // Module optimization (don't turn more than 90 degrees)
         var delta = desiredState.angle.minus(latestAngle);
-        SmartDashboard.putNumber("Unoptimized Angle " + this.index + 1, desiredState.angle.getDegrees());
-        SmartDashboard.putNumber("Module Angle Delta " + this.index+1, delta.getDegrees());
+        unoptimizedAng.set(desiredState.angle.getDegrees());
+        modAngDelta.set(delta.getDegrees());
+
         if (Math.abs(delta.getDegrees()) > 90.0) {
           desiredState = new SwerveModuleState(
               -desiredState.speedMetersPerSecond, desiredState.angle.rotateBy(Rotation2d.kPi));
@@ -297,7 +367,7 @@ public class TalonFXModule{
         
         //double sigmoidCompensation = -1/(1+Math.pow(Math.E, -90 * ((Math.abs(desiredState.angle.getRadians() -  latestAngle.getRadians()))-0.1))) + 1;
         
-        double sigmoidCompensation = Math.cos(Math.abs(desiredState.angle.getRadians() -  latestAngle.getRadians()));
+        double sigmoidCompensation = Math.cos(Math.abs(desiredState.angle.getRadians() - latestAngle.getRadians()));
 
         double velocity = sigmoidCompensation * desiredState.speedMetersPerSecond;
         //driveMotor.set(velocity/Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS);
@@ -313,18 +383,25 @@ public class TalonFXModule{
             rotationSetter.withPosition(desiredState.angle.getRotations())
         );
 
-        
-        SmartDashboard.putNumber("Module " + (this.index+1) + " Desired Velocity", desiredState.speedMetersPerSecond);
-        SmartDashboard.putNumber("Module " + (this.index+1) + " Rotation Setpoint Deg", desiredState.angle.getDegrees());
-        SmartDashboard.putNumber("Module " + (this.index+1) + " Angular Velocity", turnMotor.getVelocity().getValueAsDouble());
-        SmartDashboard.putNumber("Module " + (this.index+1) + " Angular Acceleration", turnMotor.getAcceleration().getValueAsDouble());
+        // 50Hz networktables
+        //Angular Position
+        currentAngle.set(latestAngle.getRadians()*180/Math.PI);
+        desiredAngle.set(desiredState.angle.getDegrees());
 
-        SmartDashboard.putNumber("Module " + (this.index+1) + " Motor Velocity", driveMotor.getVelocity().getValueAsDouble() / Constants.Swerve.DRIVING_GEAR_RATIO * Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS);
-        SmartDashboard.putNumber("Module " + (this.index+1) + " PID Desired Velocity", velocity);
+        //Velocity
+        currentVelocity.set(driveMotor.getVelocity().getValueAsDouble() / Constants.Swerve.DRIVING_GEAR_RATIO * Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS);
+        desiredVelocity.set(desiredState.speedMetersPerSecond);
+        PIDdesiredVelocity.set(velocity);
+        VelocityError.set((velocity)-(driveMotor.getVelocity().getValueAsDouble() / Constants.Swerve.DRIVING_GEAR_RATIO * Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS));
 
-        SmartDashboard.putNumber("Module " + (this.index+1) + " Velocity Error", (velocity)-(driveMotor.getVelocity().getValueAsDouble() / Constants.Swerve.DRIVING_GEAR_RATIO * Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS));
+        currentAngVel.set(turnMotor.getVelocity().getValueAsDouble());
 
-        SmartDashboard.putNumber("Module" + (this.index+1) + "Acceleration", getDriveAcceleration());
+        //Acceleration
+        currentAccel.set(getDriveAcceleration());
+        //desiredAccel.set(0); //Needs to be set properly later
+        currentAngAccel.set(turnMotor.getAcceleration().getValueAsDouble());
+        //desiredAngAccel.set(0); //Needs to be set properly later
+
     }
 
     public SwerveModulePosition getPosition(){
@@ -349,6 +426,11 @@ public class TalonFXModule{
             odometryLock.readLock().unlock();
         }
         return new SwerveModuleState(getRawDriveVelocity() / Constants.Swerve.DRIVING_GEAR_RATIO * Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS, angle);
-    }
+    }    
 
+    @Override
+    public void periodic() {
+        moduleState.set(getState().toString());
+        StatorCurrent.set(getDriveStatorCurrent());
+    }
 }

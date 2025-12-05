@@ -40,6 +40,12 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.networktables.BooleanPublisher;
+import edu.wpi.first.networktables.DoublePublisher;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.PubSubOption;
+import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -155,6 +161,16 @@ public class SwerveBase extends SubsystemBase {
     public Command sysIdDynamic(SysIdRoutine.Direction direction) {
         return m_sysIdRoutineToApply.dynamic(direction);
     }
+
+    // 50 Hz Networktables
+    private final NetworkTableInstance inst = NetworkTableInstance.getDefault();
+    private final NetworkTable SwerveBaseTable = inst.getTable("SwerveBase");
+    private final NetworkTable poseTable = SwerveBaseTable.getSubTable("Pose");
+    private final NetworkTable cmdSpeedTable = SwerveBaseTable.getSubTable("Commanded Speed");
+    private final NetworkTable odometryTable = SwerveBaseTable.getSubTable("Odometry");
+    private final NetworkTable NavXTable = SwerveBaseTable.getSubTable("NavX");
+    private final NetworkTable wheelChar = SwerveBaseTable.getSubTable("Wheel Characterization");
+    private final NetworkTable poseVisionTable = SwerveBaseTable.getSubTable("Wheel Characterization");
 
     /**
      * Does all da constructing
@@ -502,6 +518,15 @@ public class SwerveBase extends SubsystemBase {
         return resetGyro(0);
     }
     
+    //Driving to pose
+    private final DoublePublisher xAlignment = poseTable.getDoubleTopic("alignment dx").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher yAlignment = poseTable.getDoubleTopic("alignment dy").publish(PubSubOption.periodic(0.02));
+    private final BooleanPublisher reachedGoal = poseTable.getBooleanTopic("reached destination").publish(PubSubOption.periodic(0.02));
+    private final StringPublisher goalPose = poseTable.getStringTopic("target pose").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher distanceToTarget = poseTable.getDoubleTopic("distance to target trapezoid").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher attractionSpeed = poseTable.getDoubleTopic("attract speed").publish(PubSubOption.periodic(0.02));
+    private final StringPublisher aligningSpeed = poseTable.getStringTopic("align speeds").publish(PubSubOption.periodic(0.02));
+
     public Command driveToPose(Pose2d targetPose, double distanceEnd){
 
         // creates a profiled PID controller object and gives it constraints
@@ -523,9 +548,6 @@ public class SwerveBase extends SubsystemBase {
                 double dy = targetPose.getY() - robotPose.getY();
 
                 double distance = Math.hypot(dx, dy); // diagonal distance from robot to target pose
-
-                SmartDashboard.putNumber("alignment dx", dx);
-                SmartDashboard.putNumber("alignment dy", dy);
                
                 // retrieiving the current field relative speeds of the robot
                 ChassisSpeeds robotSpeed = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), robotPose.getRotation());
@@ -543,10 +565,10 @@ public class SwerveBase extends SubsystemBase {
             (run(
             ()->{
 
-                SmartDashboard.putBoolean("reached destination", false);
+                reachedGoal.set(false);
  
                 m_field.getObject("targetPose").setPose(targetPose);
-                SmartDashboard.putString("targetPose", targetPose.toString());
+                goalPose.set(targetPose.toString());
 
                 // the current field relative robot pose
                 Pose2d robotPose = getSavedPose();
@@ -559,8 +581,8 @@ public class SwerveBase extends SubsystemBase {
                 double unitX = dx / distance;
                 double unitY = dy / distance;
 
-                SmartDashboard.putNumber("alignment dx", dx);
-                SmartDashboard.putNumber("alignment dy", dy);
+                xAlignment.set(dx);
+                yAlignment.set(dy);
 
                 // calculating the desired velocity based on the controller
                 double desiredVelocity = controller.getSetpoint().velocity;
@@ -575,9 +597,8 @@ public class SwerveBase extends SubsystemBase {
                 attractY = -unitY * desiredVelocity;
                 attractX = -unitX * desiredVelocity;
            
-                SmartDashboard.putNumber("desired velocity", desiredVelocity);
-                SmartDashboard.putNumber("distance to target trapezoid", distance);
-                SmartDashboard.putNumber("attract speed", Math.hypot(attractX, attractY));
+                distanceToTarget.set(distance);
+                attractionSpeed.set(Math.hypot(attractX, attractY));
                 
                 ChassisSpeeds speeds =
                     new ChassisSpeeds(
@@ -585,13 +606,14 @@ public class SwerveBase extends SubsystemBase {
                         MathUtil.clamp(attractY, -Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND),
                     getAngularComponentFromRotationOverride(targetPose.getRotation().getDegrees())
                 );
-                SmartDashboard.putString("align speeds", speeds.toString());
+                
+                aligningSpeed.set(speeds.toString());
 
                 drive(speeds, true, false, false);
             }
             ).until(() -> getDistanceToTranslation(targetPose.getTranslation()) < distanceEnd))
             .andThen(runOnce(()-> {
-                SmartDashboard.putBoolean("reached destination", true);
+                reachedGoal.set(true);
                 this.stopModules();
             }))
         );
@@ -636,6 +658,11 @@ public class SwerveBase extends SubsystemBase {
             LimelightHelpers.SetIMUMode(cam, 1);
         }
     }
+
+    private DoublePublisher initDistance = null;
+    private DoublePublisher curDistance = null;
+    private DoublePublisher calWheelCirc = null;
+    private DoublePublisher avgWheelCirc = null;
 
     /*
      * Calculates the circumference of the wheel by turning in place slowly
@@ -691,12 +718,18 @@ public class SwerveBase extends SubsystemBase {
                     // new_circumference = actual_distance * original_circumference / (calculated_distance)
                     double new_circumference = actual_distance_traveled * Constants.Swerve.WHEEL_CIRCUMFERENCE_METERS / (initialPositions[mod.index] - currentPositions[mod.index]);
                     avg_calculated_wheel_circumference += new_circumference;
-                    SmartDashboard.putNumber("initial distance " + mod.index, initialPositions[mod.index]);
-                    SmartDashboard.putNumber("current distance " + mod.index, currentPositions[mod.index]);
-                    SmartDashboard.putNumber(mod.index + "calculated wheel circumference", new_circumference);
+
+                    initDistance = wheelChar.getDoubleTopic("initial distance" + mod.index).publish(PubSubOption.periodic(0.02));
+                    curDistance = wheelChar.getDoubleTopic("current distance" + mod.index).publish(PubSubOption.periodic(0.02));
+                    calWheelCirc = wheelChar.getDoubleTopic("calculated wheel circumference" + mod.index).publish(PubSubOption.periodic(0.02));
+                    avgWheelCirc = wheelChar.getDoubleTopic("average wheel circumference" + mod.index).publish(PubSubOption.periodic(0.02));                                
+                
+                    initDistance.set(initialPositions[mod.index]);
+                    curDistance.set(currentPositions[mod.index]);
+                    calWheelCirc.set(new_circumference);
                 }
                 avg_calculated_wheel_circumference /= 4;
-                SmartDashboard.putNumber("Average Calculated Wheel Circumference", avg_calculated_wheel_circumference);
+                avgWheelCirc.set(avg_calculated_wheel_circumference);
             })
         )
         ;
@@ -783,6 +816,11 @@ public class SwerveBase extends SubsystemBase {
         drive(speedsSupplier.get(), true, true, accelComp);
     } //590, 736
     
+    //CommandedSpeeds
+    private final DoublePublisher omega = cmdSpeedTable.getDoubleTopic("Zj").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher vx = cmdSpeedTable.getDoubleTopic("Xj").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher vy = cmdSpeedTable.getDoubleTopic("Yj").publish(PubSubOption.periodic(0.02));
+
     /**
      * Drives swerve given chassis speeds
      * Should be called every loop
@@ -812,27 +850,21 @@ public class SwerveBase extends SubsystemBase {
             // if robot is nearly stopped, just use commanded speed magnitude (all commanded vel is speeding us up)
             w_along_v = Math.hypot(w_x, w_y);
         }
-
-        SmartDashboard.putNumber("w along v", w_along_v);
-        SmartDashboard.putNumber("v mag", v_mag);
         
         // the signum signifies if we are requesting speed up/braking
         double max_fwd_accel = Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ *
                                (1 - Math.signum(w_along_v - v_mag) * v_mag / Constants.Swerve.MAX_SPEED_METERS_PER_SECONDS_TELEOP);
-        SmartDashboard.putNumber("max fwd accel", max_fwd_accel);
         
         double desiredForwardAccel = (w_along_v - v_mag)/dt;
 
         // project commanded vel onto forward axis, if we aren't moving rn then all wanted vel is parallel
         double w_parallel_x = (v_mag > 1e-6) ? (v_x / v_mag) * w_along_v : w_x;
         double w_parallel_y = (v_mag > 1e-6) ? (v_y / v_mag) * w_along_v : w_y;
-        SmartDashboard.putNumber("parallel cmd vel", Math.hypot(w_parallel_x, w_parallel_y));
 
         // perpendicular component = commanded - parallel
         double w_perp_x = w_x - w_parallel_x;
         double w_perp_y = w_y - w_parallel_y;
         double w_perp_mag = Math.hypot(w_perp_x, w_perp_y);
-        SmartDashboard.putNumber("perp cmd vel", w_perp_mag);
 
         // current sideways vel is always 0 since no component of the current vel doesn't point in the direction of the current vel
         double desiredSkidAccel = w_perp_mag/dt;
@@ -841,16 +873,11 @@ public class SwerveBase extends SubsystemBase {
         double norm = Math.pow(desiredForwardAccel/Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ, 2)
                     + Math.pow(desiredSkidAccel/Constants.Swerve.MAX_SKID_ACCEL, 2);
         if(norm > 1){
-            SmartDashboard.putBoolean("scaling acceleration", true);
             double scale = 1 / Math.sqrt(norm);
             desiredForwardAccel *= scale;
             desiredSkidAccel *= scale;
         }
-        else{
-            SmartDashboard.putBoolean("scaling acceleration", false);
-        }
         double newForwardVel = v_mag + desiredForwardAccel * dt;
-        SmartDashboard.putNumber("new forward vel", newForwardVel);
 
         double vx_forward;
         double vy_forward;
@@ -886,14 +913,13 @@ public class SwerveBase extends SubsystemBase {
         commandedSpeeds.omegaRadiansPerSecond = omegaFilter.calculate(commandedSpeeds.omegaRadiansPerSecond);
         //speeds = applyAccelerationLimit(speeds);
 
-        SmartDashboard.putNumber("Zj", commandedSpeeds.omegaRadiansPerSecond);
-        SmartDashboard.putNumber("Xj", commandedSpeeds.vxMetersPerSecond);
-        SmartDashboard.putNumber("Yj", commandedSpeeds.vyMetersPerSecond);
+        omega.set(commandedSpeeds.omegaRadiansPerSecond);
+        vx.set(commandedSpeeds.vxMetersPerSecond);
+        vy.set(commandedSpeeds.vyMetersPerSecond);
 
         this.driveRobotRelative(ChassisSpeeds.fromFieldRelativeSpeeds(commandedSpeeds, getSavedPose().getRotation()), false, useMaxSpeed);
 
         //SmartDashboard.putBoolean("collision", detectCollision());
-
     }
 
 
@@ -926,6 +952,8 @@ public class SwerveBase extends SubsystemBase {
         }
     }
 
+    public DoublePublisher avgTagDistance = null;
+    public StringPublisher estimatePose = null;
 
     /*
      * updateOdometryWithVision uses vision to add measurements to the odometry
@@ -946,7 +974,9 @@ public class SwerveBase extends SubsystemBase {
             // Only update pose if it is valid and if we arent spinning too fast
             if(mt2_estimate != null && mt2_estimate.tagCount != 0){//remove rotation speed limit
                 ++inc;
-                SmartDashboard.putNumber(inc + " Average Tag Distance", mt2_estimate.avgTagDist);
+                avgTagDistance = poseVisionTable.getDoubleTopic(inc + " Average Tag Distance").publish(PubSubOption.periodic(0.02));
+                avgTagDistance.set(mt2_estimate.avgTagDist);
+
                 avgLLx += mt2_estimate.pose.getX();
                 avgLLy += mt2_estimate.pose.getY();
                 avgLLomega += mt2_estimate.pose.getRotation().getDegrees();
@@ -969,13 +999,14 @@ public class SwerveBase extends SubsystemBase {
                 // This puts the pose reading from each camera onto the Field2d Widget,
                 // Docs - https://docs.wpilib.org/en/stable/docs/software/dashboards/glass/field2d-widget.html
                 m_field.getObject(cam).setPose(mt2_estimate.pose);
-                SmartDashboard.putString("mt2 pose", mt2_estimate.pose.toString());
+                
+                estimatePose = poseVisionTable.getStringTopic("mt2 pose").publish(PubSubOption.periodic(0.02));
+                estimatePose.set(mt2_estimate.pose.toString());
             }
             avgLLx /= inc;
             avgLLy /= inc;
             avgLLomega /= inc;
 
-            SmartDashboard.putString("Logged Pose", new Pose2d(avgLLx, avgLLy, Rotation2d.fromDegrees(avgLLomega)).toString());
         }  
     }
 
@@ -988,10 +1019,6 @@ public class SwerveBase extends SubsystemBase {
      * @param voltageSupplier
      */
     public void testModules(double voltage){
-        //SmartDasboard.putNumber("Swerve/Module 1/Module 1 Current", modules[0].getDriveStatorCurrent());
-        //SmartDashboard.putNumber("Swerve/Module 2/Module 2 Current", modules[1].getDriveStatorCurrent());
-        //SmartDashboard.putNumber("Swerve/Module 3/Module 3 Current", modules[2].getDriveStatorCurrent());
-        //SmartDashboard.putNumber("Swerve/Module 4/Module 4 Current", modules[3].getDriveStatorCurrent());
 
         for(var mod : modules){
             mod.driveWithVoltage(voltage);
@@ -1009,13 +1036,26 @@ public class SwerveBase extends SubsystemBase {
         return pose;
     }
 
+    //Odometry
+    private final DoublePublisher AvgOdometryLoopTime = odometryTable.getDoubleTopic("Average odometry loop time").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher FailedOdometryUpdates = odometryTable.getDoubleTopic("Failed odometry updates").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher SuccessfulOdometryUpdates = odometryTable.getDoubleTopic("Sucessful odometry updates").publish(PubSubOption.periodic(0.02));
+
+    //NavX
+    private final DoublePublisher NavXPos = NavXTable.getDoubleTopic("NavX Position").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher NavXTemp = NavXTable.getDoubleTopic("NavX temperature").publish(PubSubOption.periodic(0.02));
+    private final DoublePublisher NavXModPos = NavXTable.getDoubleTopic("NavX Modified Position").publish(PubSubOption.periodic(0.02));
+
+    //Pose
+    private final StringPublisher robotPose = poseTable.getStringTopic("robot pose").publish(PubSubOption.periodic(0.02));
+    private final BooleanPublisher atRotSetpoint = poseTable.getBooleanTopic("at rotation setpoint").publish(PubSubOption.periodic(0.02));
 
     @Override
     public void periodic() {
-        SmartDashboard.putNumber("average odometry loop time", avgLoopTIme);
-        SmartDashboard.putNumber("failed odometry updates", failedOdometryUpdates);
-        SmartDashboard.putNumber("sucessful odometry updates", successfulOdometryUpdates);
-        SmartDashboard.putString("Robot Pose", getSavedPose().toString());
+        AvgOdometryLoopTime.set(avgLoopTIme);
+        FailedOdometryUpdates.set(failedOdometryUpdates);
+        SuccessfulOdometryUpdates.set(successfulOdometryUpdates);
+        robotPose.set(getSavedPose().toString());
 
         // limelightUpdateCounter++;
         // if(limelightUpdateCounter > 25){
@@ -1026,28 +1066,15 @@ public class SwerveBase extends SubsystemBase {
             updateOdometryWithVision(false);
         //}
 
-       SmartDashboard.putNumber("NavX Position", gyro.getAngle());
-       SmartDashboard.putNumber("NavX temperature", gyro.getTempC());
-       SmartDashboard.putNumber("NavX Modified Position", getGyroHeading().getDegrees());
+        NavXPos.set(gyro.getAngle());
+        NavXTemp.set(gyro.getTempC());
+        NavXModPos.set(getGyroHeading().getDegrees());
 
         m_field.setRobotPose(getSavedPose());
 
-        SwerveModuleState[] modStates = getModuleStates();
-
-        SmartDashboard.putNumber("Module 1 Angle deg", modStates[0].angle.getDegrees());
-        SmartDashboard.putNumber("Module 2 Angle deg", modStates[1].angle.getDegrees());
-        SmartDashboard.putNumber("Module 3 Angle deg", modStates[2].angle.getDegrees());
-        SmartDashboard.putNumber("Module 4 Angle deg", modStates[3].angle.getDegrees());        
+        SwerveModuleState[] modStates = getModuleStates();   
         
-        SmartDashboard.putBoolean("Robot Rotation at Setpoint", atRotationSetpoint.getAsBoolean());
-
-        if (currentModuleStates[0] != null) {
-            ChassisSpeeds currentFieldRelativeSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(getLatestChassisSpeed(), getSavedPose().getRotation());
-            double currentvx = currentFieldRelativeSpeeds.vxMetersPerSecond;
-            double currentvy = currentFieldRelativeSpeeds.vyMetersPerSecond;
-            SmartDashboard.putNumber("Currentvx", currentvx);
-            SmartDashboard.putNumber("Currentvy", currentvy);
-        }
+        ((BooleanPublisher) atRotSetpoint).set(atRotationSetpoint.getAsBoolean());
     }
 }
 
