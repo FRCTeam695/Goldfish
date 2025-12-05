@@ -1,6 +1,10 @@
 package frc.robot.subsystems;
 
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -14,6 +18,7 @@ import edu.wpi.first.networktables.StringSubscriber;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.BisonLib.BaseProject.LimelightHelpers;
 import frc.BisonLib.BaseProject.Swerve.SwerveBase;
 import frc.BisonLib.BaseProject.Swerve.Modules.TalonFXModule;
 import frc.robot.Constants;
@@ -53,8 +58,19 @@ public class Swerve extends SwerveBase{
     public TrapezoidProfile yProfile;
     public TrapezoidProfile distanceProfile;
 
+    Map<String, int[]> tagDictionary;
+
+    public void addTagToDictionary(String tagSetName, int[] tagSet){
+        tagDictionary.put(tagSetName, tagSet);
+    }
+
     public Swerve(String[] camNames, TalonFXModule[] modules, int[] reefTags) {
         super(camNames, modules, reefTags);
+
+        tagDictionary = new HashMap<String, int[]>();
+
+        addTagToDictionary("tagSet1", new int[] {7});
+        addTagToDictionary("tagSet2", new int[] {1});
 
         targetLocationPose = new Pose2d();
 
@@ -72,6 +88,26 @@ public class Swerve extends SwerveBase{
         isFullyAutonomous = new Trigger(()-> currentlyFullyAutonomous);
         xProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
         yProfile = new TrapezoidProfile(new TrapezoidProfile.Constraints(Constants.Swerve.MAX_TRACKABLE_SPEED_METERS_PER_SECOND, Constants.Swerve.MAX_ACCELERATION_METERS_PER_SECOND_SQ));
+    }
+
+    public void setValidTagIDs(String tagSetName) {
+
+        validTagIDs = tagDictionary.get(tagSetName);
+
+        for (String cam : camNames) {
+            LimelightHelpers.SetFiducialIDFiltersOverride(cam, validTagIDs);
+        }
+
+        SmartDashboard.putString("Valid Tag IDs", Arrays.toString(validTagIDs));
+        SmartDashboard.putString(" Valid Tag Set Name ", tagSetName);
+    }
+
+    public Command setTagSet1() {
+        return runOnce(() -> setValidTagIDs("tagSet1"));
+    }
+
+    public Command setTagSet2() {
+        return runOnce(() -> setValidTagIDs("tagSet2"));
     }
       
 

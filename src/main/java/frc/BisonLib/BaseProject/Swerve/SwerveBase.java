@@ -128,8 +128,6 @@ SwerveBase extends SubsystemBase {
     double initialGyroAngle;
     double[] initialPositions;
 
-    Map<String, int[]> tagDictionary;
-
 
     // SysID
     private final SysIdRoutine m_sysIdRoutineSteer = new SysIdRoutine(
@@ -163,9 +161,7 @@ SwerveBase extends SubsystemBase {
         return m_sysIdRoutineToApply.dynamic(direction);
     }
 
-    public void addTagToDictionary(String tagSetName, int[] tagSet){
-        tagDictionary.put(tagSetName, tagSet);
-    }
+    
 
     /**
      * Does all da constructing
@@ -176,9 +172,7 @@ SwerveBase extends SubsystemBase {
      */
     public SwerveBase(String[] camNames, TalonFXModule[] modules, int[] validTagIDs) {
 
-        tagDictionary = new HashMap<String, int[]>();
-
-        addTagToDictionary("currentTagSet", validTagIDs);
+        
 
         //pigeon.setYaw(0);
         // 4 modules * 3 signals per module
@@ -954,17 +948,7 @@ SwerveBase extends SubsystemBase {
         }
     }
 
-    public void setValidTagIDs(String tagSetName) {
-
-        validTagIDs = tagDictionary.get(tagSetName);
-
-        for (String cam : camNames) {
-            LimelightHelpers.SetFiducialIDFiltersOverride(cam, validTagIDs);
-        }
-
-        SmartDashboard.putString("Valid Tag IDs", Arrays.toString(validTagIDs));
-        SmartDashboard.putString(" Valid Tag Set Name ", tagSetName);
-    }
+    
 
 
     /*

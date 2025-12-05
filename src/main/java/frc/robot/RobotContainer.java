@@ -115,6 +115,15 @@ public class RobotContainer {
         ()-> DriverStation.isDisabled()
       )
     );
+
+    driver.b().onTrue(
+      Swerve.setTagSet1().andThen(() ->
+      System.out.println("CURRENT TAG SET ONE"))
+    );
+
+    driver.y().onTrue(
+      Swerve.setTagSet2().andThen(() -> System.out.println("CURRENT TAG SET TWO"))
+    );
 /* 
     driver.a().whileTrue(
       Swerve.driveToTargetPoseStraightTrapezoidal(new Pose2d(1.75,1.5, new Rotation2d(0)), 0.1)
